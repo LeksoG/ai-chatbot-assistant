@@ -14,7 +14,7 @@ module.exports = async function handler(req, res) {
             return res.status(405).json({ error: 'Method not allowed' });
         }
 
-        const { message, history = [] } = req.body || {};
+        const { message, history = [], modelVersion = '3.0' } = req.body || {};
 
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
@@ -28,7 +28,17 @@ module.exports = async function handler(req, res) {
             });
         }
 
-        const systemPrompt = `You are Clarity AI, a helpful and intelligent AI assistant. Be concise — keep responses short and to the point (2–3 paragraphs max for explanations, fewer for simple questions). Only expand with lists, headers, or code blocks when truly necessary. Structure with markdown only when it adds real clarity:
+        // Model version config
+        const is35 = modelVersion === '3.5';
+        const systemPrompt = is35
+            ? `You are Clarity AI 3.5, an advanced and highly intelligent AI assistant. Provide thorough, nuanced, and well-reasoned responses. You may go deeper into topics when the question warrants it. Use markdown formatting effectively:
+- Use **bold** for key terms and important concepts
+- Use bullet or numbered lists to organize multi-part answers
+- Use \`inline code\` for commands or variables
+- Use fenced code blocks for multi-line code
+- Use ## headers for long, structured responses
+- Be analytical, precise, comprehensive, and accurate`
+            : `You are Clarity AI, a helpful and intelligent AI assistant. Be concise — keep responses short and to the point (2–3 paragraphs max, fewer for simple questions). Only expand with lists or code blocks when truly necessary. Structure with markdown only when it adds real clarity:
 - Use **bold** for key terms
 - Use bullet lists only when listing 3+ distinct items
 - Use \`inline code\` for commands or variables
@@ -50,8 +60,8 @@ module.exports = async function handler(req, res) {
             body: JSON.stringify({
                 model: 'mistral-large-latest',
                 messages,
-                temperature: 0.7,
-                max_tokens: 800
+                temperature: is35 ? 0.65 : 0.7,
+                max_tokens: is35 ? 1400 : 800
             })
         });
 
