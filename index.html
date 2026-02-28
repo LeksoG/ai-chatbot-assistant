@@ -213,6 +213,9 @@
         ::-webkit-scrollbar       { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+
+        /* ── Model modal backdrop ── */
+        #model-modal { backdrop-filter: blur(4px); }
     </style>
 </head>
 <body>
@@ -224,6 +227,8 @@
 
     <!-- Sidebar -->
     <div id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-[#0d0d0d] z-50 border-r border-white/5 -translate-x-full flex flex-col">
+
+        <!-- Sidebar header -->
         <div class="p-5 flex justify-between items-center border-b border-white/5">
             <div class="flex items-center gap-2">
                 <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-lg">
@@ -236,13 +241,27 @@
             </button>
         </div>
 
-        <div class="p-3">
+        <!-- New Conversation button -->
+        <div class="p-3 pb-2">
             <button onclick="newConversation()" class="w-full flex items-center gap-2.5 p-3 bg-white/5 hover:bg-white/10 rounded-xl text-sm text-gray-300 transition-colors border border-white/5 group">
                 <i data-lucide="plus" class="w-4 group-hover:text-violet-400 transition-colors"></i>
                 <span>New Conversation</span>
             </button>
         </div>
 
+        <!-- Model Version Selector -->
+        <div class="px-3 pb-3">
+            <button id="model-btn" onclick="openModelModal()"
+                class="w-full flex items-center justify-between px-3 py-2.5 bg-violet-950/40 hover:bg-violet-900/40 border border-violet-800/30 rounded-xl transition-colors group">
+                <div class="flex items-center gap-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-sm shadow-violet-400/60"></div>
+                    <span class="text-xs font-medium text-violet-300">Clarity <span id="model-label">3.0</span></span>
+                </div>
+                <i data-lucide="chevrons-up-down" class="w-3 text-violet-500 group-hover:text-violet-300 transition-colors"></i>
+            </button>
+        </div>
+
+        <!-- Conversation history -->
         <div class="px-3 flex-1 overflow-y-auto">
             <p class="px-2 text-[10px] text-gray-600 uppercase tracking-widest mb-2">Recent</p>
             <div id="history-list">
@@ -339,10 +358,55 @@
 
     </main>
 
+    <!-- ── Model Version Modal ───────────────────────────────── -->
+    <div id="model-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60">
+        <div class="absolute inset-0" onclick="closeModelModal()"></div>
+        <div class="relative w-80 bg-[#111] border border-white/10 rounded-2xl p-5 shadow-2xl mx-4">
+
+            <!-- Modal header -->
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-5 h-5 rounded-md bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center">
+                        <i data-lucide="gem" class="text-white w-2.5"></i>
+                    </div>
+                    <h3 class="text-white font-semibold text-sm">Choose Version</h3>
+                </div>
+                <button onclick="closeModelModal()" class="p-1 hover:bg-white/5 rounded-lg transition-colors">
+                    <i data-lucide="x" class="w-3.5 text-gray-500"></i>
+                </button>
+            </div>
+
+            <!-- Clarity 3.0 card -->
+            <button onclick="selectModel('3.0')" id="card-3-0"
+                class="w-full text-left p-4 rounded-xl border mb-2.5 transition-all hover:border-violet-700/40">
+                <div class="flex items-center justify-between mb-1.5">
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-sm text-white">Clarity 3.0</span>
+                        <span class="text-[10px] text-gray-500 font-mono">default</span>
+                    </div>
+                    <span id="badge-3-0" class="text-[10px] bg-violet-600/80 text-white px-2 py-0.5 rounded-full font-medium">Active</span>
+                </div>
+                <p class="text-xs text-gray-400 leading-relaxed">Fast, accurate, and efficient. Great for everyday questions, writing, summarising, and quick tasks.</p>
+            </button>
+
+            <!-- Clarity 3.5 card -->
+            <button onclick="selectModel('3.5')" id="card-3-5"
+                class="w-full text-left p-4 rounded-xl border transition-all hover:border-violet-700/40">
+                <div class="flex items-center justify-between mb-1.5">
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-sm text-white">Clarity 3.5</span>
+                        <span class="text-[10px] text-violet-400 font-medium">enhanced</span>
+                    </div>
+                    <span id="badge-3-5" class="hidden text-[10px] bg-violet-600/80 text-white px-2 py-0.5 rounded-full font-medium">Active</span>
+                </div>
+                <p class="text-xs text-gray-400 leading-relaxed">More intelligent and thorough. Best for complex reasoning, deep research, nuanced analysis, and detailed explanations.</p>
+            </button>
+        </div>
+    </div>
+
     <script>
         // ── Configure marked ──────────────────────────────────────
         marked.setOptions({ breaks: true, gfm: true });
-
         lucide.createIcons();
 
         const input       = document.getElementById('chat-input');
@@ -351,19 +415,32 @@
         const chatResults = document.getElementById('chat-results');
         const topBrand    = document.getElementById('top-brand');
 
-        let conversationHistory = [];
-        let isTyping = false;
+        let conversationHistory  = [];
+        let isTyping             = false;
+
+        // ── User identity (anonymous UUID, persisted in localStorage) ──
+        let userId = localStorage.getItem('clarity_uid');
+        if (!userId) {
+            userId = crypto.randomUUID();
+            localStorage.setItem('clarity_uid', userId);
+        }
+
+        // ── Model version ─────────────────────────────────────────
+        let selectedModel        = localStorage.getItem('clarity_model') || '3.0';
+        let activeConversationId = null;
 
         // ── Glow on load ──────────────────────────────────────────
         window.addEventListener('load', () => {
             setTimeout(() => { glow.style.opacity = '1'; }, 120);
+            document.getElementById('model-label').textContent = selectedModel;
+            updateModelCards();
+            loadConversations();
         });
 
         // ── Input listeners ───────────────────────────────────────
         input.addEventListener('input', (e) => {
             updateButtonState(e.target.value.trim().length > 0);
         });
-
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
         });
@@ -389,8 +466,8 @@
 
         // ── Sidebar ───────────────────────────────────────────────
         function toggleSidebar(open) {
-            const sb  = document.getElementById('sidebar');
-            const ov  = document.getElementById('sidebar-overlay');
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('sidebar-overlay');
             if (open) {
                 sb.classList.remove('-translate-x-full');
                 ov.classList.remove('opacity-0','pointer-events-none');
@@ -402,9 +479,147 @@
             }
         }
 
+        // ── Model picker ──────────────────────────────────────────
+        function openModelModal() {
+            const m = document.getElementById('model-modal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+            updateModelCards();
+        }
+
+        function closeModelModal() {
+            const m = document.getElementById('model-modal');
+            m.classList.add('hidden');
+            m.classList.remove('flex');
+        }
+
+        function selectModel(version) {
+            selectedModel = version;
+            localStorage.setItem('clarity_model', version);
+            document.getElementById('model-label').textContent = version;
+            updateModelCards();
+            closeModelModal();
+        }
+
+        function updateModelCards() {
+            ['3.0', '3.5'].forEach(v => {
+                const key   = v.replace('.', '-');
+                const card  = document.getElementById('card-' + key);
+                const badge = document.getElementById('badge-' + key);
+                if (v === selectedModel) {
+                    card.classList.add('border-violet-700/50', 'bg-violet-950/25');
+                    card.classList.remove('border-white/5');
+                    badge.classList.remove('hidden');
+                } else {
+                    card.classList.remove('border-violet-700/50', 'bg-violet-950/25');
+                    card.classList.add('border-white/5');
+                    badge.classList.add('hidden');
+                }
+            });
+        }
+
+        // ── Conversation list ─────────────────────────────────────
+        async function loadConversations() {
+            try {
+                const res = await fetch('/api/conversations?userId=' + userId);
+                if (!res.ok) return;
+                const list = await res.json();
+                renderConversationList(list);
+            } catch (_) { /* Supabase not configured yet */ }
+        }
+
+        function renderConversationList(conversations) {
+            const list = document.getElementById('history-list');
+            if (!conversations || !conversations.length) {
+                list.innerHTML = '<div class="p-3 text-gray-600 text-sm text-center">No history yet</div>';
+                return;
+            }
+            list.innerHTML = conversations.map(c => `
+                <button onclick="loadConversation('${c.id}')"
+                    class="conv-item w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group ${activeConversationId === c.id ? 'bg-white/5' : ''}">
+                    <i data-lucide="message-square" class="w-3.5 shrink-0 text-gray-600 group-hover:text-gray-400 transition-colors"></i>
+                    <span class="text-sm text-gray-400 group-hover:text-gray-200 transition-colors truncate">${escapeHtml(c.title)}</span>
+                </button>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        async function loadConversation(id) {
+            try {
+                const res = await fetch('/api/messages?conversationId=' + id);
+                if (!res.ok) return;
+                const msgs = await res.json();
+
+                activeConversationId = id;
+                conversationHistory  = [];
+                chatResults.innerHTML = '';
+
+                if (!document.body.classList.contains('conversation-started')) {
+                    document.body.classList.add('conversation-started');
+                    topBrand.style.opacity = '1';
+                    topBrand.style.pointerEvents = 'auto';
+                }
+
+                for (const msg of msgs) {
+                    if (msg.role === 'user') {
+                        appendUserMessage(msg.content);
+                    } else {
+                        const aiEl = appendAIMessageShell();
+                        aiEl.innerHTML = marked.parse(msg.content);
+                    }
+                    conversationHistory.push({ role: msg.role, content: msg.content });
+                }
+
+                scrollToBottom();
+                toggleSidebar(false);
+                loadConversations(); // refresh active highlight
+            } catch (e) {
+                console.error('Failed to load conversation:', e);
+            }
+        }
+
+        async function ensureConversation(firstMessage) {
+            if (activeConversationId) return;
+            try {
+                const res = await fetch('/api/conversations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId,
+                        title: firstMessage.slice(0, 60).trim(),
+                        modelVersion: selectedModel
+                    })
+                });
+                if (!res.ok) return;
+                const conv = await res.json();
+                activeConversationId = conv.id;
+                loadConversations();
+            } catch (_) { /* silently skip if Supabase not set up */ }
+        }
+
+        async function saveMessage(role, content) {
+            if (!activeConversationId) return;
+            try {
+                await fetch('/api/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ conversationId: activeConversationId, role, content })
+                });
+                if (role === 'assistant') {
+                    fetch('/api/conversations?id=' + activeConversationId, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    });
+                    loadConversations();
+                }
+            } catch (_) { /* silently skip */ }
+        }
+
         // ── New conversation ──────────────────────────────────────
         function newConversation() {
-            conversationHistory = [];
+            activeConversationId = null;
+            conversationHistory  = [];
             chatResults.innerHTML = '';
             document.body.classList.remove('conversation-started');
             topBrand.style.opacity = '0';
@@ -452,8 +667,8 @@
         // ── Typewriter ────────────────────────────────────────────
         async function typeWriter(el, text) {
             let built = '';
-            const BATCH = 3;     // characters per frame
-            const DELAY = 14;    // ms between frames
+            const BATCH = 3;
+            const DELAY = 14;
 
             for (let i = 0; i < text.length; i += BATCH) {
                 built += text.slice(i, i + BATCH);
@@ -462,7 +677,6 @@
                 await sleep(DELAY);
             }
 
-            // Final render — no cursor
             el.innerHTML = marked.parse(text);
             scrollToBottom();
         }
@@ -490,8 +704,12 @@
                 topBrand.style.pointerEvents = 'auto';
             }
 
+            // Create conversation record in Supabase (if not already active)
+            await ensureConversation(val);
+
             appendUserMessage(val);
             scrollToBottom();
+            saveMessage('user', val);
 
             const aiEl = appendAIMessageShell();
             scrollToBottom();
@@ -500,7 +718,11 @@
                 const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: val, history: conversationHistory })
+                    body: JSON.stringify({
+                        message: val,
+                        history: conversationHistory,
+                        modelVersion: selectedModel
+                    })
                 });
 
                 const data = await res.json();
@@ -518,6 +740,7 @@
                         { role: 'assistant', content: data.reply }
                     );
                     await typeWriter(aiEl, data.reply);
+                    saveMessage('assistant', data.reply);
                 }
 
             } catch (err) {
