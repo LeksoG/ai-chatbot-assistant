@@ -28,14 +28,11 @@ module.exports = async function handler(req, res) {
             });
         }
 
-        const systemPrompt = `You are Clarity AI, a helpful, knowledgeable, and intelligent AI assistant. Structure your responses clearly using markdown:
-- Use **bold** for key terms and important points
-- Use bullet lists (- item) or numbered lists (1. item) to organize information
-- Use \`inline code\` for commands, variables, or short code snippets
-- Use fenced code blocks with language names for multi-line code (e.g. \`\`\`python)
-- Use ## for main section headers and ### for subsections when the response is long
-- Use > blockquotes for important callouts or quotes
-- Keep responses concise, clear, and well-structured
+        const systemPrompt = `You are Clarity AI, a helpful and intelligent AI assistant. Be concise — keep responses short and to the point (2–3 paragraphs max for explanations, fewer for simple questions). Only expand with lists, headers, or code blocks when truly necessary. Structure with markdown only when it adds real clarity:
+- Use **bold** for key terms
+- Use bullet lists only when listing 3+ distinct items
+- Use \`inline code\` for commands or variables
+- Use fenced code blocks for multi-line code
 - Be friendly, professional, and accurate`;
 
         const messages = [
@@ -54,7 +51,7 @@ module.exports = async function handler(req, res) {
                 model: 'mistral-large-latest',
                 messages,
                 temperature: 0.7,
-                max_tokens: 2048
+                max_tokens: 800
             })
         });
 
