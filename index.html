@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern AI Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --container-bg: #111;
+            --accent-gradient: conic-gradient(from 0deg, transparent 0deg, #ff00c8 40deg, #7000ff 100deg, #00c2ff 160deg, #00ff85 220deg, #ffea00 280deg, transparent 360deg);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: white;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Rainbow Edge Glow Logic */
+        .glow-wrapper {
+            position: absolute;
+            inset: -1.5px;
+            border-radius: 9999px;
+            overflow: hidden;
+            filter: blur(8px);
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .glow-content {
+            position: absolute;
+            inset: -150%;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            animation: rainbow-trace 2.5s ease-out forwards;
+        }
+
+        @keyframes rainbow-trace {
+            0% { transform: rotate(0deg) scale(0.8); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        /* Static glow after conversation starts */
+        .conversation-started .glow-content {
+            animation: none !important;
+            background: linear-gradient(90deg, #ff00c8, #7000ff, #00c2ff, #00ff85);
+            opacity: 0.3;
+            inset: -5%;
+        }
+
+        /* Subtle Spring Entrance for suggestions */
+        @keyframes subtle-spring {
+            0% { transform: translateY(30px) scale(0.95); opacity: 0; }
+            70% { transform: translateY(-5px) scale(1.02); opacity: 1; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        .suggestion-card {
+            opacity: 0;
+            animation: subtle-spring 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        /* Transition for Main Container sliding down */
+        .chat-input-wrapper {
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+        }
+
+        .conversation-started .chat-input-wrapper {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 42rem;
+        }
+
+        /* Sidebar Transition */
+        #sidebar {
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input::placeholder {
+            transition: all 0.3s ease;
+        }
+        input:focus::placeholder {
+            opacity: 0;
+            transform: translateX(10px);
+        }
+
+        .hide-on-start {
+            transition: all 0.6s ease;
+        }
+        .conversation-started .hide-on-start {
+            opacity: 0;
+            transform: translateY(-20px);
+            pointer-events: none;
+            display: none; /* Fully remove from flow when started */
+        }
+
+        /* Adjust main container to push content to top when conversation starts */
+        #main-ui {
+            transition: justify-content 0.5s ease;
+        }
+        .conversation-started #main-ui {
+            justify-content: flex-start;
+            padding-top: 5rem;
+        }
+
+        #chat-results {
+            display: none;
+            opacity: 0;
+        }
+        .conversation-started #chat-results {
+            display: flex;
+            animation: fade-in-up 1s ease 0.3s forwards;
+        }
+
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Overlay -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 opacity-0 pointer-events-none transition-opacity duration-500"></div>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-[#0d0d0d] z-50 border-r border-white/5 -translate-x-full">
+        <div class="p-6 flex justify-between items-center">
+            <span class="font-medium text-gray-400 uppercase text-xs tracking-widest">History</span>
+            <button onclick="toggleSidebar(false)" class="p-2 hover:bg-white/5 rounded-full transition-colors">
+                <i data-lucide="x" class="w-[18px]"></i>
+            </button>
+        </div>
+        <div class="px-3 space-y-1">
+            <div class="p-3 hover:bg-white/5 rounded-xl cursor-pointer flex items-center gap-3 text-gray-400 text-sm transition-colors group">
+                <i data-lucide="message-square" class="w-4 group-hover:text-violet-400"></i>
+                <span>Previous Conversation 1</span>
+            </div>
+            <div class="p-3 hover:bg-white/5 rounded-xl cursor-pointer flex items-center gap-3 text-gray-400 text-sm transition-colors group">
+                <i data-lucide="message-square" class="w-4 group-hover:text-violet-400"></i>
+                <span>Previous Conversation 2</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Button -->
+    <button onclick="toggleSidebar(true)" class="fixed top-6 left-6 z-30 p-2.5 hover:bg-white/10 rounded-xl transition-all active:scale-90 bg-white/5 border border-white/5">
+        <i data-lucide="panel-left" class="text-gray-300 w-[22px]"></i>
+    </button>
+
+    <main id="main-ui" class="min-h-screen flex flex-col items-center justify-center p-4">
+        
+        <!-- Header -->
+        <div class="hide-on-start text-center mb-12">
+            <h1 class="text-5xl font-bold mb-4 tracking-tight">How can I help today?</h1>
+            <p class="text-gray-500 text-lg font-light">Ask me anything — I'm here to assist.</p>
+        </div>
+
+        <!-- Suggestions Grid -->
+        <div class="hide-on-start grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl mb-12">
+            <button onclick="fillInput('Help me write a professional email')" class="suggestion-card flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group shadow-lg" style="animation-delay: 0.6s;">
+                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
+                    <i data-lucide="pen-line" class="text-blue-400 w-5"></i>
+                </div>
+                <span class="text-gray-300 font-medium">Help me write a professional email</span>
+            </button>
+            <button onclick="fillInput('Brainstorm creative project ideas')" class="suggestion-card flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group shadow-lg" style="animation-delay: 0.7s;">
+                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
+                    <i data-lucide="lightbulb" class="text-yellow-400 w-5"></i>
+                </div>
+                <span class="text-gray-300 font-medium">Brainstorm creative project ideas</span>
+            </button>
+            <button onclick="fillInput('Explain a complex topic simply')" class="suggestion-card flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group shadow-lg" style="animation-delay: 0.8s;">
+                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
+                    <i data-lucide="book-open" class="text-green-400 w-5"></i>
+                </div>
+                <span class="text-gray-300 font-medium">Explain a complex topic simply</span>
+            </button>
+            <button onclick="fillInput('Debug and fix my code')" class="suggestion-card flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group shadow-lg" style="animation-delay: 0.9s;">
+                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
+                    <i data-lucide="code" class="text-purple-400 w-5"></i>
+                </div>
+                <span class="text-gray-300 font-medium">Debug and fix my code</span>
+            </button>
+        </div>
+
+        <!-- Chat Results -->
+        <div id="chat-results" class="w-full max-w-3xl flex-col gap-8 pb-32 px-6">
+            <div class="flex justify-end">
+                <div id="user-msg" class="bg-[#1a1a1a] border border-white/5 p-4 px-6 rounded-3xl rounded-tr-none max-w-[80%] text-gray-200"></div>
+            </div>
+            <div class="flex justify-start items-start gap-5">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shrink-0">
+                    <i data-lucide="sparkles" class="text-white w-5"></i>
+                </div>
+                <div class="text-gray-300 leading-relaxed pt-1 text-lg">
+                    <p class="animate-pulse">Thinking about your request...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Input Wrapper -->
+        <div class="chat-input-wrapper w-full max-w-2xl px-4 relative">
+            <div class="relative group">
+                <!-- Rainbow Edge Glow -->
+                <div id="rainbow-glow" class="glow-wrapper">
+                    <div class="glow-content"></div>
+                </div>
+
+                <!-- Input Container -->
+                <div class="relative flex items-center bg-[#111] rounded-full px-6 py-4 shadow-2xl border border-white/10 z-10">
+                    <input id="chat-input" type="text" placeholder="Ask anything" 
+                        class="w-full bg-transparent border-none outline-none text-white text-lg placeholder-gray-600">
+                    
+                    <button id="send-btn" onclick="startConversation()" disabled
+                        class="ml-3 p-2.5 rounded-full transition-all duration-500 flex items-center justify-center bg-white/5 text-gray-600 scale-90 opacity-40 cursor-not-allowed rotate-45">
+                        <i data-lucide="arrow-up" class="w-5 stroke-[3]"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        const input = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const glow = document.getElementById('rainbow-glow');
+
+        // Initial Load animation
+        window.onload = () => {
+            setTimeout(() => {
+                glow.style.opacity = '1';
+            }, 100);
+        };
+
+        // Handle Input events
+        input.addEventListener('input', (e) => {
+            const hasText = e.target.value.trim().length > 0;
+            updateButtonState(hasText);
+        });
+
+        function updateButtonState(hasText) {
+            sendBtn.disabled = !hasText;
+            if (hasText) {
+                sendBtn.classList.remove('bg-white/5', 'text-gray-600', 'opacity-40', 'cursor-not-allowed', 'rotate-45');
+                sendBtn.classList.add('bg-white', 'text-black', 'opacity-100', 'shadow-[0_0_20px_rgba(255,255,255,0.5)]', 'rotate-0');
+            } else {
+                sendBtn.classList.add('bg-white/5', 'text-gray-600', 'opacity-40', 'cursor-not-allowed', 'rotate-45');
+                sendBtn.classList.remove('bg-white', 'text-black', 'opacity-100', 'shadow-[0_0_20px_rgba(255,255,255,0.5)]', 'rotate-0');
+            }
+        }
+
+        function fillInput(text) {
+            input.value = text;
+            updateButtonState(true);
+        }
+
+        function toggleSidebar(open) {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (open) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('opacity-0', 'pointer-events-none');
+                overlay.classList.add('opacity-100');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+                overlay.classList.remove('opacity-100');
+            }
+        }
+
+        function startConversation() {
+            const val = input.value.trim();
+            if (!val) return;
+
+            // Update user message text
+            document.getElementById('user-msg').textContent = val;
+            
+            // Clear input and reset button immediately
+            input.value = '';
+            updateButtonState(false);
+
+            // Add class to trigger layout animations
+            document.body.classList.add('conversation-started');
+            
+            // Reset scroll to top to see results
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Enter key to send
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') startConversation();
+        });
+    </script>
+</body>
+</html>
