@@ -1,32 +1,34 @@
 module.exports = async function handler(req, res) {
-    // CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    // Always return JSON, even on unexpected crashes
+    try {
+        // CORS headers
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
+        if (req.method === 'OPTIONS') {
+            return res.status(200).end();
+        }
 
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
+        if (req.method !== 'POST') {
+            return res.status(405).json({ error: 'Method not allowed' });
+        }
 
-    const { message, history = [] } = req.body;
+        const { message, history = [] } = req.body || {};
 
-    if (!message) {
-        return res.status(400).json({ error: 'Message is required' });
-    }
+        if (!message) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
 
-    const apiKey = process.env.MISTRAL_API_KEY;
+        const apiKey = process.env.MISTRAL_API_KEY;
 
-    if (!apiKey) {
-        return res.status(500).json({
-            error: 'Mistral API key not configured. Add MISTRAL_API_KEY to your Vercel environment variables.'
-        });
-    }
+        if (!apiKey) {
+            return res.status(500).json({
+                error: 'MISTRAL_API_KEY is not set. Go to Vercel → Project → Settings → Environment Variables and add it, then redeploy.'
+            });
+        }
 
-    const systemPrompt = `You are Clarity AI, a helpful, knowledgeable, and intelligent AI assistant. Structure your responses clearly using markdown:
+        const systemPrompt = `You are Clarity AI, a helpful, knowledgeable, and intelligent AI assistant. Structure your responses clearly using markdown:
 - Use **bold** for key terms and important points
 - Use bullet lists (- item) or numbered lists (1. item) to organize information
 - Use \`inline code\` for commands, variables, or short code snippets
@@ -36,14 +38,13 @@ module.exports = async function handler(req, res) {
 - Keep responses concise, clear, and well-structured
 - Be friendly, professional, and accurate`;
 
-    const messages = [
-        { role: 'system', content: systemPrompt },
-        ...history,
-        { role: 'user', content: message }
-    ];
+        const messages = [
+            { role: 'system', content: systemPrompt },
+            ...history,
+            { role: 'user', content: message }
+        ];
 
-    try {
-        const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        const mistralRes = await fetch('https://api.mistral.ai/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -57,20 +58,22 @@ module.exports = async function handler(req, res) {
             })
         });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            return res.status(response.status).json({
-                error: errorData.message || `Mistral API error (${response.status})`
+        if (!mistralRes.ok) {
+            const errorData = await mistralRes.json().catch(() => ({}));
+            return res.status(mistralRes.status).json({
+                error: errorData.message || `Mistral API error (${mistralRes.status})`
             });
         }
 
-        const data = await response.json();
+        const data = await mistralRes.json();
         const reply = data.choices[0].message.content;
 
         return res.status(200).json({ reply });
 
-    } catch (error) {
-        console.error('Mistral API error:', error);
-        return res.status(500).json({ error: 'Failed to connect to Mistral API. Please try again.' });
+    } catch (err) {
+        console.error('[chat] unexpected error:', err);
+        return res.status(500).json({
+            error: `Server error: ${err.message || 'Unknown error'}. Check Vercel function logs.`
+        });
     }
 };
