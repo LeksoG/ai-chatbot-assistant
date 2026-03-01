@@ -85,6 +85,19 @@
         ::-webkit-scrollbar { width:5px; }
         ::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:4px; }
 
+        /* ── Version popup ── */
+        #version-popup { transform-origin:bottom left; transition:opacity 0.18s ease, transform 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+        .vpop-hidden { opacity:0; transform:scale(0.92) translateY(8px); pointer-events:none; }
+        .vpop-open   { opacity:1; transform:scale(1) translateY(0); pointer-events:auto; }
+
+        /* ── Canvas ── */
+        #canvas-panel { flex-direction:column; }
+        #canvas-resizer:active { background:rgba(124,58,237,0.7); }
+        .canvas-tab-active   { color:#fff; border-bottom-color:#fff; }
+        .canvas-tab-inactive { color:#6b7280; border-bottom-color:transparent; }
+        #canvas-ai-text .ai-response p { margin:.4rem 0; }
+        .canvas-gen-btn:disabled { opacity:.5; cursor:not-allowed; }
+
         /* ── Code logo ── */
         .cl-seg { stroke:none; transform-origin:center; fill:url(#codeRainbow); }
         .cl-seg-top { animation:clMorphTop 5s infinite cubic-bezier(0.6,0.05,0.01,1); }
@@ -149,18 +162,6 @@
             <button onclick="newConversation()" class="w-full flex items-center gap-2.5 p-3 bg-white/5 hover:bg-white/10 rounded-xl text-sm text-gray-300 transition-colors border border-white/5 group">
                 <i data-lucide="plus" class="w-4 group-hover:text-violet-400 transition-colors"></i>
                 <span>New Conversation</span>
-            </button>
-        </div>
-
-        <!-- Model selector -->
-        <div class="px-3 pb-3 shrink-0">
-            <button id="model-btn" onclick="openModelModal()"
-                class="w-full flex items-center justify-between px-3 py-2.5 bg-violet-950/40 hover:bg-violet-900/40 border border-violet-800/30 rounded-xl transition-colors group">
-                <div class="flex items-center gap-2">
-                    <div class="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-sm shadow-violet-400/60"></div>
-                    <span class="text-xs font-medium text-violet-300">Clarity <span id="model-label">3.0</span></span>
-                </div>
-                <i data-lucide="chevrons-up-down" class="w-3 text-violet-500 group-hover:text-violet-300 transition-colors"></i>
             </button>
         </div>
 
@@ -273,42 +274,100 @@
     </main>
 
     <!-- ═══════════════════════════════════════════════════════
-         MODEL MODAL
+         BOTTOM-LEFT VERSION PILL
     ═══════════════════════════════════════════════════════ -->
-    <div id="model-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div class="absolute inset-0" onclick="closeModelModal()"></div>
-        <div class="relative w-80 bg-[#111] border border-white/10 rounded-2xl p-5 shadow-2xl mx-4">
-            <div class="flex items-center justify-between mb-4">
+    <button id="version-pill" onclick="toggleVersionPopup()"
+        class="fixed bottom-6 left-6 z-30 flex items-center gap-2 px-3.5 py-2 bg-[#111] border border-white/10 rounded-full text-sm hover:border-white/20 transition-all shadow-lg">
+        <div class="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-sm shadow-violet-400/60 shrink-0"></div>
+        <span class="text-xs font-medium text-white">Clarity <span id="pill-model-label">3.0</span></span>
+        <i data-lucide="chevrons-up-down" class="w-3 text-gray-500 shrink-0"></i>
+    </button>
+
+    <!-- ═══════════════════════════════════════════════════════
+         VERSION POPUP (anchored above the pill)
+    ═══════════════════════════════════════════════════════ -->
+    <div id="version-popup" class="vpop-hidden fixed bottom-[4.5rem] left-6 z-30 w-72 bg-[#111] border border-white/10 rounded-2xl p-3 shadow-2xl">
+        <p class="text-[10px] text-gray-500 uppercase tracking-widest px-1 mb-2">Model</p>
+        <button onclick="selectModel('3.0')" id="card-3-0" class="w-full text-left p-3 rounded-xl border mb-2 transition-all hover:border-violet-700/40">
+            <div class="flex items-center justify-between mb-1">
                 <div class="flex items-center gap-2">
-                    <div class="w-5 h-5 rounded-md bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center">
-                        <i data-lucide="gem" class="text-white w-2.5"></i>
-                    </div>
-                    <h3 class="text-white font-semibold text-sm">Choose Version</h3>
+                    <span class="font-semibold text-sm text-white">Clarity 3.0</span>
+                    <span class="text-[10px] text-gray-500 font-mono">default</span>
                 </div>
-                <button onclick="closeModelModal()" class="p-1 hover:bg-white/5 rounded-lg">
-                    <i data-lucide="x" class="w-3.5 text-gray-500"></i>
-                </button>
+                <span id="badge-3-0" class="text-[10px] bg-violet-600/80 text-white px-2 py-0.5 rounded-full font-medium">Active</span>
             </div>
-            <button onclick="selectModel('3.0')" id="card-3-0" class="w-full text-left p-4 rounded-xl border mb-2.5 transition-all hover:border-violet-700/40">
-                <div class="flex items-center justify-between mb-1.5">
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-sm text-white">Clarity 3.0</span>
-                        <span class="text-[10px] text-gray-500 font-mono">default</span>
-                    </div>
-                    <span id="badge-3-0" class="text-[10px] bg-violet-600/80 text-white px-2 py-0.5 rounded-full font-medium">Active</span>
+            <p class="text-xs text-gray-400 leading-relaxed">Fast and efficient for writing, chat, and general tasks. Can handle basic code but struggles with complex challenges.</p>
+        </button>
+        <button onclick="selectModel('3.5')" id="card-3-5" class="w-full text-left p-3 rounded-xl border mb-3 transition-all hover:border-violet-700/40">
+            <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold text-sm text-white">Clarity 3.5</span>
+                    <span class="text-[10px] text-violet-400 font-medium">enhanced</span>
                 </div>
-                <p class="text-xs text-gray-400 leading-relaxed">Fast, accurate, and efficient. Great for everyday questions, writing, and quick tasks.</p>
+                <span id="badge-3-5" class="hidden text-[10px] bg-violet-600/80 text-white px-2 py-0.5 rounded-full font-medium">Active</span>
+            </div>
+            <p class="text-xs text-gray-400 leading-relaxed">Advanced reasoning and superior coding. Best for complex engineering, deep research, and multi-step challenges.</p>
+        </button>
+        <!-- Canvas Preview toggle -->
+        <div class="border-t border-white/5 pt-3 px-1 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-medium text-white">Canvas Preview</p>
+                <p class="text-[10px] text-gray-500 mt-0.5">Open code in live editor + preview</p>
+            </div>
+            <button id="canvas-toggle-track" onclick="toggleCanvasPreview()" class="toggle-track shrink-0 ml-3">
+                <div class="toggle-thumb"></div>
             </button>
-            <button onclick="selectModel('3.5')" id="card-3-5" class="w-full text-left p-4 rounded-xl border transition-all hover:border-violet-700/40">
-                <div class="flex items-center justify-between mb-1.5">
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-sm text-white">Clarity 3.5</span>
-                        <span class="text-[10px] text-violet-400 font-medium">enhanced</span>
-                    </div>
-                    <span id="badge-3-5" class="hidden text-[10px] bg-violet-600/80 text-white px-2 py-0.5 rounded-full font-medium">Active</span>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         CANVAS PANEL
+    ═══════════════════════════════════════════════════════ -->
+    <div id="canvas-panel" class="hidden fixed inset-0 z-[150] bg-[#0a0a0a]">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-5 py-3 border-b border-white/8 shrink-0 bg-[#0d0d0d]">
+            <div class="flex items-center gap-2.5">
+                <svg class="w-5 h-5" viewBox="-15 -15 130 130">
+                    <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
+                    <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
+                    <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
+                </svg>
+                <span class="text-white font-semibold text-sm">Canvas Preview</span>
+            </div>
+            <button onclick="closeCanvas()" class="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
+                <i data-lucide="x" class="w-4 text-gray-400"></i>
+            </button>
+        </div>
+        <!-- Split body -->
+        <div id="canvas-split" class="flex" style="height:calc(100% - 49px)">
+            <!-- Left: prompt panel -->
+            <div id="canvas-left" class="flex flex-col border-r border-white/8 shrink-0" style="width:30%">
+                <div class="p-4 border-b border-white/5 flex-1 flex flex-col min-h-0">
+                    <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Prompt</p>
+                    <textarea id="canvas-prompt" class="flex-1 min-h-0 w-full bg-[#1a1a1a] border border-white/8 rounded-xl p-3 text-white text-sm resize-none outline-none focus:border-violet-600/60 transition-colors placeholder-gray-600" placeholder="Describe what to build…"></textarea>
                 </div>
-                <p class="text-xs text-gray-400 leading-relaxed">More intelligent and thorough. Best for complex reasoning, deep research, and detailed analysis.</p>
-            </button>
+                <div class="p-4 shrink-0">
+                    <button id="canvas-gen-btn" onclick="canvasGenerate()" class="canvas-gen-btn w-full py-2.5 bg-black border border-white text-white text-sm font-medium rounded-xl hover:bg-white/10 transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="sparkles" class="w-4"></i> Generate Code
+                    </button>
+                </div>
+                <div id="canvas-ai-text" class="px-4 pb-4 overflow-y-auto text-sm text-gray-400 leading-relaxed ai-response" style="max-height:180px"></div>
+            </div>
+            <!-- Resizer -->
+            <div id="canvas-resizer" class="w-1 bg-white/5 hover:bg-violet-600/50 cursor-col-resize transition-colors shrink-0"></div>
+            <!-- Right: Monaco + preview -->
+            <div id="canvas-right" class="flex flex-col flex-1 min-w-0">
+                <div class="flex border-b border-white/8 px-4 bg-[#0d0d0d] shrink-0">
+                    <button id="tab-code"    onclick="switchCanvasTab('code')"    class="canvas-tab-active    px-4 py-3 text-xs font-medium border-b-2 transition-colors mr-1">Code</button>
+                    <button id="tab-preview" onclick="switchCanvasTab('preview')" class="canvas-tab-inactive px-4 py-3 text-xs font-medium border-b-2 transition-colors">Preview</button>
+                </div>
+                <div id="canvas-code-tab" class="flex-1 min-h-0 relative">
+                    <div id="monaco-container" class="absolute inset-0"></div>
+                </div>
+                <div id="canvas-preview-tab" class="hidden flex-1 min-h-0">
+                    <iframe id="canvas-iframe" class="w-full h-full border-0 bg-white"></iframe>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -452,13 +511,18 @@
         let selectedModel        = localStorage.getItem('clarity_model') || '3.0';
         let pendingRenameId      = null;
         let pendingDeleteId      = null;
+        let canvasEnabled        = localStorage.getItem('clarity_canvas') === 'true';
+        let versionPopupOpen     = false;
+        let monacoReady          = false;
+        let monacoEditor         = null;
 
         // ── Init ──────────────────────────────────────────────────
         window.addEventListener('load', async () => {
             lucide.createIcons();
             setTimeout(() => { document.getElementById('rainbow-glow').style.opacity = '1'; }, 120);
-            document.getElementById('model-label').textContent = selectedModel;
+            document.getElementById('pill-model-label').textContent = selectedModel;
             updateModelCards();
+            if (canvasEnabled) document.getElementById('canvas-toggle-track').classList.add('on');
             updateUserUI();
             // Fetch fresh profile so initials/name always reflect the latest DB data
             try {
@@ -530,22 +594,36 @@
             }
         }
 
-        // ── Model picker ──────────────────────────────────────────
-        function openModelModal()  { const m = document.getElementById('model-modal'); m.classList.remove('hidden'); m.classList.add('flex'); updateModelCards(); }
-        function closeModelModal() { const m = document.getElementById('model-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+        // ── Version popup ─────────────────────────────────────────
+        function toggleVersionPopup() {
+            const popup = document.getElementById('version-popup');
+            versionPopupOpen = !versionPopupOpen;
+            popup.classList.toggle('vpop-hidden', !versionPopupOpen);
+            popup.classList.toggle('vpop-open',    versionPopupOpen);
+        }
+        function closeVersionPopup() {
+            versionPopupOpen = false;
+            const popup = document.getElementById('version-popup');
+            popup.classList.add('vpop-hidden');
+            popup.classList.remove('vpop-open');
+        }
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#version-pill') && !e.target.closest('#version-popup')) closeVersionPopup();
+        });
 
         function selectModel(v) {
             selectedModel = v;
             localStorage.setItem('clarity_model', v);
-            document.getElementById('model-label').textContent = v;
+            document.getElementById('pill-model-label').textContent = v;
             updateModelCards();
-            closeModelModal();
+            closeVersionPopup();
         }
         function updateModelCards() {
             ['3.0','3.5'].forEach(v => {
-                const k = v.replace('.', '-');
-                const card  = document.getElementById('card-' + k);
-                const badge = document.getElementById('badge-' + k);
+                const k    = v.replace('.', '-');
+                const card = document.getElementById('card-' + k);
+                const badge= document.getElementById('badge-' + k);
+                if (!card) return;
                 if (v === selectedModel) {
                     card.classList.add('border-violet-700/50','bg-violet-950/25');
                     card.classList.remove('border-white/5');
@@ -555,6 +633,152 @@
                     card.classList.add('border-white/5');
                     badge.classList.add('hidden');
                 }
+            });
+        }
+
+        // ── Canvas Preview toggle ─────────────────────────────────
+        function toggleCanvasPreview() {
+            canvasEnabled = !canvasEnabled;
+            localStorage.setItem('clarity_canvas', canvasEnabled);
+            const track = document.getElementById('canvas-toggle-track');
+            track.classList.toggle('on', canvasEnabled);
+        }
+
+        // ── Canvas ────────────────────────────────────────────────
+        function extractCodeBlock(text) {
+            const m = text.match(/```(?:html|css|javascript|js|tsx?|vue|svelte)?\n?([\s\S]*?)```/i);
+            if (m) return m[1].trim();
+            if (/<!DOCTYPE|<html/i.test(text)) return text.trim();
+            return null;
+        }
+        function detectLang(code) {
+            if (/<!DOCTYPE|<html/i.test(code)) return 'html';
+            if (/^\s*[.#][\w-]+\s*\{/.test(code)) return 'css';
+            return 'javascript';
+        }
+
+        async function loadMonaco() {
+            if (monacoReady) return;
+            return new Promise(resolve => {
+                const s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js';
+                s.onload = () => {
+                    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+                    require(['vs/editor/editor.main'], () => {
+                        monacoEditor = monaco.editor.create(document.getElementById('monaco-container'), {
+                            value: '',
+                            language: 'html',
+                            theme: 'vs-dark',
+                            minimap: { enabled: false },
+                            fontSize: 13,
+                            wordWrap: 'on',
+                            scrollBeyondLastLine: false,
+                            automaticLayout: true,
+                        });
+                        monacoEditor.onDidChangeModelContent(() => updateCanvasPreview());
+                        monacoReady = true;
+                        resolve();
+                    });
+                };
+                document.head.appendChild(s);
+            });
+        }
+
+        async function openCanvas(prompt, code) {
+            const panel = document.getElementById('canvas-panel');
+            panel.classList.remove('hidden');
+            panel.style.display = 'flex';
+            document.getElementById('canvas-prompt').value = prompt || '';
+            document.getElementById('canvas-ai-text').innerHTML = '';
+            switchCanvasTab('code');
+            lucide.createIcons();
+            await loadMonaco();
+            if (code) {
+                const lang = detectLang(code);
+                monaco.editor.setModelLanguage(monacoEditor.getModel(), lang);
+                monacoEditor.setValue(code);
+                updateCanvasPreview();
+            }
+            initCanvasResizer();
+        }
+        function closeCanvas() {
+            const panel = document.getElementById('canvas-panel');
+            panel.classList.add('hidden');
+            panel.style.display = '';
+        }
+        function updateCanvasPreview() {
+            if (monacoEditor) document.getElementById('canvas-iframe').srcdoc = monacoEditor.getValue();
+        }
+        function switchCanvasTab(tab) {
+            const codePan = document.getElementById('canvas-code-tab');
+            const prevPan = document.getElementById('canvas-preview-tab');
+            const tabC    = document.getElementById('tab-code');
+            const tabP    = document.getElementById('tab-preview');
+            if (tab === 'code') {
+                codePan.classList.remove('hidden'); prevPan.classList.add('hidden');
+                tabC.className = 'canvas-tab-active    px-4 py-3 text-xs font-medium border-b-2 transition-colors mr-1';
+                tabP.className = 'canvas-tab-inactive px-4 py-3 text-xs font-medium border-b-2 transition-colors';
+            } else {
+                prevPan.classList.remove('hidden'); codePan.classList.add('hidden');
+                tabP.className = 'canvas-tab-active    px-4 py-3 text-xs font-medium border-b-2 transition-colors';
+                tabC.className = 'canvas-tab-inactive px-4 py-3 text-xs font-medium border-b-2 transition-colors mr-1';
+                updateCanvasPreview();
+            }
+        }
+
+        async function canvasGenerate() {
+            const prompt = document.getElementById('canvas-prompt').value.trim();
+            if (!prompt) return;
+            const btn = document.getElementById('canvas-gen-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 animate-spin"></i> Generating…';
+            lucide.createIcons();
+            try {
+                const res  = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: prompt, history: [], modelVersion: selectedModel })
+                });
+                const data = await res.json();
+                if (res.ok && data.reply) {
+                    document.getElementById('canvas-ai-text').innerHTML = marked.parse(data.reply);
+                    const code = extractCodeBlock(data.reply);
+                    if (code && monacoEditor) {
+                        monaco.editor.setModelLanguage(monacoEditor.getModel(), detectLang(code));
+                        monacoEditor.setValue(code);
+                        updateCanvasPreview();
+                    }
+                }
+            } catch (_) {}
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="sparkles" class="w-4"></i> Generate Code';
+            lucide.createIcons();
+        }
+
+        let _resizerInited = false;
+        function initCanvasResizer() {
+            if (_resizerInited) return;
+            _resizerInited = true;
+            const resizer = document.getElementById('canvas-resizer');
+            const left    = document.getElementById('canvas-left');
+            const split   = document.getElementById('canvas-split');
+            let dragging = false;
+            resizer.addEventListener('mousedown', () => {
+                dragging = true;
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+            });
+            document.addEventListener('mousemove', e => {
+                if (!dragging) return;
+                const r   = split.getBoundingClientRect();
+                const pct = Math.max(20, Math.min(60, (e.clientX - r.left) / r.width * 100));
+                left.style.width = pct + '%';
+                if (monacoEditor) monacoEditor.layout();
+            });
+            document.addEventListener('mouseup', () => {
+                dragging = false;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
             });
         }
 
@@ -938,6 +1162,10 @@
                     await typeWriter(aiEl, data.reply);
                     avatarEl.innerHTML = STATIC_LOGO_SVG;
                     saveMessage('assistant', data.reply);
+                    if (canvasEnabled) {
+                        const code = extractCodeBlock(data.reply);
+                        if (code) openCanvas(val, code);
+                    }
                 }
             } catch {
                 avatarEl.innerHTML = STATIC_LOGO_SVG;
