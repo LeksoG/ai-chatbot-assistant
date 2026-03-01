@@ -272,7 +272,7 @@
         </div>
 
         <!-- Chat messages -->
-        <div id="chat-results" class="w-full max-w-3xl flex-col gap-7 pb-36 px-4"></div>
+        <div id="chat-results" class="w-full max-w-2xl flex flex-col gap-6 pb-36 px-4"></div>
 
         <!-- Input -->
         <div class="chat-input-wrapper w-full max-w-2xl px-4 relative">
@@ -500,6 +500,27 @@
     <!-- Account toast -->
     <div id="account-toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] hidden px-4 py-3 rounded-xl text-sm shadow-xl border pointer-events-none"></div>
 
+    <!-- 2FA session gate (shown on load when 2FA is enabled) -->
+    <div id="twofa-gate" class="fixed inset-0 z-[700] bg-[#050505]/96 backdrop-blur-sm hidden items-center justify-center">
+        <div class="w-full max-w-sm mx-4">
+            <div class="text-center mb-6">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-2xl shadow-violet-900/40 mx-auto mb-4">
+                    <i data-lucide="shield" class="text-white w-7"></i>
+                </div>
+                <h2 class="text-xl font-bold text-white mb-1">Verify Your Identity</h2>
+                <p class="text-gray-500 text-sm">A 6-digit code was sent to <span id="twofa-gate-email" class="text-gray-300 font-medium"></span></p>
+            </div>
+            <div id="twofa-gate-alert" class="hidden mb-4 p-3 rounded-xl text-sm border bg-red-950/50 border-red-900/40 text-red-400"></div>
+            <input id="twofa-gate-code" type="text" placeholder="000000" maxlength="6"
+                class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors tracking-[0.5em] text-center font-mono mb-3"
+                onkeydown="if(event.key==='Enter')submitTwofaGate()">
+            <button id="twofa-gate-btn" onclick="submitTwofaGate()"
+                class="w-full py-3 bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white font-semibold rounded-xl transition-colors text-sm">
+                Continue
+            </button>
+        </div>
+    </div>
+
     <script>
         marked.setOptions({ breaks: true, gfm: true });
 
@@ -513,7 +534,7 @@
             // Authenticated: show splash 2s then fade out to reveal loaded app
             setTimeout(() => {
                 _splash.style.opacity = '0';
-                setTimeout(() => _splash.remove(), 560);
+                setTimeout(() => { _splash.remove(); loadConversations(); }, 560);
             }, 2000);
         }
 
@@ -565,14 +586,18 @@
                 if (r.ok) {
                     const profile = await r.json();
                     if (profile && (profile.first_name || profile.last_name)) {
-                        currentUser.first_name = profile.first_name || currentUser.first_name;
-                        currentUser.last_name  = profile.last_name  || currentUser.last_name;
+                        currentUser.first_name     = profile.first_name || currentUser.first_name;
+                        currentUser.last_name      = profile.last_name  || currentUser.last_name;
                         currentUser.two_fa_enabled = profile.two_fa_enabled ?? currentUser.two_fa_enabled;
                         localStorage.setItem('clarity_user', JSON.stringify(currentUser));
                         updateUserUI();
                     }
                 }
             } catch (_) {}
+            // 2FA gate: ask once per session if 2FA is enabled
+            if (currentUser.two_fa_enabled && !sessionStorage.getItem('clarity_2fa_ok')) {
+                initTwofaGate();
+            }
             loadConversations();
         });
 
@@ -767,14 +792,61 @@
         }
         function updateCanvasPreview() {
             if (!monacoEditor) return;
-            // Inject error console + link-navigation guard into every preview
+            // Red error bar at bottom + "Fix it" button + block external nav
             const guard = `<script>
-window.onerror=function(m,s,l){var c=document.getElementById('__cc');if(!c){c=document.createElement('div');c.id='__cc';c.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;border-top:1px solid #333;color:#f87171;font:12px/1.5 monospace;padding:8px 12px;max-height:110px;overflow-y:auto;z-index:9999;white-space:pre-wrap;word-break:break-word';document.body.appendChild(c);}var d=document.createElement('div');d.textContent='\u26a0 '+m+(l?' (line '+l+')':'');c.appendChild(d);c.scrollTop=c.scrollHeight;return true;};
+var __ce='';
+window.onerror=function(m,s,l){
+    __ce=(m.length>100?m.slice(0,100)+'\u2026':m)+(l?' \u2022 line '+l:'');
+    var c=document.getElementById('__cc');
+    if(!c){
+        c=document.createElement('div');c.id='__cc';
+        c.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#2d0a0a;border-top:2px solid #7f1d1d;color:#fca5a5;font:12px/1.4 monospace;padding:9px 12px;z-index:9999;display:flex;align-items:center;gap:10px;box-shadow:0 -4px 20px rgba(0,0,0,.5)';
+        var t=document.createElement('span');t.id='__cm';t.style.cssText='flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+        var b=document.createElement('button');b.textContent='Fix it';
+        b.style.cssText='background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b;padding:3px 10px;border-radius:6px;font:11px monospace;cursor:pointer;white-space:nowrap;flex-shrink:0';
+        b.onclick=function(){window.parent.postMessage({type:'canvas-fix',error:__ce},'*');};
+        c.appendChild(t);c.appendChild(b);document.body.appendChild(c);
+    }
+    document.getElementById('__cm').textContent='\u26a0 '+__ce;
+    return true;
+};
 window.addEventListener('unhandledrejection',function(e){window.onerror(e.reason&&e.reason.message?e.reason.message:String(e.reason));});
-document.addEventListener('click',function(e){var a=e.target.closest('a[href]');if(a){var h=a.getAttribute('href')||'';if(h&&h[0]!=='#'&&h.indexOf('javascript:')!==0){e.preventDefault();}}});<\/script>`;
+document.addEventListener('click',function(e){var a=e.target.closest('a[href]');if(a){var h=a.getAttribute('href')||'';if(h&&h[0]!=='#'&&h.indexOf('javascript:')!==0){e.preventDefault();}}});
+<\/script>`;
             const code = monacoEditor.getValue();
             const html = code.includes('</body>') ? code.replace('</body>', guard + '</body>') : code + guard;
             document.getElementById('canvas-iframe').srcdoc = html;
+        }
+
+        // ── Canvas "Fix it" — receives postMessage from preview iframe ──
+        window.addEventListener('message', function(e) {
+            if (e.data && e.data.type === 'canvas-fix') fixCanvasCode(e.data.error);
+        });
+        async function fixCanvasCode(errorMsg) {
+            if (!monacoEditor || isTyping) return;
+            const broken = monacoEditor.getValue();
+            if (!broken || broken === '// Generating…' || broken === '// Fixing error…') return;
+            isTyping = true;
+            monacoEditor.setValue('// Fixing error…');
+            try {
+                const res  = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: `Fix this error in my code: "${errorMsg}"\n\nFull code:\n\`\`\`\n${broken}\n\`\`\`\n\nReturn only the complete corrected code with no explanation.`,
+                        history: [],
+                        modelVersion: selectedModel
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.reply) {
+                    const fixed = extractCodeBlock(data.reply) || data.reply;
+                    await typeWriterMonaco(fixed);
+                } else {
+                    monacoEditor.setValue(broken);
+                }
+            } catch (_) { monacoEditor.setValue(broken); }
+            isTyping = false;
         }
 
         // ── Rainbow glow replay ───────────────────────────────────
@@ -906,8 +978,9 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                     if (msg.role === 'user') {
                         appendUserMessage(msg.content);
                     } else {
-                        const el = appendAIMessageShell();
-                        el.innerHTML = marked.parse(msg.content);
+                        const { responseEl, avatarEl } = appendAIMessageShell();
+                        responseEl.innerHTML = marked.parse(msg.content);
+                        avatarEl.innerHTML   = STATIC_LOGO_SVG;
                     }
                     conversationHistory.push({ role: msg.role, content: msg.content });
                 }
@@ -1122,9 +1195,64 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             }
         }
 
+        // ── 2FA session gate ─────────────────────────────────────
+        async function initTwofaGate() {
+            const gate = document.getElementById('twofa-gate');
+            document.getElementById('twofa-gate-email').textContent = currentUser.email || '';
+            gate.classList.remove('hidden');
+            gate.classList.add('flex');
+            lucide.createIcons();
+            try {
+                await fetch('/api/auth/send-2fa-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: currentUser.email, access_token: authToken })
+                });
+            } catch (_) {}
+        }
+        async function submitTwofaGate() {
+            const code = document.getElementById('twofa-gate-code').value.trim();
+            if (code.length !== 6) { showGateAlert('Enter the 6-digit code.'); return; }
+            const btn = document.getElementById('twofa-gate-btn');
+            btn.disabled = true;
+            btn.textContent = 'Verifying…';
+            try {
+                const res  = await fetch('/api/auth/verify-2fa', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: currentUser.email, code })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    btn.disabled = false;
+                    btn.textContent = 'Continue';
+                    showGateAlert(data.error || 'Invalid or expired code.');
+                    return;
+                }
+                if (data.access_token) localStorage.setItem('clarity_token', data.access_token);
+                btn.textContent = 'Loading…';
+                await sleep(2000);
+                sessionStorage.setItem('clarity_2fa_ok', '1');
+                const gate = document.getElementById('twofa-gate');
+                gate.style.transition = 'opacity 0.4s ease';
+                gate.style.opacity = '0';
+                setTimeout(() => { gate.classList.add('hidden'); gate.classList.remove('flex'); }, 400);
+            } catch {
+                btn.disabled = false;
+                btn.textContent = 'Continue';
+                showGateAlert('Connection error. Try again.');
+            }
+        }
+        function showGateAlert(msg) {
+            const el = document.getElementById('twofa-gate-alert');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
         function signOut() {
             localStorage.removeItem('clarity_token');
             localStorage.removeItem('clarity_user');
+            sessionStorage.removeItem('clarity_2fa_ok');
             window.location.href = '/auth.html';
         }
 
@@ -1139,7 +1267,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             const el = document.createElement('div');
             el.className = 'flex justify-end msg-enter';
             el.innerHTML = `
-                <div class="bg-[#1c1c1c] border border-white/5 py-3 px-5 rounded-3xl rounded-tr-md max-w-[75%] w-fit text-gray-200 leading-relaxed whitespace-pre-wrap break-words">
+                <div class="bg-[#1a1a1a] border border-white/8 py-2.5 px-4 rounded-2xl rounded-tr-sm max-w-[72%] text-sm text-gray-200 leading-relaxed break-words whitespace-pre-wrap">
                     ${escapeHtml(text)}
                 </div>`;
             chatResults.appendChild(el);
