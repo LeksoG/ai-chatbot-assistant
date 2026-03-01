@@ -83,14 +83,17 @@ module.exports = async function handler(req, res) {
             return res.json({ requires2FA: true });
         }
 
+        // Fall back to auth user_metadata if users table row is missing
+        const meta = loginData.user.user_metadata || {};
+
         // No 2FA — return token and profile
         return res.json({
             access_token: accessToken,
             user: {
                 id:             userId,
                 email:          loginData.user.email,
-                first_name:     profile?.first_name  || '',
-                last_name:      profile?.last_name   || '',
+                first_name:     profile?.first_name  || meta.first_name  || '',
+                last_name:      profile?.last_name   || meta.last_name   || '',
                 two_fa_enabled: profile?.two_fa_enabled || false
             }
         });

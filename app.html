@@ -137,15 +137,15 @@
 
         <!-- User profile -->
         <div class="p-3 border-t border-white/5 shrink-0">
-            <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shrink-0 shadow-md">
+            <div class="flex items-center gap-2.5 bg-white/5 border border-white/5 rounded-xl p-2.5">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shrink-0 shadow-md">
                     <span id="user-initials" class="text-white text-xs font-bold"></span>
                 </div>
                 <div class="flex-1 min-w-0">
                     <p id="user-display-name" class="text-sm text-white font-medium truncate"></p>
                     <p id="user-email-display" class="text-xs text-gray-600 truncate"></p>
                 </div>
-                <button onclick="openAccountPage()" title="Manage account" class="p-1.5 hover:bg-white/5 rounded-lg transition-colors shrink-0">
+                <button onclick="openAccountPage()" title="Manage account" class="p-1.5 hover:bg-white/10 rounded-lg transition-colors shrink-0">
                     <i data-lucide="settings" class="w-3.5 text-gray-500 hover:text-gray-300 transition-colors"></i>
                 </button>
             </div>
@@ -307,7 +307,7 @@
          ACCOUNT MANAGEMENT PAGE
     ═══════════════════════════════════════════════════════ -->
     <div id="account-page" class="fixed inset-0 z-[200] bg-[#0a0a0a] hidden flex-col overflow-y-auto">
-        <div class="max-w-lg mx-auto w-full p-6 pb-16">
+        <div class="max-w-3xl mx-auto w-full p-8 pb-16">
 
             <!-- Back -->
             <button onclick="closeAccountPage()" class="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8 group">
@@ -345,7 +345,7 @@
                     <label class="text-xs text-gray-500 mb-1.5 block">Email</label>
                     <input id="account-email-input" type="email" class="account-input opacity-50 cursor-not-allowed" readonly>
                 </div>
-                <button onclick="saveProfile()" class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors">
+                <button onclick="saveProfile()" class="px-4 py-2 bg-black hover:bg-zinc-900 border border-white/20 hover:border-white/40 text-white text-sm font-medium rounded-xl transition-all">
                     Save changes
                 </button>
             </div>
@@ -360,7 +360,7 @@
                     <input id="new-password"     type="password" placeholder="New password (min 6 chars)" class="account-input">
                     <input id="confirm-password" type="password" placeholder="Confirm new password" class="account-input">
                 </div>
-                <button onclick="changePassword()" class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors">
+                <button onclick="changePassword()" class="px-4 py-2 bg-black hover:bg-zinc-900 border border-white/20 hover:border-white/40 text-white text-sm font-medium rounded-xl transition-all">
                     Update password
                 </button>
             </div>

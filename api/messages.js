@@ -1,14 +1,13 @@
-async function getAuthUser(req) {
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
-    const token = (req.headers.authorization || '').replace('Bearer ', '').trim();
-    if (!token || !SUPABASE_URL || !SUPABASE_KEY) return null;
+function getUserFromToken(req) {
     try {
-        const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}` }
-        });
-        if (!r.ok) return null;
-        return await r.json();
+        const raw = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+        if (!raw) return null;
+        const parts = raw.split('.');
+        if (parts.length !== 3) return null;
+        const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
+        if (!payload.sub) return null;
+        if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
+        return { id: payload.sub, email: payload.email || '' };
     } catch { return null; }
 }
 
@@ -22,8 +21,8 @@ module.exports = async function handler(req, res) {
     const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
     if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(503).json({ error: 'Supabase not configured' });
 
-    const authUser = await getAuthUser(req);
-    if (!authUser) return res.status(401).json({ error: 'Unauthorized' });
+    const authUser = getUserFromToken(req);
+    if (!authUser) return res.status(401).json({ error: 'Unauthorized or session expired' });
 
     const sbHeaders = {
         'apikey': SUPABASE_KEY,
@@ -32,7 +31,6 @@ module.exports = async function handler(req, res) {
     };
 
     try {
-        // GET — messages for a conversation (verify ownership via join)
         if (req.method === 'GET') {
             const { conversationId } = req.query;
             if (!conversationId) return res.status(400).json({ error: 'conversationId required' });
@@ -44,7 +42,6 @@ module.exports = async function handler(req, res) {
             return res.json(Array.isArray(data) ? data : []);
         }
 
-        // POST — save a message
         if (req.method === 'POST') {
             const { conversationId, role, content } = req.body || {};
             if (!conversationId || !role || !content)
