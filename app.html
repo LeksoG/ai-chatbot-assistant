@@ -528,8 +528,27 @@
             }, 2000);
         }
 
+        // Decode JWT payload without verification (used as name fallback)
+        function parseJWT(token) {
+            try {
+                const b64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+                return JSON.parse(decodeURIComponent(escape(atob(b64))));
+            } catch { return null; }
+        }
+
         let currentUser = {};
         try { currentUser = JSON.parse(localStorage.getItem('clarity_user') || '{}'); } catch (_) {}
+
+        // Enrich from JWT claims if localStorage names are missing
+        if (authToken && (!currentUser.first_name || !currentUser.last_name)) {
+            const claims = parseJWT(authToken);
+            if (claims) {
+                currentUser.first_name = currentUser.first_name || claims.user_metadata?.first_name || '';
+                currentUser.last_name  = currentUser.last_name  || claims.user_metadata?.last_name  || '';
+                currentUser.email      = currentUser.email      || claims.email || '';
+                currentUser.id         = currentUser.id         || claims.sub   || '';
+            }
+        }
 
         // ── State ─────────────────────────────────────────────────
         let conversationHistory  = [];
@@ -575,7 +594,18 @@
 
         // ── User UI ───────────────────────────────────────────────
         function getInitials(u) {
-            return ((u.first_name || '?')[0] + (u.last_name || '?')[0]).toUpperCase();
+            const f = (u.first_name || '').trim();
+            const l = (u.last_name  || '').trim();
+            if (f && l) return (f[0] + l[0]).toUpperCase();
+            if (f)      return f.slice(0, 2).toUpperCase();
+            if (l)      return l.slice(0, 2).toUpperCase();
+            // Last resort: derive from email (e.g. john.doe@ → JD)
+            if (u.email) {
+                const parts = u.email.split('@')[0].split(/[._\-+]/);
+                if (parts.length >= 2 && parts[0] && parts[1]) return (parts[0][0] + parts[1][0]).toUpperCase();
+                return u.email.slice(0, 2).toUpperCase();
+            }
+            return '?';
         }
         function updateUserUI() {
             document.getElementById('user-initials').textContent = getInitials(currentUser);
