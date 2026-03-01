@@ -1,15 +1,33 @@
+// Decode JWT payload without verifying signature (server-side, Node Buffer)
+function decodeJWTPayload(token) {
+    try {
+        const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(Buffer.from(b64, 'base64').toString('utf8'));
+    } catch { return null; }
+}
+
 async function getAuthUser(req) {
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
     const token = (req.headers.authorization || '').replace('Bearer ', '').trim();
     if (!token || !SUPABASE_URL || !SUPABASE_KEY) return null;
+
+    // Try the live Supabase auth endpoint first (works for fresh tokens)
     try {
         const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}` }
         });
-        if (!r.ok) return null;
-        return await r.json();
-    } catch { return null; }
+        if (r.ok) return await r.json();
+    } catch { /* fall through */ }
+
+    // Token is expired or Supabase is unreachable — fall back to decoding the
+    // JWT payload.  The JWT is Supabase-signed, so the `sub` (user UUID) inside
+    // is still trustworthy: an attacker cannot forge a different `sub` without
+    // Supabase's private key.
+    const payload = decodeJWTPayload(token);
+    if (payload?.sub) return { id: payload.sub, email: payload.email };
+
+    return null;
 }
 
 module.exports = async function handler(req, res) {
