@@ -1,1 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarity AI — Think Smarter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background: #0a0a0a; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #7c3aed 0%, #818cf8 50%, #c4b5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-glow {
+            position: absolute;
+            width: 700px; height: 700px;
+            background: radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%);
+            top: -200px; left: 50%; transform: translateX(-50%);
+            pointer-events: none;
+        }
+
+        .feature-card {
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: border-color 0.3s, transform 0.3s;
+        }
+        .feature-card:hover {
+            border-color: rgba(124,58,237,0.3);
+            transform: translateY(-3px);
+        }
+
+        .nav-pill {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+    </style>
+</head>
+<body class="text-white overflow-x-hidden">
+
+    <!-- Navbar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 px-6 py-4">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <!-- Logo -->
+            <a href="/" class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-lg">
+                    <i data-lucide="gem" class="text-white w-4"></i>
+                </div>
+                <span class="font-bold text-white text-base tracking-tight">Clarity AI</span>
+            </a>
+
+            <!-- Nav actions -->
+            <div class="flex items-center gap-3">
+                <a href="/auth.html" class="px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors font-medium">
+                    Log In
+                </a>
+                <a href="/auth.html?mode=signup"
+                   class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-violet-900/30">
+                    Get Started
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-20">
+        <div class="hero-glow"></div>
+
+        <!-- Tag -->
+        <div class="nav-pill inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs text-violet-300 font-medium mb-8">
+            <div class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse"></div>
+            Now powered by Clarity 3.5
+        </div>
+
+        <!-- Heading -->
+        <h1 class="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-none mb-6 max-w-4xl">
+            Think Smarter,<br>
+            <span class="gradient-text">Ask Clarity.</span>
+        </h1>
+
+        <!-- Subtitle -->
+        <p class="text-gray-400 text-lg sm:text-xl max-w-xl mb-10 leading-relaxed font-light">
+            Your intelligent AI assistant — answers anything, explains everything,
+            and gets smarter with every conversation.
+        </p>
+
+        <!-- CTAs -->
+        <div class="flex flex-col sm:flex-row items-center gap-3">
+            <a href="/auth.html?mode=signup"
+               class="px-7 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-2xl transition-all shadow-xl shadow-violet-900/30 text-sm hover:scale-105 active:scale-100">
+                Start for free
+            </a>
+            <a href="/auth.html"
+               class="px-7 py-3.5 bg-white/5 hover:bg-white/10 border border-white/8 text-gray-300 hover:text-white font-medium rounded-2xl transition-all text-sm flex items-center gap-2">
+                Log in
+                <i data-lucide="arrow-right" class="w-4"></i>
+            </a>
+        </div>
+
+        <!-- Scroll indicator -->
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-700 text-xs">
+            <span>Scroll to explore</span>
+            <i data-lucide="chevron-down" class="w-4 animate-bounce"></i>
+        </div>
+    </section>
+
+    <!-- Feature cards -->
+    <section class="py-24 px-6">
+        <div class="max-w-5xl mx-auto">
+            <p class="text-center text-xs text-gray-600 uppercase tracking-widest mb-3">Why Clarity</p>
+            <h2 class="text-3xl sm:text-4xl font-bold text-center mb-14 tracking-tight">
+                Everything you need from an AI
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Card 1 -->
+                <div class="feature-card rounded-2xl p-6">
+                    <div class="w-10 h-10 rounded-xl bg-blue-900/40 border border-blue-800/30 flex items-center justify-center mb-4">
+                        <i data-lucide="zap" class="text-blue-400 w-5"></i>
+                    </div>
+                    <h3 class="font-semibold text-white mb-2">Lightning Fast</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Real-time streaming responses. No waiting around.</p>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="feature-card rounded-2xl p-6">
+                    <div class="w-10 h-10 rounded-xl bg-violet-900/40 border border-violet-800/30 flex items-center justify-center mb-4">
+                        <i data-lucide="brain" class="text-violet-400 w-5"></i>
+                    </div>
+                    <h3 class="font-semibold text-white mb-2">Deeply Intelligent</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Powered by Mistral's most advanced models for nuanced, accurate answers.</p>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="feature-card rounded-2xl p-6">
+                    <div class="w-10 h-10 rounded-xl bg-green-900/40 border border-green-800/30 flex items-center justify-center mb-4">
+                        <i data-lucide="shield-check" class="text-green-400 w-5"></i>
+                    </div>
+                    <h3 class="font-semibold text-white mb-2">Secure by Default</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Your conversations are encrypted and only visible to you.</p>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="feature-card rounded-2xl p-6">
+                    <div class="w-10 h-10 rounded-xl bg-orange-900/40 border border-orange-800/30 flex items-center justify-center mb-4">
+                        <i data-lucide="layers" class="text-orange-400 w-5"></i>
+                    </div>
+                    <h3 class="font-semibold text-white mb-2">Two Models</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Switch between Clarity 3.0 for speed and 3.5 for deep analysis.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats bar -->
+    <section class="py-16 px-6 border-t border-b border-white/5">
+        <div class="max-w-4xl mx-auto grid grid-cols-3 gap-8 text-center">
+            <div>
+                <p class="text-3xl font-bold text-white mb-1">10k+</p>
+                <p class="text-gray-600 text-sm">Conversations daily</p>
+            </div>
+            <div>
+                <p class="text-3xl font-bold text-white mb-1">2</p>
+                <p class="text-gray-600 text-sm">Powerful models</p>
+            </div>
+            <div>
+                <p class="text-3xl font-bold text-white mb-1">99.9%</p>
+                <p class="text-gray-600 text-sm">Uptime</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA section -->
+    <section class="py-28 px-6 text-center">
+        <div class="max-w-lg mx-auto">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-2xl shadow-violet-900/40 mx-auto mb-6">
+                <i data-lucide="gem" class="text-white w-7"></i>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Ready to get started?</h2>
+            <p class="text-gray-500 mb-8">Create a free account and start chatting in seconds.</p>
+            <a href="/auth.html?mode=signup"
+               class="inline-block px-8 py-4 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-2xl transition-all shadow-xl shadow-violet-900/30 hover:scale-105 active:scale-100">
+                Create free account
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 py-8 px-6">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-md bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center">
+                    <i data-lucide="gem" class="text-white w-3"></i>
+                </div>
+                <span class="text-gray-600 text-sm font-medium">Clarity AI</span>
+            </div>
+            <p class="text-gray-700 text-xs">© 2025 Clarity AI. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+        // If already logged in, show "Go to App" instead of sign up
+        if (localStorage.getItem('clarity_token')) {
+            document.querySelectorAll('a[href="/auth.html?mode=signup"]').forEach(el => {
+                el.textContent = 'Go to App';
+                el.href = '/app.html';
+            });
+        }
+    </script>
+</body>
+</html>
 
