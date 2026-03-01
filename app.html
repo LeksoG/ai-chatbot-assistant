@@ -17,8 +17,9 @@
         @keyframes rainbow-trace { 0%{transform:rotate(0deg) scale(0.8)} 100%{transform:rotate(360deg) scale(1)} }
 
         /* ── Layout transitions ── */
-        .chat-input-wrapper { transition:all 0.8s cubic-bezier(0.4,0,0.2,1); z-index:50; }
+        .chat-input-wrapper { transition:left 0.42s cubic-bezier(0.4,0,0.2,1), max-width 0.42s ease, width 0.42s ease, all 0.8s cubic-bezier(0.4,0,0.2,1); z-index:50; }
         .conversation-started .chat-input-wrapper { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%); width:100%; max-width:42rem; }
+        body.canvas-open.conversation-started .chat-input-wrapper { left:24% !important; max-width:min(38rem,calc(48vw - 3rem)); }
         .hide-on-start { transition:all 0.6s ease; }
         .conversation-started .hide-on-start { opacity:0; transform:translateY(-20px); pointer-events:none; display:none; }
         #main-ui { transition:justify-content 0.5s ease; }
@@ -66,7 +67,11 @@
         .msg-enter { animation:msg-in 0.35s ease forwards; }
 
         /* ── Top brand ── */
-        #top-brand { transition:opacity 0.5s ease; }
+        #top-brand { transition:opacity 0.5s ease, left 0.42s cubic-bezier(0.4,0,0.2,1); }
+        body.canvas-open #top-brand { left:24% !important; }
+        /* ── Main area shifts when canvas opens ── */
+        #main-ui { transition:margin-right 0.42s cubic-bezier(0.4,0,0.2,1); }
+        body.canvas-open #main-ui { margin-right:52%; }
 
         /* ── 2FA toggle ── */
         .toggle-track { width:44px; height:24px; background:rgba(255,255,255,0.1); border-radius:12px; position:relative; transition:background 0.2s; cursor:pointer; }
@@ -85,18 +90,28 @@
         ::-webkit-scrollbar { width:5px; }
         ::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:4px; }
 
+        /* ── Canvas sidebar ── */
+        #canvas-sidebar { position:fixed; right:0; top:0; bottom:0; z-index:100; width:0; overflow:hidden; background:#0d0d0d; border-left:1px solid transparent; border-radius:24px 0 0 24px; display:flex; flex-direction:column; transition:width 0.42s cubic-bezier(0.4,0,0.2,1), border-color 0.42s ease; }
+        #canvas-sidebar.cs-open { width:52%; border-color:rgba(255,255,255,0.07); }
+        .cs-tab { padding:0.65rem 1.1rem; font-size:0.72rem; font-weight:500; border-bottom:2px solid transparent; color:#6b7280; transition:color 0.15s, border-color 0.15s; cursor:pointer; white-space:nowrap; }
+        .cs-tab.active { color:#fff; border-bottom-color:#fff; }
+        .cs-tab:hover:not(.active) { color:#d1d5db; }
+        /* ── Code block copy button ── */
+        .code-block-wrapper { position:relative; }
+        .code-copy-btn { position:absolute; top:0.55rem; right:0.55rem; font-size:0.7rem; padding:0.2rem 0.55rem; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:0.4rem; color:#9ca3af; cursor:pointer; transition:background 0.15s,color 0.15s; z-index:1; }
+        .code-copy-btn:hover { background:rgba(255,255,255,0.14); color:#fff; }
+        /* ── Canvas reopen card ── */
+        .canvas-reopen-card { display:flex; align-items:center; gap:0.7rem; padding:0.6rem 0.9rem; background:#111; border:1px solid rgba(255,255,255,0.07); border-radius:0.875rem; cursor:pointer; transition:background 0.15s,border-color 0.15s; margin-top:0.6rem; }
+        .canvas-reopen-card:hover { background:#1a1a1a; border-color:rgba(255,255,255,0.15); }
+        /* ── Splash screen ── */
+        #splash-screen { transition:opacity 0.55s ease; }
+        @keyframes spl-pulse { 0%,100%{opacity:.55} 50%{opacity:1} }
+        #splash-screen .spl-logo { animation:spl-pulse 1.8s ease-in-out infinite; }
         /* ── Version popup ── */
         #version-popup { transform-origin:bottom left; transition:opacity 0.18s ease, transform 0.2s cubic-bezier(0.34,1.56,0.64,1); }
         .vpop-hidden { opacity:0; transform:scale(0.92) translateY(8px); pointer-events:none; }
         .vpop-open   { opacity:1; transform:scale(1) translateY(0); pointer-events:auto; }
 
-        /* ── Canvas ── */
-        #canvas-panel { flex-direction:column; }
-        #canvas-resizer:active { background:rgba(124,58,237,0.7); }
-        .canvas-tab-active   { color:#fff; border-bottom-color:#fff; }
-        .canvas-tab-inactive { color:#6b7280; border-bottom-color:transparent; }
-        #canvas-ai-text .ai-response p { margin:.4rem 0; }
-        .canvas-gen-btn:disabled { opacity:.5; cursor:not-allowed; }
 
         /* ── Code logo ── */
         .cl-seg { stroke:none; transform-origin:center; fill:url(#codeRainbow); }
@@ -123,6 +138,20 @@
     </style>
 </head>
 <body>
+
+    <!-- Splash screen (2-second landing) -->
+    <div id="splash-screen" class="fixed inset-0 z-[600] bg-[#050505] flex flex-col items-center justify-center">
+        <div class="spl-logo flex items-center gap-3 mb-4">
+            <svg class="w-14 h-14" viewBox="-15 -15 130 130" overflow="visible">
+                <g style="filter:blur(18px);opacity:.4;mix-blend-mode:screen">
+                    <path class="cl-seg cl-seg-top"/><path class="cl-seg cl-seg-mid"/><path class="cl-seg cl-seg-bot"/>
+                </g>
+                <g><path class="cl-seg cl-seg-top"/><path class="cl-seg cl-seg-mid"/><path class="cl-seg cl-seg-bot"/></g>
+            </svg>
+            <h1 class="text-3xl font-bold text-white tracking-tight">Clarity AI</h1>
+        </div>
+        <p class="text-gray-600 text-sm">Powered by Mistral</p>
+    </div>
 
     <!-- Shared SVG gradient defs for code logo (referenced by all logo SVGs) -->
     <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
@@ -321,53 +350,41 @@
     </div>
 
     <!-- ═══════════════════════════════════════════════════════
-         CANVAS PANEL
+         CANVAS SIDEBAR (slides in from right)
     ═══════════════════════════════════════════════════════ -->
-    <div id="canvas-panel" class="hidden fixed inset-0 z-[150] bg-[#0a0a0a]">
-        <!-- Header -->
-        <div class="flex items-center justify-between px-5 py-3 border-b border-white/8 shrink-0 bg-[#0d0d0d]">
-            <div class="flex items-center gap-2.5">
+    <div id="canvas-sidebar">
+        <!-- Toolbar -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-white/6 shrink-0 bg-[#0d0d0d]">
+            <div class="flex items-center gap-2">
                 <svg class="w-5 h-5" viewBox="-15 -15 130 130">
                     <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
                     <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
                     <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
                 </svg>
-                <span class="text-white font-semibold text-sm">Canvas Preview</span>
+                <span class="text-white font-semibold text-sm">Canvas</span>
             </div>
-            <button onclick="closeCanvas()" class="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
-                <i data-lucide="x" class="w-4 text-gray-400"></i>
-            </button>
+            <div class="flex items-center gap-1">
+                <button onclick="copyCanvasCode()" id="canvas-copy-btn"
+                    class="flex items-center gap-1 px-2.5 py-1.5 text-[11px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
+                    <i data-lucide="copy" class="w-3"></i> Copy
+                </button>
+                <button onclick="closeCanvas()" class="p-1.5 hover:bg-white/10 rounded-lg transition-colors ml-1">
+                    <i data-lucide="x" class="w-4 text-gray-400"></i>
+                </button>
+            </div>
         </div>
-        <!-- Split body -->
-        <div id="canvas-split" class="flex" style="height:calc(100% - 49px)">
-            <!-- Left: prompt panel -->
-            <div id="canvas-left" class="flex flex-col border-r border-white/8 shrink-0" style="width:30%">
-                <div class="p-4 border-b border-white/5 flex-1 flex flex-col min-h-0">
-                    <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Prompt</p>
-                    <textarea id="canvas-prompt" class="flex-1 min-h-0 w-full bg-[#1a1a1a] border border-white/8 rounded-xl p-3 text-white text-sm resize-none outline-none focus:border-violet-600/60 transition-colors placeholder-gray-600" placeholder="Describe what to build…"></textarea>
-                </div>
-                <div class="p-4 shrink-0">
-                    <button id="canvas-gen-btn" onclick="canvasGenerate()" class="canvas-gen-btn w-full py-2.5 bg-black border border-white text-white text-sm font-medium rounded-xl hover:bg-white/10 transition-colors flex items-center justify-center gap-2">
-                        <i data-lucide="sparkles" class="w-4"></i> Generate Code
-                    </button>
-                </div>
-                <div id="canvas-ai-text" class="px-4 pb-4 overflow-y-auto text-sm text-gray-400 leading-relaxed ai-response" style="max-height:180px"></div>
-            </div>
-            <!-- Resizer -->
-            <div id="canvas-resizer" class="w-1 bg-white/5 hover:bg-violet-600/50 cursor-col-resize transition-colors shrink-0"></div>
-            <!-- Right: Monaco + preview -->
-            <div id="canvas-right" class="flex flex-col flex-1 min-w-0">
-                <div class="flex border-b border-white/8 px-4 bg-[#0d0d0d] shrink-0">
-                    <button id="tab-code"    onclick="switchCanvasTab('code')"    class="canvas-tab-active    px-4 py-3 text-xs font-medium border-b-2 transition-colors mr-1">Code</button>
-                    <button id="tab-preview" onclick="switchCanvasTab('preview')" class="canvas-tab-inactive px-4 py-3 text-xs font-medium border-b-2 transition-colors">Preview</button>
-                </div>
-                <div id="canvas-code-tab" class="flex-1 min-h-0 relative">
-                    <div id="monaco-container" class="absolute inset-0"></div>
-                </div>
-                <div id="canvas-preview-tab" class="hidden flex-1 min-h-0">
-                    <iframe id="canvas-iframe" class="w-full h-full border-0 bg-white"></iframe>
-                </div>
-            </div>
+        <!-- Tabs -->
+        <div class="flex border-b border-white/6 px-3 bg-[#0d0d0d] shrink-0">
+            <button id="cs-tab-code"    onclick="switchCanvasTab('code')"    class="cs-tab active">Code</button>
+            <button id="cs-tab-preview" onclick="switchCanvasTab('preview')" class="cs-tab">Preview</button>
+        </div>
+        <!-- Monaco editor -->
+        <div id="canvas-code-tab" class="flex-1 min-h-0 relative">
+            <div id="monaco-container" class="absolute inset-0"></div>
+        </div>
+        <!-- Live preview iframe -->
+        <div id="canvas-preview-tab" class="hidden flex-1 min-h-0">
+            <iframe id="canvas-iframe" class="w-full h-full border-0 bg-white"></iframe>
         </div>
     </div>
 
@@ -497,9 +514,19 @@
     <script>
         marked.setOptions({ breaks: true, gfm: true });
 
-        // ── Auth guard ────────────────────────────────────────────
+        // ── Splash + auth ─────────────────────────────────────────
         const authToken = localStorage.getItem('clarity_token');
-        if (!authToken) window.location.href = '/auth.html';
+        const _splash = document.getElementById('splash-screen');
+        if (!authToken) {
+            // Unauthenticated: redirect immediately (splash briefly visible)
+            window.location.href = '/auth.html';
+        } else {
+            // Authenticated: show splash 2s then fade out to reveal loaded app
+            setTimeout(() => {
+                _splash.style.opacity = '0';
+                setTimeout(() => _splash.remove(), 560);
+            }, 2000);
+        }
 
         let currentUser = {};
         try { currentUser = JSON.parse(localStorage.getItem('clarity_user') || '{}'); } catch (_) {}
@@ -640,23 +667,26 @@
         function toggleCanvasPreview() {
             canvasEnabled = !canvasEnabled;
             localStorage.setItem('clarity_canvas', canvasEnabled);
-            const track = document.getElementById('canvas-toggle-track');
-            track.classList.toggle('on', canvasEnabled);
+            document.getElementById('canvas-toggle-track').classList.toggle('on', canvasEnabled);
         }
 
-        // ── Canvas ────────────────────────────────────────────────
+        // ── Code helpers ──────────────────────────────────────────
         function extractCodeBlock(text) {
             const m = text.match(/```(?:html|css|javascript|js|tsx?|vue|svelte)?\n?([\s\S]*?)```/i);
             if (m) return m[1].trim();
             if (/<!DOCTYPE|<html/i.test(text)) return text.trim();
             return null;
         }
+        function removeCodeBlocks(text) {
+            return text.replace(/```[\w]*\n?[\s\S]*?```/g, '').replace(/\n{3,}/g, '\n\n').trim();
+        }
         function detectLang(code) {
             if (/<!DOCTYPE|<html/i.test(code)) return 'html';
-            if (/^\s*[.#][\w-]+\s*\{/.test(code)) return 'css';
+            if (/^\s*[.#][\w-]+\s*\{/.test(code))  return 'css';
             return 'javascript';
         }
 
+        // ── Monaco ────────────────────────────────────────────────
         async function loadMonaco() {
             if (monacoReady) return;
             return new Promise(resolve => {
@@ -666,14 +696,9 @@
                     require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
                     require(['vs/editor/editor.main'], () => {
                         monacoEditor = monaco.editor.create(document.getElementById('monaco-container'), {
-                            value: '',
-                            language: 'html',
-                            theme: 'vs-dark',
-                            minimap: { enabled: false },
-                            fontSize: 13,
-                            wordWrap: 'on',
-                            scrollBeyondLastLine: false,
-                            automaticLayout: true,
+                            value: '', language: 'html', theme: 'vs-dark',
+                            minimap: { enabled: false }, fontSize: 13,
+                            wordWrap: 'on', scrollBeyondLastLine: false, automaticLayout: true,
                         });
                         monacoEditor.onDidChangeModelContent(() => updateCanvasPreview());
                         monacoReady = true;
@@ -684,27 +709,42 @@
             });
         }
 
+        // ── Canvas sidebar open/close ─────────────────────────────
         async function openCanvas(prompt, code) {
-            const panel = document.getElementById('canvas-panel');
-            panel.classList.remove('hidden');
-            panel.style.display = 'flex';
-            document.getElementById('canvas-prompt').value = prompt || '';
-            document.getElementById('canvas-ai-text').innerHTML = '';
+            const sb = document.getElementById('canvas-sidebar');
+            sb.classList.add('cs-open');
+            document.body.classList.add('canvas-open');
             switchCanvasTab('code');
             lucide.createIcons();
             await loadMonaco();
             if (code) {
-                const lang = detectLang(code);
-                monaco.editor.setModelLanguage(monacoEditor.getModel(), lang);
+                monaco.editor.setModelLanguage(monacoEditor.getModel(), detectLang(code));
                 monacoEditor.setValue(code);
                 updateCanvasPreview();
+            } else {
+                // Show loading dots while waiting for response
+                monacoEditor.setValue('// Generating…');
             }
-            initCanvasResizer();
         }
+
+        async function typeWriterMonaco(code) {
+            if (!monacoEditor) return;
+            await loadMonaco();
+            monacoEditor.setValue('');
+            let built = '';
+            for (let i = 0; i < code.length; i += 4) {
+                built += code.slice(i, i + 4);
+                monacoEditor.setValue(built);
+                monacoEditor.revealLine(monacoEditor.getModel().getLineCount());
+                await sleep(10);
+            }
+            monacoEditor.setValue(code);
+            updateCanvasPreview();
+        }
+
         function closeCanvas() {
-            const panel = document.getElementById('canvas-panel');
-            panel.classList.add('hidden');
-            panel.style.display = '';
+            document.getElementById('canvas-sidebar').classList.remove('cs-open');
+            document.body.classList.remove('canvas-open');
         }
         function updateCanvasPreview() {
             if (monacoEditor) document.getElementById('canvas-iframe').srcdoc = monacoEditor.getValue();
@@ -712,75 +752,63 @@
         function switchCanvasTab(tab) {
             const codePan = document.getElementById('canvas-code-tab');
             const prevPan = document.getElementById('canvas-preview-tab');
-            const tabC    = document.getElementById('tab-code');
-            const tabP    = document.getElementById('tab-preview');
+            const tabC    = document.getElementById('cs-tab-code');
+            const tabP    = document.getElementById('cs-tab-preview');
             if (tab === 'code') {
                 codePan.classList.remove('hidden'); prevPan.classList.add('hidden');
-                tabC.className = 'canvas-tab-active    px-4 py-3 text-xs font-medium border-b-2 transition-colors mr-1';
-                tabP.className = 'canvas-tab-inactive px-4 py-3 text-xs font-medium border-b-2 transition-colors';
+                tabC.classList.add('active');    tabP.classList.remove('active');
             } else {
                 prevPan.classList.remove('hidden'); codePan.classList.add('hidden');
-                tabP.className = 'canvas-tab-active    px-4 py-3 text-xs font-medium border-b-2 transition-colors';
-                tabC.className = 'canvas-tab-inactive px-4 py-3 text-xs font-medium border-b-2 transition-colors mr-1';
+                tabP.classList.add('active');    tabC.classList.remove('active');
                 updateCanvasPreview();
             }
         }
 
-        async function canvasGenerate() {
-            const prompt = document.getElementById('canvas-prompt').value.trim();
-            if (!prompt) return;
-            const btn = document.getElementById('canvas-gen-btn');
-            btn.disabled = true;
-            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 animate-spin"></i> Generating…';
-            lucide.createIcons();
-            try {
-                const res  = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: prompt, history: [], modelVersion: selectedModel })
-                });
-                const data = await res.json();
-                if (res.ok && data.reply) {
-                    document.getElementById('canvas-ai-text').innerHTML = marked.parse(data.reply);
-                    const code = extractCodeBlock(data.reply);
-                    if (code && monacoEditor) {
-                        monaco.editor.setModelLanguage(monacoEditor.getModel(), detectLang(code));
-                        monacoEditor.setValue(code);
-                        updateCanvasPreview();
-                    }
-                }
-            } catch (_) {}
-            btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="sparkles" class="w-4"></i> Generate Code';
+        // ── Canvas reopen card (shown in chat after canvas response) ──
+        function appendCanvasReopenCard(aiResponseEl, prompt, code) {
+            const card = document.createElement('div');
+            card.className = 'canvas-reopen-card';
+            card.innerHTML = `
+                <svg class="w-4 h-4 shrink-0" viewBox="-15 -15 130 130">
+                    <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
+                    <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
+                    <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
+                </svg>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-medium text-white">Code in Canvas</p>
+                    <p class="text-[11px] text-gray-500 truncate">${escapeHtml((prompt||'').slice(0,55))}…</p>
+                </div>
+                <i data-lucide="panel-right-open" class="w-3.5 text-gray-500 shrink-0"></i>`;
+            card.onclick = () => openCanvas(prompt, code);
+            aiResponseEl.appendChild(card);
             lucide.createIcons();
         }
 
-        let _resizerInited = false;
-        function initCanvasResizer() {
-            if (_resizerInited) return;
-            _resizerInited = true;
-            const resizer = document.getElementById('canvas-resizer');
-            const left    = document.getElementById('canvas-left');
-            const split   = document.getElementById('canvas-split');
-            let dragging = false;
-            resizer.addEventListener('mousedown', () => {
-                dragging = true;
-                document.body.style.cursor = 'col-resize';
-                document.body.style.userSelect = 'none';
-            });
-            document.addEventListener('mousemove', e => {
-                if (!dragging) return;
-                const r   = split.getBoundingClientRect();
-                const pct = Math.max(20, Math.min(60, (e.clientX - r.left) / r.width * 100));
-                left.style.width = pct + '%';
-                if (monacoEditor) monacoEditor.layout();
-            });
-            document.addEventListener('mouseup', () => {
-                dragging = false;
-                document.body.style.cursor = '';
-                document.body.style.userSelect = '';
+        // ── Copy functions ────────────────────────────────────────
+        function copyCanvasCode() {
+            if (!monacoEditor) return;
+            navigator.clipboard.writeText(monacoEditor.getValue()).then(() => {
+                const btn = document.getElementById('canvas-copy-btn');
+                btn.innerHTML = '<i data-lucide="check" class="w-3"></i> Copied!';
+                lucide.createIcons();
+                setTimeout(() => { btn.innerHTML = '<i data-lucide="copy" class="w-3"></i> Copy'; lucide.createIcons(); }, 2000);
             });
         }
+        function copyCode(btn) {
+            const code = btn.closest('.code-block-wrapper').querySelector('code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            });
+        }
+
+        // ── Custom marked renderer (copy button on code blocks) ──
+        const _renderer = new marked.Renderer();
+        _renderer.code = (code, lang) => {
+            const esc = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            return `<div class="code-block-wrapper"><button class="code-copy-btn" onclick="copyCode(this)">Copy</button><pre><code class="language-${lang||''}">${esc}</code></pre></div>`;
+        };
+        marked.setOptions({ renderer: _renderer });
 
         // ── Conversations ─────────────────────────────────────────
         async function loadConversations() {
@@ -1142,6 +1170,9 @@
             scrollToBottom();
             saveMessage('user', val);
 
+            // If canvas mode is on, open the sidebar immediately (loading state)
+            if (canvasEnabled) openCanvas(val, null);
+
             const { responseEl: aiEl, avatarEl } = appendAIMessageShell();
             scrollToBottom();
 
@@ -1155,20 +1186,31 @@
 
                 if (!res.ok) {
                     avatarEl.innerHTML = STATIC_LOGO_SVG;
+                    if (canvasEnabled) closeCanvas();
                     aiEl.innerHTML = `<div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3"><i data-lucide="alert-circle" class="w-4 shrink-0 mt-0.5"></i><span>${escapeHtml(data.error || 'Something went wrong.')}</span></div>`;
                     lucide.createIcons();
                 } else {
                     conversationHistory.push({ role: 'user', content: val }, { role: 'assistant', content: data.reply });
-                    await typeWriter(aiEl, data.reply);
-                    avatarEl.innerHTML = STATIC_LOGO_SVG;
-                    saveMessage('assistant', data.reply);
-                    if (canvasEnabled) {
-                        const code = extractCodeBlock(data.reply);
-                        if (code) openCanvas(val, code);
+                    const codeBlock = canvasEnabled ? extractCodeBlock(data.reply) : null;
+
+                    if (canvasEnabled && codeBlock) {
+                        // Show explanation in chat (no code block), type code in Monaco
+                        const chatText = removeCodeBlocks(data.reply);
+                        await typeWriter(aiEl, chatText || '*Code is rendering in Canvas →*');
+                        avatarEl.innerHTML = STATIC_LOGO_SVG;
+                        await typeWriterMonaco(codeBlock);
+                        appendCanvasReopenCard(aiEl, val, codeBlock);
+                    } else {
+                        // Normal mode: full response in chat
+                        if (canvasEnabled) closeCanvas(); // no code found, close loading canvas
+                        await typeWriter(aiEl, data.reply);
+                        avatarEl.innerHTML = STATIC_LOGO_SVG;
                     }
+                    saveMessage('assistant', data.reply);
                 }
             } catch {
                 avatarEl.innerHTML = STATIC_LOGO_SVG;
+                if (canvasEnabled) closeCanvas();
                 aiEl.innerHTML = `<div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3"><i data-lucide="wifi-off" class="w-4 shrink-0 mt-0.5"></i><span>Connection error. Check your network.</span></div>`;
                 lucide.createIcons();
             }
