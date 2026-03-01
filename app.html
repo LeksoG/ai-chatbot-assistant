@@ -105,8 +105,6 @@
         .canvas-reopen-card:hover { background:#1a1a1a; border-color:rgba(255,255,255,0.15); }
         /* ── Splash screen ── */
         #splash-screen { transition:opacity 0.55s ease; }
-        @keyframes spl-pulse { 0%,100%{opacity:.55} 50%{opacity:1} }
-        #splash-screen .spl-logo { animation:spl-pulse 1.8s ease-in-out infinite; }
         /* ── Version popup ── */
         #version-popup { transform-origin:bottom left; transition:opacity 0.18s ease, transform 0.2s cubic-bezier(0.34,1.56,0.64,1); }
         .vpop-hidden { opacity:0; transform:scale(0.92) translateY(8px); pointer-events:none; }
@@ -139,18 +137,9 @@
 </head>
 <body>
 
-    <!-- Splash screen (2-second landing) -->
-    <div id="splash-screen" class="fixed inset-0 z-[600] bg-[#050505] flex flex-col items-center justify-center">
-        <div class="spl-logo flex items-center gap-3 mb-4">
-            <svg class="w-14 h-14" viewBox="-15 -15 130 130" overflow="visible">
-                <g style="filter:blur(18px);opacity:.4;mix-blend-mode:screen">
-                    <path class="cl-seg cl-seg-top"/><path class="cl-seg cl-seg-mid"/><path class="cl-seg cl-seg-bot"/>
-                </g>
-                <g><path class="cl-seg cl-seg-top"/><path class="cl-seg cl-seg-mid"/><path class="cl-seg cl-seg-bot"/></g>
-            </svg>
-            <h1 class="text-3xl font-bold text-white tracking-tight">Clarity AI</h1>
-        </div>
-        <p class="text-gray-600 text-sm">Powered by Mistral</p>
+    <!-- Splash screen (2-second landing) — shows the real landing page -->
+    <div id="splash-screen" class="fixed inset-0 z-[600] overflow-hidden" style="transition:opacity 0.56s ease">
+        <iframe src="/" class="w-full h-full border-0" style="pointer-events:none" tabindex="-1" aria-hidden="true"></iframe>
     </div>
 
     <!-- Shared SVG gradient defs for code logo (referenced by all logo SVGs) -->
@@ -384,7 +373,7 @@
         </div>
         <!-- Live preview iframe -->
         <div id="canvas-preview-tab" class="hidden flex-1 min-h-0">
-            <iframe id="canvas-iframe" class="w-full h-full border-0 bg-white"></iframe>
+            <iframe id="canvas-iframe" class="w-full h-full border-0 bg-white" sandbox="allow-scripts allow-modals allow-forms"></iframe>
         </div>
     </div>
 
@@ -777,7 +766,27 @@
             document.body.classList.remove('canvas-open');
         }
         function updateCanvasPreview() {
-            if (monacoEditor) document.getElementById('canvas-iframe').srcdoc = monacoEditor.getValue();
+            if (!monacoEditor) return;
+            // Inject error console + link-navigation guard into every preview
+            const guard = `<script>
+window.onerror=function(m,s,l){var c=document.getElementById('__cc');if(!c){c=document.createElement('div');c.id='__cc';c.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;border-top:1px solid #333;color:#f87171;font:12px/1.5 monospace;padding:8px 12px;max-height:110px;overflow-y:auto;z-index:9999;white-space:pre-wrap;word-break:break-word';document.body.appendChild(c);}var d=document.createElement('div');d.textContent='\u26a0 '+m+(l?' (line '+l+')':'');c.appendChild(d);c.scrollTop=c.scrollHeight;return true;};
+window.addEventListener('unhandledrejection',function(e){window.onerror(e.reason&&e.reason.message?e.reason.message:String(e.reason));});
+document.addEventListener('click',function(e){var a=e.target.closest('a[href]');if(a){var h=a.getAttribute('href')||'';if(h&&h[0]!=='#'&&h.indexOf('javascript:')!==0){e.preventDefault();}}});<\/script>`;
+            const code = monacoEditor.getValue();
+            const html = code.includes('</body>') ? code.replace('</body>', guard + '</body>') : code + guard;
+            document.getElementById('canvas-iframe').srcdoc = html;
+        }
+
+        // ── Rainbow glow replay ───────────────────────────────────
+        function triggerRainbowGlow() {
+            const wrapper = document.getElementById('rainbow-glow');
+            if (!wrapper) return;
+            wrapper.style.opacity = '0';
+            setTimeout(() => {
+                const content = wrapper.querySelector('.glow-content');
+                if (content) { content.style.animation = 'none'; void content.offsetWidth; content.style.animation = ''; }
+                wrapper.style.opacity = '1';
+            }, 400);
         }
         function switchCanvasTab(tab) {
             const codePan = document.getElementById('canvas-code-tab');
@@ -915,7 +924,7 @@
                 const res  = await fetch('/api/conversations', {
                     method: 'POST',
                     headers: authHeaders(),
-                    body: JSON.stringify({ title: firstMsg.slice(0, 60).trim(), modelVersion: selectedModel })
+                    body: JSON.stringify({ userId: currentUser.id, title: firstMsg.slice(0, 60).trim(), modelVersion: selectedModel })
                 });
                 if (!res.ok) return;
                 const conv = await res.json();
@@ -1003,11 +1012,13 @@
             document.body.classList.remove('conversation-started');
             topBrand.style.opacity = '0';
             topBrand.style.pointerEvents = 'none';
+            closeCanvas();
             toggleSidebar(false);
             input.value = '';
             updateButtonState(false);
             window.scrollTo({ top: 0, behavior: 'smooth' });
             loadConversations();
+            triggerRainbowGlow();
         }
 
         // ── Account page ──────────────────────────────────────────
