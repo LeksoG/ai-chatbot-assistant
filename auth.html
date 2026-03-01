@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarity AI — Sign in</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background: #0a0a0a; }
+        input:-webkit-autofill { -webkit-box-shadow: 0 0 0 30px #111 inset !important; -webkit-text-fill-color: #fff !important; }
+        .tab-active   { background: rgba(255,255,255,0.08); color: #fff; }
+        .tab-inactive { color: #6b7280; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 font-sans">
+
+    <div class="w-full max-w-sm">
+
+        <!-- Logo -->
+        <a href="/" class="flex items-center justify-center gap-2.5 mb-8 group">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-violet-900/40">
+                <i data-lucide="gem" class="text-white w-5"></i>
+            </div>
+            <span class="text-2xl font-bold text-white tracking-tight">Clarity AI</span>
+        </a>
+
+        <!-- Alert -->
+        <div id="alert" class="hidden mb-4 p-3 rounded-xl text-sm border"></div>
+
+        <!-- Tab switcher -->
+        <div class="flex bg-white/5 rounded-xl p-1 mb-5 border border-white/5">
+            <button id="tab-login"  onclick="showLogin()"  class="flex-1 py-2 text-sm font-medium rounded-lg transition-all tab-active">Log In</button>
+            <button id="tab-signup" onclick="showSignup()" class="flex-1 py-2 text-sm font-medium rounded-lg transition-all tab-inactive">Sign Up</button>
+        </div>
+
+        <!-- Login Form -->
+        <div id="login-form">
+            <div class="space-y-3">
+                <input id="login-email"    type="email"    placeholder="Email address"
+                    class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors">
+                <input id="login-password" type="password" placeholder="Password"
+                    class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors">
+            </div>
+
+            <!-- 2FA section (hidden until needed) -->
+            <div id="twofa-section" class="hidden mt-3 p-3 bg-violet-950/30 border border-violet-800/30 rounded-xl">
+                <p class="text-xs text-violet-300 mb-2.5">
+                    <i data-lucide="mail" class="inline w-3 mr-1"></i>
+                    A 6-digit code was sent to your email.
+                </p>
+                <input id="twofa-code" type="text" placeholder="000000" maxlength="6"
+                    class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors tracking-[0.5em] text-center font-mono">
+            </div>
+
+            <button id="login-btn" onclick="handleLogin()"
+                class="w-full mt-4 py-3 bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white font-semibold rounded-xl transition-colors text-sm">
+                Log In
+            </button>
+        </div>
+
+        <!-- Signup Form -->
+        <div id="signup-form" class="hidden">
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <input id="signup-firstname" type="text" placeholder="First name"
+                        class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors">
+                    <input id="signup-lastname"  type="text" placeholder="Last name"
+                        class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors">
+                </div>
+                <input id="signup-email"    type="email"    placeholder="Email address"
+                    class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors">
+                <input id="signup-password" type="password" placeholder="Password (min 6 characters)"
+                    class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors">
+                <input id="signup-confirm"  type="password" placeholder="Confirm password"
+                    class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors">
+            </div>
+            <button id="signup-btn" onclick="handleSignup()"
+                class="w-full mt-4 py-3 bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white font-semibold rounded-xl transition-colors text-sm">
+                Create Account
+            </button>
+        </div>
+
+        <p class="text-center text-[11px] text-gray-700 mt-6">
+            By continuing you agree to Clarity AI's terms of service.
+        </p>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Redirect if already logged in
+        if (localStorage.getItem('clarity_token')) window.location.href = '/app.html';
+
+        // Check URL for mode
+        if (new URLSearchParams(location.search).get('mode') === 'signup') showSignup();
+
+        let awaiting2FA  = false;
+        let pendingEmail = '';
+
+        // ── Tab switching ──────────────────────────────────
+        function showLogin() {
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('signup-form').classList.add('hidden');
+            document.getElementById('tab-login').className  = 'flex-1 py-2 text-sm font-medium rounded-lg transition-all tab-active';
+            document.getElementById('tab-signup').className = 'flex-1 py-2 text-sm font-medium rounded-lg transition-all tab-inactive';
+            clearAlert();
+        }
+        function showSignup() {
+            document.getElementById('signup-form').classList.remove('hidden');
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('tab-signup').className = 'flex-1 py-2 text-sm font-medium rounded-lg transition-all tab-active';
+            document.getElementById('tab-login').className  = 'flex-1 py-2 text-sm font-medium rounded-lg transition-all tab-inactive';
+            clearAlert();
+        }
+
+        // ── Alerts ────────────────────────────────────────
+        function showAlert(msg, type = 'error') {
+            const el = document.getElementById('alert');
+            if (type === 'error') {
+                el.className = 'mb-4 p-3 rounded-xl text-sm border bg-red-950/50 border-red-900/40 text-red-400';
+            } else {
+                el.className = 'mb-4 p-3 rounded-xl text-sm border bg-green-950/50 border-green-900/40 text-green-400';
+            }
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+        function clearAlert() { document.getElementById('alert').classList.add('hidden'); }
+
+        // ── Button loading state ───────────────────────────
+        function setLoading(id, loading, label) {
+            const btn = document.getElementById(id);
+            btn.disabled = loading;
+            btn.textContent = loading ? 'Please wait…' : label;
+        }
+
+        // ── Login ─────────────────────────────────────────
+        async function handleLogin() {
+            clearAlert();
+
+            // Verify 2FA code if we're in that step
+            if (awaiting2FA) {
+                const code = document.getElementById('twofa-code').value.trim();
+                if (code.length !== 6) { showAlert('Enter the 6-digit code.'); return; }
+                setLoading('login-btn', true, 'Verify Code');
+                try {
+                    const res  = await fetch('/api/auth/verify-2fa', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: pendingEmail, code })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) { showAlert(data.error || 'Invalid or expired code.'); return; }
+                    completeLogin(data);
+                } catch { showAlert('Connection error. Try again.'); }
+                finally   { setLoading('login-btn', false, 'Verify Code'); }
+                return;
+            }
+
+            const email    = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            if (!email || !password) { showAlert('Fill in all fields.'); return; }
+
+            setLoading('login-btn', true, 'Log In');
+            try {
+                const res  = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (!res.ok) { showAlert(data.error || 'Invalid email or password.'); return; }
+
+                if (data.requires2FA) {
+                    awaiting2FA  = true;
+                    pendingEmail = email;
+                    document.getElementById('twofa-section').classList.remove('hidden');
+                    document.getElementById('login-btn').textContent = 'Verify Code';
+                    showAlert('Check your email for a 6-digit code.', 'success');
+                    lucide.createIcons();
+                } else {
+                    completeLogin(data);
+                }
+            } catch { showAlert('Connection error. Try again.'); }
+            finally   { setLoading('login-btn', false, awaiting2FA ? 'Verify Code' : 'Log In'); }
+        }
+
+        function completeLogin(data) {
+            localStorage.setItem('clarity_token', data.access_token);
+            localStorage.setItem('clarity_user',  JSON.stringify(data.user));
+            window.location.href = '/app.html';
+        }
+
+        // ── Signup ────────────────────────────────────────
+        async function handleSignup() {
+            clearAlert();
+            const firstName = document.getElementById('signup-firstname').value.trim();
+            const lastName  = document.getElementById('signup-lastname').value.trim();
+            const email     = document.getElementById('signup-email').value.trim();
+            const password  = document.getElementById('signup-password').value;
+            const confirm   = document.getElementById('signup-confirm').value;
+
+            if (!firstName || !lastName || !email || !password || !confirm) {
+                showAlert('Please fill in all fields.'); return;
+            }
+            if (password !== confirm) { showAlert('Passwords do not match.'); return; }
+            if (password.length < 6)  { showAlert('Password must be at least 6 characters.'); return; }
+
+            setLoading('signup-btn', true, 'Create Account');
+            try {
+                const res  = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firstName, lastName, email, password })
+                });
+                const data = await res.json();
+                if (!res.ok) { showAlert(data.error || 'Signup failed. Please try again.'); return; }
+                showAlert('Account created! You can now log in.', 'success');
+                setTimeout(showLogin, 1800);
+            } catch { showAlert('Connection error. Try again.'); }
+            finally   { setLoading('signup-btn', false, 'Create Account'); }
+        }
+
+        // ── Enter key support ──────────────────────────────
+        document.addEventListener('keydown', e => {
+            if (e.key !== 'Enter') return;
+            if (!document.getElementById('signup-form').classList.contains('hidden')) handleSignup();
+            else handleLogin();
+        });
+    </script>
+</body>
+</html>

@@ -3,758 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clarity AI</title>
+    <title>Clarity AI — Think Smarter</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        :root {
-            --bg-color: #0a0a0a;
-            --container-bg: #111;
-            --accent-gradient: conic-gradient(from 0deg, transparent 0deg, #ff00c8 40deg, #7000ff 100deg, #00c2ff 160deg, #00ff85 220deg, #ffea00 280deg, transparent 360deg);
+        body { background: #0a0a0a; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #7c3aed 0%, #818cf8 50%, #c4b5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        body {
-            background-color: var(--bg-color);
-            color: white;
-            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            overflow-x: hidden;
-        }
-
-        /* ── Rainbow Edge Glow ── */
-        .glow-wrapper {
+        .hero-glow {
             position: absolute;
-            inset: -1.5px;
-            border-radius: 9999px;
-            overflow: hidden;
-            filter: blur(8px);
-            opacity: 0;
-            transition: opacity 1s ease;
-        }
-        .glow-content {
-            position: absolute;
-            inset: -150%;
-            border-radius: 50%;
-            background: var(--accent-gradient);
-            animation: rainbow-trace 2.5s ease-out forwards;
-        }
-        @keyframes rainbow-trace {
-            0%   { transform: rotate(0deg) scale(0.8); }
-            100% { transform: rotate(360deg) scale(1); }
-        }
-        .conversation-started .glow-content {
-            animation: none !important;
-            background: linear-gradient(90deg, #ff00c8, #7000ff, #00c2ff, #00ff85);
-            opacity: 0.3;
-            inset: -5%;
-        }
-
-        /* ── Suggestion cards entrance ── */
-        @keyframes subtle-spring {
-            0%   { transform: translateY(30px) scale(0.95); opacity: 0; }
-            70%  { transform: translateY(-5px) scale(1.02); opacity: 1; }
-            100% { transform: translateY(0) scale(1); opacity: 1; }
-        }
-        .suggestion-card {
-            opacity: 0;
-            animation: subtle-spring 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-
-        /* ── Input wrapper slides to bottom ── */
-        .chat-input-wrapper {
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 50;
-        }
-        .conversation-started .chat-input-wrapper {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            max-width: 42rem;
-        }
-
-        /* ── Sidebar ── */
-        #sidebar { transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-
-        /* ── Input placeholder fade ── */
-        input::placeholder { transition: all 0.3s ease; }
-        input:focus::placeholder { opacity: 0; transform: translateX(10px); }
-
-        /* ── Hide header / suggestions after first message ── */
-        .hide-on-start { transition: all 0.6s ease; }
-        .conversation-started .hide-on-start {
-            opacity: 0;
-            transform: translateY(-20px);
+            width: 700px; height: 700px;
+            background: radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%);
+            top: -200px; left: 50%; transform: translateX(-50%);
             pointer-events: none;
-            display: none;
         }
 
-        #main-ui { transition: justify-content 0.5s ease; }
-        .conversation-started #main-ui {
-            justify-content: flex-start;
-            padding-top: 5rem;
+        .feature-card {
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: border-color 0.3s, transform 0.3s;
+        }
+        .feature-card:hover {
+            border-color: rgba(124,58,237,0.3);
+            transform: translateY(-3px);
         }
 
-        #chat-results { display: none; opacity: 0; }
-        .conversation-started #chat-results {
-            display: flex;
-            animation: fade-in-up 0.5s ease forwards;
-        }
-        @keyframes fade-in-up {
-            from { opacity: 0; transform: translateY(20px); }
-            to   { opacity: 1; transform: translateY(0); }
+        .nav-pill {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.07);
         }
 
-        /* ── Markdown response styling ── */
-        .ai-response { line-height: 1.75; }
-
-        .ai-response h1 { font-size: 1.5rem; font-weight: 700; margin: 1.25rem 0 0.5rem; color: #f1f5f9; }
-        .ai-response h2 { font-size: 1.2rem; font-weight: 700; margin: 1rem 0 0.4rem; color: #e2e8f0; border-bottom: 1px solid #2d2d3f; padding-bottom: 0.3rem; }
-        .ai-response h3 { font-size: 1.05rem; font-weight: 600; margin: 0.85rem 0 0.35rem; color: #cbd5e0; }
-
-        .ai-response p { margin: 0.55rem 0; }
-        .ai-response p:first-child { margin-top: 0; }
-        .ai-response p:last-child  { margin-bottom: 0; }
-
-        .ai-response ul { list-style: none; padding-left: 0; margin: 0.5rem 0; }
-        .ai-response ul li { padding-left: 1.4rem; position: relative; margin: 0.35rem 0; }
-        .ai-response ul li::before { content: "▸"; position: absolute; left: 0; color: #7c3aed; font-size: 0.8rem; top: 0.15rem; }
-
-        .ai-response ol { list-style: decimal; padding-left: 1.6rem; margin: 0.5rem 0; }
-        .ai-response ol li { margin: 0.35rem 0; }
-
-        .ai-response code {
-            background: #1e1e2e;
-            border: 1px solid #2d2d3f;
-            padding: 0.1rem 0.4rem;
-            border-radius: 0.3rem;
-            font-family: 'Courier New', Consolas, monospace;
-            font-size: 0.85rem;
-            color: #a78bfa;
-        }
-        .ai-response pre {
-            background: #12121f;
-            border: 1px solid #2d2d3f;
-            border-radius: 0.85rem;
-            padding: 1.1rem 1.2rem;
-            margin: 0.85rem 0;
-            overflow-x: auto;
-        }
-        .ai-response pre code {
-            background: none;
-            border: none;
-            padding: 0;
-            color: #e2e8f0;
-            font-size: 0.875rem;
-        }
-        .ai-response blockquote {
-            border-left: 3px solid #7c3aed;
-            padding: 0.3rem 0 0.3rem 1rem;
-            margin: 0.75rem 0;
-            color: #94a3b8;
-            font-style: italic;
-            background: #ffffff05;
-            border-radius: 0 0.5rem 0.5rem 0;
-        }
-        .ai-response strong { color: #f1f5f9; font-weight: 600; }
-        .ai-response em     { color: #cbd5e0; }
-        .ai-response a      { color: #818cf8; text-decoration: underline; }
-        .ai-response hr     { border-color: #2d2d3f; margin: 1rem 0; }
-        .ai-response table  { width: 100%; border-collapse: collapse; margin: 0.75rem 0; }
-        .ai-response th     { background: #1e1e2e; padding: 0.5rem 0.75rem; text-align: left; border: 1px solid #2d2d3f; font-weight: 600; }
-        .ai-response td     { padding: 0.5rem 0.75rem; border: 1px solid #2d2d3f; }
-        .ai-response tr:nth-child(even) td { background: #ffffff04; }
-
-        /* ── Typewriter blinking cursor ── */
-        .typing-cursor {
-            display: inline-block;
-            width: 2px;
-            height: 1.1em;
-            background: #a78bfa;
-            margin-left: 2px;
-            vertical-align: text-bottom;
-            border-radius: 1px;
-            animation: blink 0.65s step-end infinite;
-        }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50%       { opacity: 0; }
-        }
-
-        /* ── Loading dots ── */
-        .loading-dots span {
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            background: #7c3aed;
-            border-radius: 50%;
-            margin: 0 2px;
-            animation: dot-bounce 1.4s infinite ease-in-out;
-        }
-        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes dot-bounce {
-            0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
-            40%            { transform: scale(1.2); opacity: 1;   }
-        }
-
-        /* ── Message entrance ── */
-        @keyframes msg-in {
-            from { opacity: 0; transform: translateY(12px); }
-            to   { opacity: 1; transform: translateY(0);    }
-        }
-        .msg-enter { animation: msg-in 0.35s ease forwards; }
-
-        /* ── Top brand fade ── */
-        #top-brand { transition: opacity 0.5s ease; }
-
-        /* ── Scrollbar ── */
-        ::-webkit-scrollbar       { width: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
-
-        /* ── Model modal backdrop ── */
-        #model-modal { backdrop-filter: blur(4px); }
     </style>
 </head>
-<body>
+<body class="text-white overflow-x-hidden">
 
-    <!-- Sidebar overlay -->
-    <div id="sidebar-overlay"
-         class="fixed inset-0 bg-black/60 z-40 opacity-0 pointer-events-none transition-opacity duration-500"
-         onclick="toggleSidebar(false)"></div>
-
-    <!-- Sidebar -->
-    <div id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-[#0d0d0d] z-50 border-r border-white/5 -translate-x-full flex flex-col">
-
-        <!-- Sidebar header -->
-        <div class="p-5 flex justify-between items-center border-b border-white/5">
-            <div class="flex items-center gap-2">
-                <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-lg">
-                    <i data-lucide="gem" class="text-white w-3.5"></i>
-                </div>
-                <span class="font-bold text-white text-sm tracking-tight">Clarity AI</span>
-            </div>
-            <button onclick="toggleSidebar(false)" class="p-1.5 hover:bg-white/5 rounded-lg transition-colors">
-                <i data-lucide="x" class="w-4 text-gray-400"></i>
-            </button>
-        </div>
-
-        <!-- New Conversation button -->
-        <div class="p-3 pb-2">
-            <button onclick="newConversation()" class="w-full flex items-center gap-2.5 p-3 bg-white/5 hover:bg-white/10 rounded-xl text-sm text-gray-300 transition-colors border border-white/5 group">
-                <i data-lucide="plus" class="w-4 group-hover:text-violet-400 transition-colors"></i>
-                <span>New Conversation</span>
-            </button>
-        </div>
-
-        <!-- Model Version Selector -->
-        <div class="px-3 pb-3">
-            <button id="model-btn" onclick="openModelModal()"
-                class="w-full flex items-center justify-between px-3 py-2.5 bg-violet-950/40 hover:bg-violet-900/40 border border-violet-800/30 rounded-xl transition-colors group">
-                <div class="flex items-center gap-2">
-                    <div class="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-sm shadow-violet-400/60"></div>
-                    <span class="text-xs font-medium text-violet-300">Clarity <span id="model-label">3.0</span></span>
-                </div>
-                <i data-lucide="chevrons-up-down" class="w-3 text-violet-500 group-hover:text-violet-300 transition-colors"></i>
-            </button>
-        </div>
-
-        <!-- Conversation history -->
-        <div class="px-3 flex-1 overflow-y-auto">
-            <p class="px-2 text-[10px] text-gray-600 uppercase tracking-widest mb-2">Recent</p>
-            <div id="history-list">
-                <div class="p-3 text-gray-600 text-sm text-center">No history yet</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Menu button -->
-    <button onclick="toggleSidebar(true)"
-            class="fixed top-6 left-6 z-30 p-2.5 hover:bg-white/10 rounded-xl transition-all active:scale-90 bg-white/5 border border-white/5">
-        <i data-lucide="panel-left" class="text-gray-300 w-[22px]"></i>
-    </button>
-
-    <!-- Top brand (visible after first message) -->
-    <div id="top-brand" class="fixed top-5 left-1/2 -translate-x-1/2 z-20 opacity-0 pointer-events-none flex items-center gap-2">
-        <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center">
-            <i data-lucide="gem" class="text-white w-3.5"></i>
-        </div>
-        <span class="font-bold text-white text-sm tracking-tight">Clarity AI</span>
-    </div>
-
-    <main id="main-ui" class="min-h-screen flex flex-col items-center justify-center p-4">
-
-        <!-- Hero header -->
-        <div class="hide-on-start text-center mb-12">
-            <div class="flex items-center justify-center gap-3 mb-5">
-                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-2xl shadow-violet-900/40">
-                    <i data-lucide="gem" class="text-white w-7"></i>
-                </div>
-                <h1 class="text-5xl font-extrabold tracking-tight">Clarity AI</h1>
-            </div>
-            <p class="text-gray-500 text-lg font-light">Ask me anything — I'm here to assist.</p>
-        </div>
-
-        <!-- Suggestion cards -->
-        <div class="hide-on-start grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl mb-12">
-            <button onclick="fillInput('Help me write a professional email')"
-                    class="suggestion-card flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group shadow-lg"
-                    style="animation-delay:0.6s">
-                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
-                    <i data-lucide="pen-line" class="text-blue-400 w-5"></i>
-                </div>
-                <span class="text-gray-300 font-medium">Help me write a professional email</span>
-            </button>
-            <button onclick="fillInput('Brainstorm creative project ideas')"
-                    class="suggestion-card flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group shadow-lg"
-                    style="animation-delay:0.7s">
-                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
-                    <i data-lucide="lightbulb" class="text-yellow-400 w-5"></i>
-                </div>
-                <span class="text-gray-300 font-medium">Brainstorm creative project ideas</span>
-            </button>
-            <button onclick="fillInput('Explain a complex topic simply')"
-                    class="suggestion-card flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group shadow-lg"
-                    style="animation-delay:0.8s">
-                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
-                    <i data-lucide="book-open" class="text-green-400 w-5"></i>
-                </div>
-                <span class="text-gray-300 font-medium">Explain a complex topic simply</span>
-            </button>
-            <button onclick="fillInput('Debug and fix my code')"
-                    class="suggestion-card flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group shadow-lg"
-                    style="animation-delay:0.9s">
-                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
-                    <i data-lucide="code" class="text-purple-400 w-5"></i>
-                </div>
-                <span class="text-gray-300 font-medium">Debug and fix my code</span>
-            </button>
-        </div>
-
-        <!-- Chat messages area -->
-        <div id="chat-results" class="w-full max-w-3xl flex-col gap-7 pb-36 px-4">
-            <!-- Messages injected here by JS -->
-        </div>
-
-        <!-- Input bar -->
-        <div class="chat-input-wrapper w-full max-w-2xl px-4 relative">
-            <div class="relative group">
-                <div id="rainbow-glow" class="glow-wrapper">
-                    <div class="glow-content"></div>
-                </div>
-                <div class="relative flex items-center bg-[#111] rounded-full px-6 py-4 shadow-2xl border border-white/10 z-10">
-                    <input id="chat-input" type="text" placeholder="Ask anything"
-                           class="w-full bg-transparent border-none outline-none text-white text-lg placeholder-gray-600">
-                    <button id="send-btn" onclick="handleSend()" disabled
-                            class="ml-3 p-2.5 rounded-full transition-all duration-500 flex items-center justify-center bg-white/5 text-gray-600 scale-90 opacity-40 cursor-not-allowed rotate-45">
-                        <i data-lucide="arrow-up" class="w-5 stroke-[3]"></i>
-                    </button>
-                </div>
-            </div>
-            <p class="text-center text-xs text-gray-700 mt-3">Clarity AI · Powered by Mistral · May make mistakes</p>
-        </div>
-
-    </main>
-
-    <!-- ── Model Version Modal ───────────────────────────────── -->
-    <div id="model-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60">
-        <div class="absolute inset-0" onclick="closeModelModal()"></div>
-        <div class="relative w-80 bg-[#111] border border-white/10 rounded-2xl p-5 shadow-2xl mx-4">
-
-            <!-- Modal header -->
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2">
-                    <div class="w-5 h-5 rounded-md bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center">
-                        <i data-lucide="gem" class="text-white w-2.5"></i>
-                    </div>
-                    <h3 class="text-white font-semibold text-sm">Choose Version</h3>
-                </div>
-                <button onclick="closeModelModal()" class="p-1 hover:bg-white/5 rounded-lg transition-colors">
-                    <i data-lucide="x" class="w-3.5 text-gray-500"></i>
-                </button>
-            </div>
-
-            <!-- Clarity 3.0 card -->
-            <button onclick="selectModel('3.0')" id="card-3-0"
-                class="w-full text-left p-4 rounded-xl border mb-2.5 transition-all hover:border-violet-700/40">
-                <div class="flex items-center justify-between mb-1.5">
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-sm text-white">Clarity 3.0</span>
-                        <span class="text-[10px] text-gray-500 font-mono">default</span>
-                    </div>
-                    <span id="badge-3-0" class="text-[10px] bg-violet-600/80 text-white px-2 py-0.5 rounded-full font-medium">Active</span>
-                </div>
-                <p class="text-xs text-gray-400 leading-relaxed">Fast, accurate, and efficient. Great for everyday questions, writing, summarising, and quick tasks.</p>
-            </button>
-
-            <!-- Clarity 3.5 card -->
-            <button onclick="selectModel('3.5')" id="card-3-5"
-                class="w-full text-left p-4 rounded-xl border transition-all hover:border-violet-700/40">
-                <div class="flex items-center justify-between mb-1.5">
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-sm text-white">Clarity 3.5</span>
-                        <span class="text-[10px] text-violet-400 font-medium">enhanced</span>
-                    </div>
-                    <span id="badge-3-5" class="hidden text-[10px] bg-violet-600/80 text-white px-2 py-0.5 rounded-full font-medium">Active</span>
-                </div>
-                <p class="text-xs text-gray-400 leading-relaxed">More intelligent and thorough. Best for complex reasoning, deep research, nuanced analysis, and detailed explanations.</p>
-            </button>
-        </div>
-    </div>
-
-    <script>
-        // ── Configure marked ──────────────────────────────────────
-        marked.setOptions({ breaks: true, gfm: true });
-        lucide.createIcons();
-
-        const input       = document.getElementById('chat-input');
-        const sendBtn     = document.getElementById('send-btn');
-        const glow        = document.getElementById('rainbow-glow');
-        const chatResults = document.getElementById('chat-results');
-        const topBrand    = document.getElementById('top-brand');
-
-        let conversationHistory  = [];
-        let isTyping             = false;
-
-        // ── User identity (anonymous UUID, persisted in localStorage) ──
-        let userId = localStorage.getItem('clarity_uid');
-        if (!userId) {
-            userId = crypto.randomUUID();
-            localStorage.setItem('clarity_uid', userId);
-        }
-
-        // ── Model version ─────────────────────────────────────────
-        let selectedModel        = localStorage.getItem('clarity_model') || '3.0';
-        let activeConversationId = null;
-
-        // ── Glow on load ──────────────────────────────────────────
-        window.addEventListener('load', () => {
-            setTimeout(() => { glow.style.opacity = '1'; }, 120);
-            document.getElementById('model-label').textContent = selectedModel;
-            updateModelCards();
-            loadConversations();
-        });
-
-        // ── Input listeners ───────────────────────────────────────
-        input.addEventListener('input', (e) => {
-            updateButtonState(e.target.value.trim().length > 0);
-        });
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
-        });
-
-        // ── Button state ──────────────────────────────────────────
-        function updateButtonState(active) {
-            const enabled = active && !isTyping;
-            sendBtn.disabled = !enabled;
-            if (enabled) {
-                sendBtn.classList.remove('bg-white/5','text-gray-600','opacity-40','cursor-not-allowed','rotate-45');
-                sendBtn.classList.add('bg-white','text-black','opacity-100','shadow-[0_0_20px_rgba(255,255,255,0.5)]','rotate-0');
-            } else {
-                sendBtn.classList.remove('bg-white','text-black','opacity-100','shadow-[0_0_20px_rgba(255,255,255,0.5)]','rotate-0');
-                sendBtn.classList.add('bg-white/5','text-gray-600','opacity-40','cursor-not-allowed','rotate-45');
-            }
-        }
-
-        function fillInput(text) {
-            input.value = text;
-            updateButtonState(true);
-            input.focus();
-        }
-
-        // ── Sidebar ───────────────────────────────────────────────
-        function toggleSidebar(open) {
-            const sb = document.getElementById('sidebar');
-            const ov = document.getElementById('sidebar-overlay');
-            if (open) {
-                sb.classList.remove('-translate-x-full');
-                ov.classList.remove('opacity-0','pointer-events-none');
-                ov.classList.add('opacity-100');
-            } else {
-                sb.classList.add('-translate-x-full');
-                ov.classList.add('opacity-0','pointer-events-none');
-                ov.classList.remove('opacity-100');
-            }
-        }
-
-        // ── Model picker ──────────────────────────────────────────
-        function openModelModal() {
-            const m = document.getElementById('model-modal');
-            m.classList.remove('hidden');
-            m.classList.add('flex');
-            updateModelCards();
-        }
-
-        function closeModelModal() {
-            const m = document.getElementById('model-modal');
-            m.classList.add('hidden');
-            m.classList.remove('flex');
-        }
-
-        function selectModel(version) {
-            selectedModel = version;
-            localStorage.setItem('clarity_model', version);
-            document.getElementById('model-label').textContent = version;
-            updateModelCards();
-            closeModelModal();
-        }
-
-        function updateModelCards() {
-            ['3.0', '3.5'].forEach(v => {
-                const key   = v.replace('.', '-');
-                const card  = document.getElementById('card-' + key);
-                const badge = document.getElementById('badge-' + key);
-                if (v === selectedModel) {
-                    card.classList.add('border-violet-700/50', 'bg-violet-950/25');
-                    card.classList.remove('border-white/5');
-                    badge.classList.remove('hidden');
-                } else {
-                    card.classList.remove('border-violet-700/50', 'bg-violet-950/25');
-                    card.classList.add('border-white/5');
-                    badge.classList.add('hidden');
-                }
-            });
-        }
-
-        // ── Conversation list ─────────────────────────────────────
-        async function loadConversations() {
-            try {
-                const res = await fetch('/api/conversations?userId=' + userId);
-                if (!res.ok) return;
-                const list = await res.json();
-                renderConversationList(list);
-            } catch (_) { /* Supabase not configured yet */ }
-        }
-
-        function renderConversationList(conversations) {
-            const list = document.getElementById('history-list');
-            if (!conversations || !conversations.length) {
-                list.innerHTML = '<div class="p-3 text-gray-600 text-sm text-center">No history yet</div>';
-                return;
-            }
-            list.innerHTML = conversations.map(c => `
-                <button onclick="loadConversation('${c.id}')"
-                    class="conv-item w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group ${activeConversationId === c.id ? 'bg-white/5' : ''}">
-                    <i data-lucide="message-square" class="w-3.5 shrink-0 text-gray-600 group-hover:text-gray-400 transition-colors"></i>
-                    <span class="text-sm text-gray-400 group-hover:text-gray-200 transition-colors truncate">${escapeHtml(c.title)}</span>
-                </button>
-            `).join('');
-            lucide.createIcons();
-        }
-
-        async function loadConversation(id) {
-            try {
-                const res = await fetch('/api/messages?conversationId=' + id);
-                if (!res.ok) return;
-                const msgs = await res.json();
-
-                activeConversationId = id;
-                conversationHistory  = [];
-                chatResults.innerHTML = '';
-
-                if (!document.body.classList.contains('conversation-started')) {
-                    document.body.classList.add('conversation-started');
-                    topBrand.style.opacity = '1';
-                    topBrand.style.pointerEvents = 'auto';
-                }
-
-                for (const msg of msgs) {
-                    if (msg.role === 'user') {
-                        appendUserMessage(msg.content);
-                    } else {
-                        const aiEl = appendAIMessageShell();
-                        aiEl.innerHTML = marked.parse(msg.content);
-                    }
-                    conversationHistory.push({ role: msg.role, content: msg.content });
-                }
-
-                scrollToBottom();
-                toggleSidebar(false);
-                loadConversations(); // refresh active highlight
-            } catch (e) {
-                console.error('Failed to load conversation:', e);
-            }
-        }
-
-        async function ensureConversation(firstMessage) {
-            if (activeConversationId) return;
-            try {
-                const res = await fetch('/api/conversations', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId,
-                        title: firstMessage.slice(0, 60).trim(),
-                        modelVersion: selectedModel
-                    })
-                });
-                if (!res.ok) return;
-                const conv = await res.json();
-                activeConversationId = conv.id;
-                loadConversations();
-            } catch (_) { /* silently skip if Supabase not set up */ }
-        }
-
-        async function saveMessage(role, content) {
-            if (!activeConversationId) return;
-            try {
-                await fetch('/api/messages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ conversationId: activeConversationId, role, content })
-                });
-                if (role === 'assistant') {
-                    fetch('/api/conversations?id=' + activeConversationId, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({})
-                    });
-                    loadConversations();
-                }
-            } catch (_) { /* silently skip */ }
-        }
-
-        // ── New conversation ──────────────────────────────────────
-        function newConversation() {
-            activeConversationId = null;
-            conversationHistory  = [];
-            chatResults.innerHTML = '';
-            document.body.classList.remove('conversation-started');
-            topBrand.style.opacity = '0';
-            topBrand.style.pointerEvents = 'none';
-            toggleSidebar(false);
-            input.value = '';
-            updateButtonState(false);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // ── DOM helpers ───────────────────────────────────────────
-        function escapeHtml(str) {
-            const d = document.createElement('div');
-            d.appendChild(document.createTextNode(str));
-            return d.innerHTML;
-        }
-
-        function appendUserMessage(text) {
-            const el = document.createElement('div');
-            el.className = 'flex justify-end msg-enter';
-            el.innerHTML = `
-                <div class="bg-[#1c1c1c] border border-white/5 py-3 px-5 rounded-3xl rounded-tr-md max-w-[75%] w-fit text-gray-200 leading-relaxed whitespace-pre-wrap break-words">
-                    ${escapeHtml(text)}
-                </div>`;
-            chatResults.appendChild(el);
-        }
-
-        function appendAIMessageShell() {
-            const el = document.createElement('div');
-            el.className = 'flex justify-start items-start gap-4 msg-enter';
-            el.innerHTML = `
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shrink-0 mt-1 shadow-lg shadow-violet-900/30">
+    <!-- Navbar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 px-6 py-4">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <!-- Logo -->
+            <a href="/" class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-lg">
                     <i data-lucide="gem" class="text-white w-4"></i>
                 </div>
-                <div class="ai-response text-gray-300 leading-relaxed pt-0.5 text-base flex-1 min-w-0">
-                    <div class="loading-dots flex items-center gap-1 py-2">
-                        <span></span><span></span><span></span>
+                <span class="font-bold text-white text-base tracking-tight">Clarity AI</span>
+            </a>
+
+            <!-- Nav actions -->
+            <div class="flex items-center gap-3">
+                <a href="/auth.html" class="px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors font-medium">
+                    Log In
+                </a>
+                <a href="/auth.html?mode=signup"
+                   class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-violet-900/30">
+                    Get Started
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-20">
+        <div class="hero-glow"></div>
+
+        <!-- Tag -->
+        <div class="nav-pill inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs text-violet-300 font-medium mb-8">
+            <div class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse"></div>
+            Now powered by Clarity 3.5
+        </div>
+
+        <!-- Heading -->
+        <h1 class="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-none mb-6 max-w-4xl">
+            Think Smarter,<br>
+            <span class="gradient-text">Ask Clarity.</span>
+        </h1>
+
+        <!-- Subtitle -->
+        <p class="text-gray-400 text-lg sm:text-xl max-w-xl mb-10 leading-relaxed font-light">
+            Your intelligent AI assistant — answers anything, explains everything,
+            and gets smarter with every conversation.
+        </p>
+
+        <!-- CTAs -->
+        <div class="flex flex-col sm:flex-row items-center gap-3">
+            <a href="/auth.html?mode=signup"
+               class="px-7 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-2xl transition-all shadow-xl shadow-violet-900/30 text-sm hover:scale-105 active:scale-100">
+                Start for free
+            </a>
+            <a href="/auth.html"
+               class="px-7 py-3.5 bg-white/5 hover:bg-white/10 border border-white/8 text-gray-300 hover:text-white font-medium rounded-2xl transition-all text-sm flex items-center gap-2">
+                Log in
+                <i data-lucide="arrow-right" class="w-4"></i>
+            </a>
+        </div>
+
+        <!-- Scroll indicator -->
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-700 text-xs">
+            <span>Scroll to explore</span>
+            <i data-lucide="chevron-down" class="w-4 animate-bounce"></i>
+        </div>
+    </section>
+
+    <!-- Feature cards -->
+    <section class="py-24 px-6">
+        <div class="max-w-5xl mx-auto">
+            <p class="text-center text-xs text-gray-600 uppercase tracking-widest mb-3">Why Clarity</p>
+            <h2 class="text-3xl sm:text-4xl font-bold text-center mb-14 tracking-tight">
+                Everything you need from an AI
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Card 1 -->
+                <div class="feature-card rounded-2xl p-6">
+                    <div class="w-10 h-10 rounded-xl bg-blue-900/40 border border-blue-800/30 flex items-center justify-center mb-4">
+                        <i data-lucide="zap" class="text-blue-400 w-5"></i>
                     </div>
-                </div>`;
-            chatResults.appendChild(el);
-            lucide.createIcons();
-            return el.querySelector('.ai-response');
-        }
+                    <h3 class="font-semibold text-white mb-2">Lightning Fast</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Real-time streaming responses. No waiting around.</p>
+                </div>
 
-        // ── Typewriter ────────────────────────────────────────────
-        async function typeWriter(el, text) {
-            let built = '';
-            const BATCH = 3;
-            const DELAY = 14;
+                <!-- Card 2 -->
+                <div class="feature-card rounded-2xl p-6">
+                    <div class="w-10 h-10 rounded-xl bg-violet-900/40 border border-violet-800/30 flex items-center justify-center mb-4">
+                        <i data-lucide="brain" class="text-violet-400 w-5"></i>
+                    </div>
+                    <h3 class="font-semibold text-white mb-2">Deeply Intelligent</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Powered by Mistral's most advanced models for nuanced, accurate answers.</p>
+                </div>
 
-            for (let i = 0; i < text.length; i += BATCH) {
-                built += text.slice(i, i + BATCH);
-                el.innerHTML = marked.parse(built) + '<span class="typing-cursor"></span>';
-                scrollToBottom();
-                await sleep(DELAY);
-            }
+                <!-- Card 3 -->
+                <div class="feature-card rounded-2xl p-6">
+                    <div class="w-10 h-10 rounded-xl bg-green-900/40 border border-green-800/30 flex items-center justify-center mb-4">
+                        <i data-lucide="shield-check" class="text-green-400 w-5"></i>
+                    </div>
+                    <h3 class="font-semibold text-white mb-2">Secure by Default</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Your conversations are encrypted and only visible to you.</p>
+                </div>
 
-            el.innerHTML = marked.parse(text);
-            scrollToBottom();
-        }
+                <!-- Card 4 -->
+                <div class="feature-card rounded-2xl p-6">
+                    <div class="w-10 h-10 rounded-xl bg-orange-900/40 border border-orange-800/30 flex items-center justify-center mb-4">
+                        <i data-lucide="layers" class="text-orange-400 w-5"></i>
+                    </div>
+                    <h3 class="font-semibold text-white mb-2">Two Models</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Switch between Clarity 3.0 for speed and 3.5 for deep analysis.</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-        // ── Scroll ────────────────────────────────────────────────
-        function scrollToBottom() {
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        }
+    <!-- Stats bar -->
+    <section class="py-16 px-6 border-t border-b border-white/5">
+        <div class="max-w-4xl mx-auto grid grid-cols-3 gap-8 text-center">
+            <div>
+                <p class="text-3xl font-bold text-white mb-1">10k+</p>
+                <p class="text-gray-600 text-sm">Conversations daily</p>
+            </div>
+            <div>
+                <p class="text-3xl font-bold text-white mb-1">2</p>
+                <p class="text-gray-600 text-sm">Powerful models</p>
+            </div>
+            <div>
+                <p class="text-3xl font-bold text-white mb-1">99.9%</p>
+                <p class="text-gray-600 text-sm">Uptime</p>
+            </div>
+        </div>
+    </section>
 
-        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    <!-- CTA section -->
+    <section class="py-28 px-6 text-center">
+        <div class="max-w-lg mx-auto">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-2xl shadow-violet-900/40 mx-auto mb-6">
+                <i data-lucide="gem" class="text-white w-7"></i>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Ready to get started?</h2>
+            <p class="text-gray-500 mb-8">Create a free account and start chatting in seconds.</p>
+            <a href="/auth.html?mode=signup"
+               class="inline-block px-8 py-4 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-2xl transition-all shadow-xl shadow-violet-900/30 hover:scale-105 active:scale-100">
+                Create free account
+            </a>
+        </div>
+    </section>
 
-        // ── Main send handler ─────────────────────────────────────
-        async function handleSend() {
-            const val = input.value.trim();
-            if (!val || isTyping) return;
+    <!-- Footer -->
+    <footer class="border-t border-white/5 py-8 px-6">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-md bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center">
+                    <i data-lucide="gem" class="text-white w-3"></i>
+                </div>
+                <span class="text-gray-600 text-sm font-medium">Clarity AI</span>
+            </div>
+            <p class="text-gray-700 text-xs">© 2025 Clarity AI. All rights reserved.</p>
+        </div>
+    </footer>
 
-            isTyping = true;
-            input.value = '';
-            updateButtonState(false);
-
-            // Switch to conversation layout on first message
-            if (!document.body.classList.contains('conversation-started')) {
-                document.body.classList.add('conversation-started');
-                topBrand.style.opacity = '1';
-                topBrand.style.pointerEvents = 'auto';
-            }
-
-            // Create conversation record in Supabase (if not already active)
-            await ensureConversation(val);
-
-            appendUserMessage(val);
-            scrollToBottom();
-            saveMessage('user', val);
-
-            const aiEl = appendAIMessageShell();
-            scrollToBottom();
-
-            try {
-                const res = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: val,
-                        history: conversationHistory,
-                        modelVersion: selectedModel
-                    })
-                });
-
-                const data = await res.json();
-
-                if (!res.ok) {
-                    aiEl.innerHTML = `
-                        <div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3">
-                            <i data-lucide="alert-circle" class="w-4 shrink-0 mt-0.5"></i>
-                            <span>${escapeHtml(data.error || 'Something went wrong. Please try again.')}</span>
-                        </div>`;
-                    lucide.createIcons();
-                } else {
-                    conversationHistory.push(
-                        { role: 'user',      content: val },
-                        { role: 'assistant', content: data.reply }
-                    );
-                    await typeWriter(aiEl, data.reply);
-                    saveMessage('assistant', data.reply);
-                }
-
-            } catch (err) {
-                aiEl.innerHTML = `
-                    <div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3">
-                        <i data-lucide="wifi-off" class="w-4 shrink-0 mt-0.5"></i>
-                        <span>Connection error. Check your network and try again.</span>
-                    </div>`;
-                lucide.createIcons();
-            }
-
-            isTyping = false;
-            updateButtonState(input.value.trim().length > 0);
-            input.focus();
+    <script>
+        lucide.createIcons();
+        // If already logged in, show "Go to App" instead of sign up
+        if (localStorage.getItem('clarity_token')) {
+            document.querySelectorAll('a[href="/auth.html?mode=signup"]').forEach(el => {
+                el.textContent = 'Go to App';
+                el.href = '/app.html';
+            });
         }
     </script>
 </body>

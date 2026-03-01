@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarity AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root { --bg: #0a0a0a; }
+        body { background: var(--bg); color: white; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; overflow-x: hidden; }
+
+        /* ── Rainbow glow ── */
+        .glow-wrapper { position:absolute; inset:-1.5px; border-radius:9999px; overflow:hidden; filter:blur(8px); opacity:0; transition:opacity 1s ease; }
+        .glow-content  { position:absolute; inset:-150%; border-radius:50%; background:conic-gradient(from 0deg,transparent 0deg,#ff00c8 40deg,#7000ff 100deg,#00c2ff 160deg,#00ff85 220deg,#ffea00 280deg,transparent 360deg); animation:rainbow-trace 2.5s ease-out forwards; }
+        @keyframes rainbow-trace { 0%{transform:rotate(0deg) scale(0.8)} 100%{transform:rotate(360deg) scale(1)} }
+
+        /* ── Layout transitions ── */
+        .chat-input-wrapper { transition:all 0.8s cubic-bezier(0.4,0,0.2,1); z-index:50; }
+        .conversation-started .chat-input-wrapper { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%); width:100%; max-width:42rem; }
+        .hide-on-start { transition:all 0.6s ease; }
+        .conversation-started .hide-on-start { opacity:0; transform:translateY(-20px); pointer-events:none; display:none; }
+        #main-ui { transition:justify-content 0.5s ease; }
+        .conversation-started #main-ui { justify-content:flex-start; padding-top:5rem; }
+        #chat-results { display:none; opacity:0; }
+        .conversation-started #chat-results { display:flex; animation:fade-up 0.5s ease forwards; }
+        @keyframes fade-up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+        /* ── Sidebar ── */
+        #sidebar { transition:transform 0.5s cubic-bezier(0.4,0,0.2,1); }
+
+        /* ── Markdown ── */
+        .ai-response { line-height:1.75; }
+        .ai-response h1 { font-size:1.5rem; font-weight:700; margin:1.25rem 0 0.5rem; color:#f1f5f9; }
+        .ai-response h2 { font-size:1.2rem; font-weight:700; margin:1rem 0 0.4rem; color:#e2e8f0; border-bottom:1px solid #2d2d3f; padding-bottom:0.3rem; }
+        .ai-response h3 { font-size:1.05rem; font-weight:600; margin:0.85rem 0 0.35rem; color:#cbd5e0; }
+        .ai-response p { margin:0.55rem 0; }
+        .ai-response p:first-child { margin-top:0; }
+        .ai-response p:last-child  { margin-bottom:0; }
+        .ai-response ul { list-style:none; padding-left:0; margin:0.5rem 0; }
+        .ai-response ul li { padding-left:1.4rem; position:relative; margin:0.35rem 0; }
+        .ai-response ul li::before { content:"▸"; position:absolute; left:0; color:#7c3aed; font-size:0.8rem; top:0.15rem; }
+        .ai-response ol { list-style:decimal; padding-left:1.6rem; margin:0.5rem 0; }
+        .ai-response ol li { margin:0.35rem 0; }
+        .ai-response code { background:#1e1e2e; border:1px solid #2d2d3f; padding:0.1rem 0.4rem; border-radius:0.3rem; font-family:'Courier New',monospace; font-size:0.85rem; color:#a78bfa; }
+        .ai-response pre { background:#12121f; border:1px solid #2d2d3f; border-radius:0.85rem; padding:1.1rem 1.2rem; margin:0.85rem 0; overflow-x:auto; }
+        .ai-response pre code { background:none; border:none; padding:0; color:#e2e8f0; font-size:0.875rem; }
+        .ai-response blockquote { border-left:3px solid #7c3aed; padding:0.3rem 0 0.3rem 1rem; margin:0.75rem 0; color:#94a3b8; font-style:italic; background:#ffffff05; border-radius:0 0.5rem 0.5rem 0; }
+        .ai-response strong { color:#f1f5f9; font-weight:600; }
+        .ai-response a { color:#818cf8; text-decoration:underline; }
+        .ai-response table { width:100%; border-collapse:collapse; margin:0.75rem 0; }
+        .ai-response th { background:#1e1e2e; padding:0.5rem 0.75rem; text-align:left; border:1px solid #2d2d3f; font-weight:600; }
+        .ai-response td { padding:0.5rem 0.75rem; border:1px solid #2d2d3f; }
+        .ai-response tr:nth-child(even) td { background:#ffffff04; }
+
+        /* ── Cursor + dots ── */
+        .typing-cursor { display:inline-block; width:2px; height:1.1em; background:#a78bfa; margin-left:2px; vertical-align:text-bottom; border-radius:1px; animation:blink 0.65s step-end infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        .loading-dots span { display:inline-block; width:6px; height:6px; background:#7c3aed; border-radius:50%; margin:0 2px; animation:dot-bounce 1.4s infinite ease-in-out; }
+        .loading-dots span:nth-child(2){animation-delay:.2s} .loading-dots span:nth-child(3){animation-delay:.4s}
+        @keyframes dot-bounce { 0%,80%,100%{transform:scale(0.7);opacity:0.4} 40%{transform:scale(1.2);opacity:1} }
+
+        /* ── Message entrance ── */
+        @keyframes msg-in { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        .msg-enter { animation:msg-in 0.35s ease forwards; }
+
+        /* ── Top brand ── */
+        #top-brand { transition:opacity 0.5s ease; }
+
+        /* ── 2FA toggle ── */
+        .toggle-track { width:44px; height:24px; background:rgba(255,255,255,0.1); border-radius:12px; position:relative; transition:background 0.2s; cursor:pointer; }
+        .toggle-track.on { background:#7c3aed; }
+        .toggle-thumb { position:absolute; top:3px; left:3px; width:18px; height:18px; background:white; border-radius:50%; transition:transform 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.4); }
+        .toggle-track.on .toggle-thumb { transform:translateX(20px); }
+
+        /* ── Account page ── */
+        #account-page { transition:opacity 0.3s ease; }
+        .account-section { background:#111; border:1px solid rgba(255,255,255,0.05); border-radius:1rem; padding:1.25rem 1.5rem; margin-bottom:1rem; }
+        .account-input { width:100%; background:#1a1a1a; border:1px solid rgba(255,255,255,0.08); border-radius:0.75rem; padding:0.75rem 1rem; color:white; font-size:0.875rem; outline:none; transition:border-color 0.2s; }
+        .account-input:focus { border-color:rgba(124,58,237,0.6); }
+        .account-input::placeholder { color:#4b5563; }
+        input:-webkit-autofill { -webkit-box-shadow:0 0 0 30px #1a1a1a inset !important; -webkit-text-fill-color:#fff !important; }
+
+        ::-webkit-scrollbar { width:5px; }
+        ::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:4px; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar overlay -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 opacity-0 pointer-events-none transition-opacity duration-500" onclick="toggleSidebar(false)"></div>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-[#0d0d0d] z-50 border-r border-white/5 -translate-x-full flex flex-col">
+
+        <!-- Header -->
+        <div class="p-5 flex justify-between items-center border-b border-white/5 shrink-0">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center">
+                    <i data-lucide="gem" class="text-white w-3.5"></i>
+                </div>
+                <span class="font-bold text-white text-sm tracking-tight">Clarity AI</span>
+            </div>
+            <button onclick="toggleSidebar(false)" class="p-1.5 hover:bg-white/5 rounded-lg transition-colors">
+                <i data-lucide="x" class="w-4 text-gray-400"></i>
+            </button>
+        </div>
+
+        <!-- New conversation -->
+        <div class="p-3 pb-2 shrink-0">
+            <button onclick="newConversation()" class="w-full flex items-center gap-2.5 p-3 bg-white/5 hover:bg-white/10 rounded-xl text-sm text-gray-300 transition-colors border border-white/5 group">
+                <i data-lucide="plus" class="w-4 group-hover:text-violet-400 transition-colors"></i>
+                <span>New Conversation</span>
+            </button>
+        </div>
+
+        <!-- Model selector -->
+        <div class="px-3 pb-3 shrink-0">
+            <button id="model-btn" onclick="openModelModal()"
+                class="w-full flex items-center justify-between px-3 py-2.5 bg-violet-950/40 hover:bg-violet-900/40 border border-violet-800/30 rounded-xl transition-colors group">
+                <div class="flex items-center gap-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-sm shadow-violet-400/60"></div>
+                    <span class="text-xs font-medium text-violet-300">Clarity <span id="model-label">3.0</span></span>
+                </div>
+                <i data-lucide="chevrons-up-down" class="w-3 text-violet-500 group-hover:text-violet-300 transition-colors"></i>
+            </button>
+        </div>
+
+        <!-- Conversation history -->
+        <div class="px-3 flex-1 overflow-y-auto min-h-0">
+            <p class="px-2 text-[10px] text-gray-600 uppercase tracking-widest mb-2">Recent</p>
+            <div id="history-list">
+                <div class="p-3 text-gray-600 text-sm text-center">No history yet</div>
+            </div>
+        </div>
+
+        <!-- User profile -->
+        <div class="p-3 border-t border-white/5 shrink-0">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shrink-0 shadow-md">
+                    <span id="user-initials" class="text-white text-xs font-bold"></span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p id="user-display-name" class="text-sm text-white font-medium truncate"></p>
+                    <p id="user-email-display" class="text-xs text-gray-600 truncate"></p>
+                </div>
+                <button onclick="openAccountPage()" title="Manage account" class="p-1.5 hover:bg-white/5 rounded-lg transition-colors shrink-0">
+                    <i data-lucide="settings" class="w-3.5 text-gray-500 hover:text-gray-300 transition-colors"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu button -->
+    <button onclick="toggleSidebar(true)" class="fixed top-6 left-6 z-30 p-2.5 hover:bg-white/10 rounded-xl transition-all active:scale-90 bg-white/5 border border-white/5">
+        <i data-lucide="panel-left" class="text-gray-300 w-[22px]"></i>
+    </button>
+
+    <!-- Top brand -->
+    <div id="top-brand" class="fixed top-5 left-1/2 -translate-x-1/2 z-20 opacity-0 pointer-events-none flex items-center gap-2">
+        <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center">
+            <i data-lucide="gem" class="text-white w-3.5"></i>
+        </div>
+        <span class="font-bold text-white text-sm tracking-tight">Clarity AI</span>
+    </div>
+
+    <!-- Main UI -->
+    <main id="main-ui" class="min-h-screen flex flex-col items-center justify-center p-4">
+
+        <!-- Hero header -->
+        <div class="hide-on-start text-center mb-12">
+            <div class="flex items-center justify-center gap-3 mb-5">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-2xl shadow-violet-900/40">
+                    <i data-lucide="gem" class="text-white w-7"></i>
+                </div>
+                <h1 class="text-5xl font-extrabold tracking-tight">Clarity AI</h1>
+            </div>
+            <p class="text-gray-500 text-lg font-light">Ask me anything — I'm here to assist.</p>
+        </div>
+
+        <!-- Suggestion cards -->
+        <div class="hide-on-start grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl mb-12">
+            <button onclick="fillInput('Help me write a professional email')"
+                class="flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group">
+                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
+                    <i data-lucide="pen-line" class="text-blue-400 w-5"></i>
+                </div>
+                <span class="text-gray-300 font-medium">Help me write a professional email</span>
+            </button>
+            <button onclick="fillInput('Brainstorm creative project ideas')"
+                class="flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group">
+                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
+                    <i data-lucide="lightbulb" class="text-yellow-400 w-5"></i>
+                </div>
+                <span class="text-gray-300 font-medium">Brainstorm creative project ideas</span>
+            </button>
+            <button onclick="fillInput('Explain a complex topic simply')"
+                class="flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group">
+                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
+                    <i data-lucide="book-open" class="text-green-400 w-5"></i>
+                </div>
+                <span class="text-gray-300 font-medium">Explain a complex topic simply</span>
+            </button>
+            <button onclick="fillInput('Debug and fix my code')"
+                class="flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group">
+                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
+                    <i data-lucide="code" class="text-purple-400 w-5"></i>
+                </div>
+                <span class="text-gray-300 font-medium">Debug and fix my code</span>
+            </button>
+        </div>
+
+        <!-- Chat messages -->
+        <div id="chat-results" class="w-full max-w-3xl flex-col gap-7 pb-36 px-4"></div>
+
+        <!-- Input -->
+        <div class="chat-input-wrapper w-full max-w-2xl px-4 relative">
+            <div class="relative group">
+                <div id="rainbow-glow" class="glow-wrapper"><div class="glow-content"></div></div>
+                <div class="relative flex items-center bg-[#111] rounded-full px-6 py-4 shadow-2xl border border-white/10 z-10">
+                    <input id="chat-input" type="text" placeholder="Ask anything"
+                        class="w-full bg-transparent border-none outline-none text-white text-lg placeholder-gray-600">
+                    <button id="send-btn" onclick="handleSend()" disabled
+                        class="ml-3 p-2.5 rounded-full transition-all duration-500 bg-white/5 text-gray-600 opacity-40 cursor-not-allowed rotate-45">
+                        <i data-lucide="arrow-up" class="w-5 stroke-[3]"></i>
+                    </button>
+                </div>
+            </div>
+            <p class="text-center text-xs text-gray-700 mt-3">Clarity AI · Powered by Mistral · May make mistakes</p>
+        </div>
+    </main>
+
+    <!-- ═══════════════════════════════════════════════════════
+         MODEL MODAL
+    ═══════════════════════════════════════════════════════ -->
+    <div id="model-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div class="absolute inset-0" onclick="closeModelModal()"></div>
+        <div class="relative w-80 bg-[#111] border border-white/10 rounded-2xl p-5 shadow-2xl mx-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-5 h-5 rounded-md bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center">
+                        <i data-lucide="gem" class="text-white w-2.5"></i>
+                    </div>
+                    <h3 class="text-white font-semibold text-sm">Choose Version</h3>
+                </div>
+                <button onclick="closeModelModal()" class="p-1 hover:bg-white/5 rounded-lg">
+                    <i data-lucide="x" class="w-3.5 text-gray-500"></i>
+                </button>
+            </div>
+            <button onclick="selectModel('3.0')" id="card-3-0" class="w-full text-left p-4 rounded-xl border mb-2.5 transition-all hover:border-violet-700/40">
+                <div class="flex items-center justify-between mb-1.5">
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-sm text-white">Clarity 3.0</span>
+                        <span class="text-[10px] text-gray-500 font-mono">default</span>
+                    </div>
+                    <span id="badge-3-0" class="text-[10px] bg-violet-600/80 text-white px-2 py-0.5 rounded-full font-medium">Active</span>
+                </div>
+                <p class="text-xs text-gray-400 leading-relaxed">Fast, accurate, and efficient. Great for everyday questions, writing, and quick tasks.</p>
+            </button>
+            <button onclick="selectModel('3.5')" id="card-3-5" class="w-full text-left p-4 rounded-xl border transition-all hover:border-violet-700/40">
+                <div class="flex items-center justify-between mb-1.5">
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-sm text-white">Clarity 3.5</span>
+                        <span class="text-[10px] text-violet-400 font-medium">enhanced</span>
+                    </div>
+                    <span id="badge-3-5" class="hidden text-[10px] bg-violet-600/80 text-white px-2 py-0.5 rounded-full font-medium">Active</span>
+                </div>
+                <p class="text-xs text-gray-400 leading-relaxed">More intelligent and thorough. Best for complex reasoning, deep research, and detailed analysis.</p>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         RENAME MODAL
+    ═══════════════════════════════════════════════════════ -->
+    <div id="rename-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div class="absolute inset-0" onclick="closeRenameModal()"></div>
+        <div class="relative w-80 bg-[#111] border border-white/10 rounded-2xl p-5 shadow-2xl mx-4">
+            <h3 class="text-white font-semibold text-sm mb-3">Rename conversation</h3>
+            <input id="rename-input" type="text" placeholder="Conversation title"
+                class="w-full bg-[#1a1a1a] border border-white/8 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-violet-600/70 transition-colors mb-3 placeholder-gray-600"
+                onkeydown="if(event.key==='Enter') confirmRename()">
+            <div class="flex gap-2">
+                <button onclick="closeRenameModal()" class="flex-1 py-2 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Cancel</button>
+                <button onclick="confirmRename()" class="flex-1 py-2 text-sm text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition-colors">Rename</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         DELETE MODAL
+    ═══════════════════════════════════════════════════════ -->
+    <div id="delete-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div class="absolute inset-0" onclick="closeDeleteModal()"></div>
+        <div class="relative w-72 bg-[#111] border border-white/10 rounded-2xl p-5 shadow-2xl mx-4">
+            <h3 class="text-white font-semibold text-sm mb-1.5">Delete conversation?</h3>
+            <p class="text-gray-500 text-xs mb-4">This cannot be undone.</p>
+            <div class="flex gap-2">
+                <button onclick="closeDeleteModal()" class="flex-1 py-2 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Cancel</button>
+                <button onclick="confirmDelete()" class="flex-1 py-2 text-sm text-white bg-red-600 hover:bg-red-500 rounded-xl transition-colors">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         ACCOUNT MANAGEMENT PAGE
+    ═══════════════════════════════════════════════════════ -->
+    <div id="account-page" class="fixed inset-0 z-[200] bg-[#0a0a0a] hidden flex-col overflow-y-auto">
+        <div class="max-w-lg mx-auto w-full p-6 pb-16">
+
+            <!-- Back -->
+            <button onclick="closeAccountPage()" class="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8 group">
+                <i data-lucide="arrow-left" class="w-4 group-hover:-translate-x-0.5 transition-transform"></i>
+                <span class="text-sm">Back to chat</span>
+            </button>
+
+            <!-- Avatar + name -->
+            <div class="flex items-center gap-4 mb-8">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-xl shadow-violet-900/30">
+                    <span id="account-initials" class="text-white text-2xl font-bold"></span>
+                </div>
+                <div>
+                    <h1 id="account-fullname" class="text-xl font-bold text-white"></h1>
+                    <p id="account-email" class="text-gray-500 text-sm"></p>
+                </div>
+            </div>
+
+            <!-- Profile section -->
+            <div class="account-section">
+                <h2 class="text-white font-semibold text-sm mb-4 flex items-center gap-2">
+                    <i data-lucide="user" class="w-4 text-gray-500"></i> Profile
+                </h2>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1.5 block">First name</label>
+                        <input id="account-fname" type="text" class="account-input" placeholder="First name">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1.5 block">Last name</label>
+                        <input id="account-lname" type="text" class="account-input" placeholder="Last name">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="text-xs text-gray-500 mb-1.5 block">Email</label>
+                    <input id="account-email-input" type="email" class="account-input opacity-50 cursor-not-allowed" readonly>
+                </div>
+                <button onclick="saveProfile()" class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors">
+                    Save changes
+                </button>
+            </div>
+
+            <!-- Password section -->
+            <div class="account-section">
+                <h2 class="text-white font-semibold text-sm mb-4 flex items-center gap-2">
+                    <i data-lucide="lock" class="w-4 text-gray-500"></i> Change Password
+                </h2>
+                <div class="space-y-3 mb-4">
+                    <input id="current-password" type="password" placeholder="Current password" class="account-input">
+                    <input id="new-password"     type="password" placeholder="New password (min 6 chars)" class="account-input">
+                    <input id="confirm-password" type="password" placeholder="Confirm new password" class="account-input">
+                </div>
+                <button onclick="changePassword()" class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors">
+                    Update password
+                </button>
+            </div>
+
+            <!-- 2FA section -->
+            <div class="account-section">
+                <h2 class="text-white font-semibold text-sm mb-1 flex items-center gap-2">
+                    <i data-lucide="shield" class="w-4 text-gray-500"></i> Two-Factor Authentication
+                </h2>
+                <p class="text-gray-600 text-xs mb-4">When enabled, a 6-digit code is sent to your email each time you log in.</p>
+                <div class="flex items-center gap-3">
+                    <div id="twofa-track" class="toggle-track" onclick="toggle2FA()">
+                        <div class="toggle-thumb"></div>
+                    </div>
+                    <span id="twofa-label" class="text-sm text-gray-400">Disabled</span>
+                </div>
+            </div>
+
+            <!-- Sign out -->
+            <div class="account-section">
+                <h2 class="text-white font-semibold text-sm mb-3 flex items-center gap-2">
+                    <i data-lucide="log-out" class="w-4 text-gray-500"></i> Session
+                </h2>
+                <button onclick="signOut()" class="px-4 py-2 bg-white/5 hover:bg-red-900/30 border border-white/5 hover:border-red-900/40 text-gray-400 hover:text-red-400 text-sm font-medium rounded-xl transition-all">
+                    Sign out
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account toast -->
+    <div id="account-toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] hidden px-4 py-3 rounded-xl text-sm shadow-xl border pointer-events-none"></div>
+
+    <script>
+        marked.setOptions({ breaks: true, gfm: true });
+
+        // ── Auth guard ────────────────────────────────────────────
+        const authToken = localStorage.getItem('clarity_token');
+        if (!authToken) window.location.href = '/auth.html';
+
+        let currentUser = {};
+        try { currentUser = JSON.parse(localStorage.getItem('clarity_user') || '{}'); } catch (_) {}
+
+        // ── State ─────────────────────────────────────────────────
+        let conversationHistory  = [];
+        let isTyping             = false;
+        let activeConversationId = null;
+        let selectedModel        = localStorage.getItem('clarity_model') || '3.0';
+        let pendingRenameId      = null;
+        let pendingDeleteId      = null;
+
+        // ── Init ──────────────────────────────────────────────────
+        window.addEventListener('load', () => {
+            lucide.createIcons();
+            setTimeout(() => { document.getElementById('rainbow-glow').style.opacity = '1'; }, 120);
+            document.getElementById('model-label').textContent = selectedModel;
+            updateModelCards();
+            updateUserUI();
+            loadConversations();
+        });
+
+        // ── Auth headers helper ───────────────────────────────────
+        function authHeaders(extra) {
+            return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}`, ...extra };
+        }
+
+        // ── User UI ───────────────────────────────────────────────
+        function getInitials(u) {
+            return ((u.first_name || '?')[0] + (u.last_name || '?')[0]).toUpperCase();
+        }
+        function updateUserUI() {
+            document.getElementById('user-initials').textContent = getInitials(currentUser);
+            document.getElementById('user-display-name').textContent =
+                [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
+            document.getElementById('user-email-display').textContent = currentUser.email || '';
+        }
+
+        // ── Input ─────────────────────────────────────────────────
+        const input       = document.getElementById('chat-input');
+        const sendBtn     = document.getElementById('send-btn');
+        const chatResults = document.getElementById('chat-results');
+        const topBrand    = document.getElementById('top-brand');
+
+        input.addEventListener('input', e => updateButtonState(e.target.value.trim().length > 0));
+        input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } });
+
+        function updateButtonState(active) {
+            const en = active && !isTyping;
+            sendBtn.disabled = !en;
+            if (en) {
+                sendBtn.classList.remove('bg-white/5','text-gray-600','opacity-40','cursor-not-allowed','rotate-45');
+                sendBtn.classList.add('bg-white','text-black','opacity-100','shadow-[0_0_20px_rgba(255,255,255,0.5)]','rotate-0');
+            } else {
+                sendBtn.classList.remove('bg-white','text-black','opacity-100','shadow-[0_0_20px_rgba(255,255,255,0.5)]','rotate-0');
+                sendBtn.classList.add('bg-white/5','text-gray-600','opacity-40','cursor-not-allowed','rotate-45');
+            }
+        }
+        function fillInput(t) { input.value = t; updateButtonState(true); input.focus(); }
+
+        // ── Sidebar ───────────────────────────────────────────────
+        function toggleSidebar(open) {
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('sidebar-overlay');
+            if (open) {
+                sb.classList.remove('-translate-x-full');
+                ov.classList.remove('opacity-0','pointer-events-none');
+                ov.classList.add('opacity-100');
+            } else {
+                sb.classList.add('-translate-x-full');
+                ov.classList.add('opacity-0','pointer-events-none');
+                ov.classList.remove('opacity-100');
+            }
+        }
+
+        // ── Model picker ──────────────────────────────────────────
+        function openModelModal()  { const m = document.getElementById('model-modal'); m.classList.remove('hidden'); m.classList.add('flex'); updateModelCards(); }
+        function closeModelModal() { const m = document.getElementById('model-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+
+        function selectModel(v) {
+            selectedModel = v;
+            localStorage.setItem('clarity_model', v);
+            document.getElementById('model-label').textContent = v;
+            updateModelCards();
+            closeModelModal();
+        }
+        function updateModelCards() {
+            ['3.0','3.5'].forEach(v => {
+                const k = v.replace('.', '-');
+                const card  = document.getElementById('card-' + k);
+                const badge = document.getElementById('badge-' + k);
+                if (v === selectedModel) {
+                    card.classList.add('border-violet-700/50','bg-violet-950/25');
+                    card.classList.remove('border-white/5');
+                    badge.classList.remove('hidden');
+                } else {
+                    card.classList.remove('border-violet-700/50','bg-violet-950/25');
+                    card.classList.add('border-white/5');
+                    badge.classList.add('hidden');
+                }
+            });
+        }
+
+        // ── Conversations ─────────────────────────────────────────
+        async function loadConversations() {
+            try {
+                const res = await fetch('/api/conversations', { headers: authHeaders() });
+                if (res.status === 401) { signOut(); return; }
+                if (!res.ok) return;
+                renderConversationList(await res.json());
+            } catch (_) {}
+        }
+
+        function renderConversationList(convs) {
+            const list = document.getElementById('history-list');
+            if (!convs || !convs.length) {
+                list.innerHTML = '<div class="p-3 text-gray-600 text-sm text-center">No history yet</div>';
+                return;
+            }
+            list.innerHTML = convs.map(c => `
+                <div class="group relative flex items-center rounded-xl hover:bg-white/5 transition-colors ${activeConversationId === c.id ? 'bg-white/5' : ''}">
+                    <button onclick="loadConversation('${c.id}')" class="flex-1 text-left flex items-center gap-2.5 px-3 py-2.5 min-w-0">
+                        <i data-lucide="message-square" class="w-3.5 shrink-0 text-gray-600 group-hover:text-gray-400 transition-colors"></i>
+                        <span class="text-sm text-gray-400 group-hover:text-gray-200 transition-colors truncate">${escapeHtml(c.title)}</span>
+                    </button>
+                    <div class="flex gap-0.5 pr-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <button onclick="openRenameModal('${c.id}','${escapeHtml(c.title).replace(/'/g,'\\\'')}')"
+                            class="p-1.5 hover:bg-white/10 rounded-lg transition-colors" title="Rename">
+                            <i data-lucide="pencil" class="w-3 text-gray-500 hover:text-gray-200"></i>
+                        </button>
+                        <button onclick="openDeleteModal('${c.id}')"
+                            class="p-1.5 hover:bg-red-900/30 rounded-lg transition-colors" title="Delete">
+                            <i data-lucide="trash-2" class="w-3 text-gray-500 hover:text-red-400"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        async function loadConversation(id) {
+            try {
+                const res  = await fetch('/api/messages?conversationId=' + id, { headers: authHeaders() });
+                if (!res.ok) return;
+                const msgs = await res.json();
+
+                activeConversationId = id;
+                conversationHistory  = [];
+                chatResults.innerHTML = '';
+
+                if (!document.body.classList.contains('conversation-started')) {
+                    document.body.classList.add('conversation-started');
+                    topBrand.style.opacity = '1';
+                    topBrand.style.pointerEvents = 'auto';
+                }
+
+                for (const msg of msgs) {
+                    if (msg.role === 'user') {
+                        appendUserMessage(msg.content);
+                    } else {
+                        const el = appendAIMessageShell();
+                        el.innerHTML = marked.parse(msg.content);
+                    }
+                    conversationHistory.push({ role: msg.role, content: msg.content });
+                }
+
+                scrollToBottom();
+                toggleSidebar(false);
+                loadConversations();
+            } catch (e) { console.error(e); }
+        }
+
+        async function ensureConversation(firstMsg) {
+            if (activeConversationId) return;
+            try {
+                const res  = await fetch('/api/conversations', {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ title: firstMsg.slice(0, 60).trim(), modelVersion: selectedModel })
+                });
+                if (!res.ok) return;
+                const conv = await res.json();
+                activeConversationId = conv.id;
+                loadConversations();
+            } catch (_) {}
+        }
+
+        async function saveMessage(role, content) {
+            if (!activeConversationId) return;
+            try {
+                await fetch('/api/messages', {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ conversationId: activeConversationId, role, content })
+                });
+                if (role === 'assistant') {
+                    fetch('/api/conversations?id=' + activeConversationId, {
+                        method: 'PATCH',
+                        headers: authHeaders(),
+                        body: JSON.stringify({})
+                    });
+                    loadConversations();
+                }
+            } catch (_) {}
+        }
+
+        // ── Rename modal ──────────────────────────────────────────
+        function openRenameModal(id, currentTitle) {
+            pendingRenameId = id;
+            document.getElementById('rename-input').value = currentTitle;
+            const m = document.getElementById('rename-modal');
+            m.classList.remove('hidden'); m.classList.add('flex');
+            setTimeout(() => document.getElementById('rename-input').focus(), 50);
+        }
+        function closeRenameModal() {
+            pendingRenameId = null;
+            const m = document.getElementById('rename-modal');
+            m.classList.add('hidden'); m.classList.remove('flex');
+        }
+        async function confirmRename() {
+            const title = document.getElementById('rename-input').value.trim();
+            if (!title || !pendingRenameId) { closeRenameModal(); return; }
+            closeRenameModal();
+            try {
+                await fetch('/api/conversations?id=' + pendingRenameId, {
+                    method: 'PATCH',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ title })
+                });
+                loadConversations();
+            } catch (_) {}
+        }
+
+        // ── Delete modal ──────────────────────────────────────────
+        function openDeleteModal(id) {
+            pendingDeleteId = id;
+            const m = document.getElementById('delete-modal');
+            m.classList.remove('hidden'); m.classList.add('flex');
+        }
+        function closeDeleteModal() {
+            pendingDeleteId = null;
+            const m = document.getElementById('delete-modal');
+            m.classList.add('hidden'); m.classList.remove('flex');
+        }
+        async function confirmDelete() {
+            if (!pendingDeleteId) { closeDeleteModal(); return; }
+            const id = pendingDeleteId;
+            closeDeleteModal();
+            try {
+                await fetch('/api/conversations?id=' + id, {
+                    method: 'DELETE',
+                    headers: authHeaders()
+                });
+                if (activeConversationId === id) newConversation();
+                else loadConversations();
+            } catch (_) {}
+        }
+
+        // ── New conversation ──────────────────────────────────────
+        function newConversation() {
+            activeConversationId = null;
+            conversationHistory  = [];
+            chatResults.innerHTML = '';
+            document.body.classList.remove('conversation-started');
+            topBrand.style.opacity = '0';
+            topBrand.style.pointerEvents = 'none';
+            toggleSidebar(false);
+            input.value = '';
+            updateButtonState(false);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            loadConversations();
+        }
+
+        // ── Account page ──────────────────────────────────────────
+        function openAccountPage() {
+            toggleSidebar(false);
+            const page = document.getElementById('account-page');
+            page.classList.remove('hidden'); page.classList.add('flex');
+            lucide.createIcons();
+
+            document.getElementById('account-initials').textContent    = getInitials(currentUser);
+            document.getElementById('account-fullname').textContent    = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
+            document.getElementById('account-email').textContent       = currentUser.email || '';
+            document.getElementById('account-fname').value             = currentUser.first_name || '';
+            document.getElementById('account-lname').value             = currentUser.last_name  || '';
+            document.getElementById('account-email-input').value       = currentUser.email || '';
+
+            const track = document.getElementById('twofa-track');
+            const label = document.getElementById('twofa-label');
+            if (currentUser.two_fa_enabled) {
+                track.classList.add('on'); label.textContent = 'Enabled';
+            } else {
+                track.classList.remove('on'); label.textContent = 'Disabled';
+            }
+        }
+        function closeAccountPage() {
+            const page = document.getElementById('account-page');
+            page.classList.add('hidden'); page.classList.remove('flex');
+        }
+
+        function showAccountToast(msg, type = 'error') {
+            const el = document.getElementById('account-toast');
+            el.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] px-4 py-3 rounded-xl text-sm shadow-xl border pointer-events-none ${type === 'success' ? 'bg-green-950 border-green-900/40 text-green-300' : 'bg-red-950 border-red-900/40 text-red-300'}`;
+            el.textContent = msg;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        }
+
+        async function saveProfile() {
+            const fn = document.getElementById('account-fname').value.trim();
+            const ln = document.getElementById('account-lname').value.trim();
+            if (!fn || !ln) { showAccountToast('Enter first and last name.'); return; }
+            try {
+                const res = await fetch('/api/auth/user', {
+                    method: 'PATCH', headers: authHeaders(),
+                    body: JSON.stringify({ firstName: fn, lastName: ln })
+                });
+                if (!res.ok) { showAccountToast((await res.json()).error || 'Failed to save.'); return; }
+                currentUser.first_name = fn; currentUser.last_name = ln;
+                localStorage.setItem('clarity_user', JSON.stringify(currentUser));
+                updateUserUI();
+                document.getElementById('account-fullname').textContent = fn + ' ' + ln;
+                document.getElementById('account-initials').textContent = getInitials(currentUser);
+                showAccountToast('Profile updated!', 'success');
+            } catch { showAccountToast('Connection error.'); }
+        }
+
+        async function changePassword() {
+            const cur  = document.getElementById('current-password').value;
+            const newP = document.getElementById('new-password').value;
+            const conf = document.getElementById('confirm-password').value;
+            if (!cur || !newP || !conf) { showAccountToast('Fill in all password fields.'); return; }
+            if (newP !== conf)           { showAccountToast('New passwords do not match.'); return; }
+            if (newP.length < 6)         { showAccountToast('Password must be at least 6 characters.'); return; }
+            try {
+                const res = await fetch('/api/auth/user', {
+                    method: 'PATCH', headers: authHeaders(),
+                    body: JSON.stringify({ currentPassword: cur, newPassword: newP, email: currentUser.email })
+                });
+                const data = await res.json();
+                if (!res.ok) { showAccountToast(data.error || 'Failed to update password.'); return; }
+                document.getElementById('current-password').value = '';
+                document.getElementById('new-password').value     = '';
+                document.getElementById('confirm-password').value = '';
+                showAccountToast('Password updated!', 'success');
+            } catch { showAccountToast('Connection error.'); }
+        }
+
+        async function toggle2FA() {
+            const track   = document.getElementById('twofa-track');
+            const label   = document.getElementById('twofa-label');
+            const enabled = !track.classList.contains('on');
+            track.classList.toggle('on', enabled);
+            label.textContent = enabled ? 'Enabled' : 'Disabled';
+            try {
+                const res = await fetch('/api/auth/user', {
+                    method: 'PATCH', headers: authHeaders(),
+                    body: JSON.stringify({ two_fa_enabled: enabled })
+                });
+                if (!res.ok) {
+                    track.classList.toggle('on', !enabled);
+                    label.textContent = !enabled ? 'Enabled' : 'Disabled';
+                    showAccountToast('Failed to update 2FA.'); return;
+                }
+                currentUser.two_fa_enabled = enabled;
+                localStorage.setItem('clarity_user', JSON.stringify(currentUser));
+                showAccountToast(enabled ? '2FA enabled. Emails will be sent on login.' : '2FA disabled.', 'success');
+            } catch {
+                track.classList.toggle('on', !enabled);
+                label.textContent = !enabled ? 'Enabled' : 'Disabled';
+                showAccountToast('Connection error.');
+            }
+        }
+
+        function signOut() {
+            localStorage.removeItem('clarity_token');
+            localStorage.removeItem('clarity_user');
+            window.location.href = '/auth.html';
+        }
+
+        // ── DOM helpers ───────────────────────────────────────────
+        function escapeHtml(str) {
+            const d = document.createElement('div');
+            d.appendChild(document.createTextNode(str));
+            return d.innerHTML;
+        }
+
+        function appendUserMessage(text) {
+            const el = document.createElement('div');
+            el.className = 'flex justify-end msg-enter';
+            el.innerHTML = `
+                <div class="bg-[#1c1c1c] border border-white/5 py-3 px-5 rounded-3xl rounded-tr-md max-w-[75%] w-fit text-gray-200 leading-relaxed whitespace-pre-wrap break-words">
+                    ${escapeHtml(text)}
+                </div>`;
+            chatResults.appendChild(el);
+        }
+
+        function appendAIMessageShell() {
+            const el = document.createElement('div');
+            el.className = 'flex justify-start items-start gap-4 msg-enter';
+            el.innerHTML = `
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shrink-0 mt-1 shadow-lg shadow-violet-900/30">
+                    <i data-lucide="gem" class="text-white w-4"></i>
+                </div>
+                <div class="ai-response text-gray-300 leading-relaxed pt-0.5 text-base flex-1 min-w-0">
+                    <div class="loading-dots flex items-center gap-1 py-2"><span></span><span></span><span></span></div>
+                </div>`;
+            chatResults.appendChild(el);
+            lucide.createIcons();
+            return el.querySelector('.ai-response');
+        }
+
+        // ── Typewriter ────────────────────────────────────────────
+        async function typeWriter(el, text) {
+            let built = '';
+            for (let i = 0; i < text.length; i += 3) {
+                built += text.slice(i, i + 3);
+                el.innerHTML = marked.parse(built) + '<span class="typing-cursor"></span>';
+                scrollToBottom();
+                await sleep(14);
+            }
+            el.innerHTML = marked.parse(text);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        // ── Send handler ──────────────────────────────────────────
+        async function handleSend() {
+            const val = input.value.trim();
+            if (!val || isTyping) return;
+
+            isTyping = true;
+            input.value = '';
+            updateButtonState(false);
+
+            if (!document.body.classList.contains('conversation-started')) {
+                document.body.classList.add('conversation-started');
+                topBrand.style.opacity = '1';
+                topBrand.style.pointerEvents = 'auto';
+            }
+
+            await ensureConversation(val);
+            appendUserMessage(val);
+            scrollToBottom();
+            saveMessage('user', val);
+
+            const aiEl = appendAIMessageShell();
+            scrollToBottom();
+
+            try {
+                const res  = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: val, history: conversationHistory, modelVersion: selectedModel })
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    aiEl.innerHTML = `<div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3"><i data-lucide="alert-circle" class="w-4 shrink-0 mt-0.5"></i><span>${escapeHtml(data.error || 'Something went wrong.')}</span></div>`;
+                    lucide.createIcons();
+                } else {
+                    conversationHistory.push({ role: 'user', content: val }, { role: 'assistant', content: data.reply });
+                    await typeWriter(aiEl, data.reply);
+                    saveMessage('assistant', data.reply);
+                }
+            } catch {
+                aiEl.innerHTML = `<div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3"><i data-lucide="wifi-off" class="w-4 shrink-0 mt-0.5"></i><span>Connection error. Check your network.</span></div>`;
+                lucide.createIcons();
+            }
+
+            isTyping = false;
+            updateButtonState(input.value.trim().length > 0);
+            input.focus();
+        }
+    </script>
+</body>
+</html>
