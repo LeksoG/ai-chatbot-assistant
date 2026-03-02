@@ -1439,13 +1439,22 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
 
         let pwEyeTimer = null;
         let pwEyeCountdown = null;
+        function swapEyeIcon(btn, name) {
+            // Lucide replaces <i> with <svg>, so look for either
+            const old = btn.querySelector('svg.lucide') || btn.querySelector('i');
+            if (!old) return;
+            const el = document.createElement('i');
+            el.setAttribute('data-lucide', name);
+            el.className = 'w-4';
+            old.replaceWith(el);
+            lucide.createIcons();
+        }
         function togglePasswordVisibility(inputId, btn) {
             const inp = document.getElementById(inputId);
             const cdEl = document.getElementById('pw-eye-countdown');
             if (inp.type === 'password') {
                 inp.type = 'text';
-                btn.querySelector('i').setAttribute('data-lucide', 'eye-off');
-                lucide.createIcons();
+                swapEyeIcon(btn, 'eye-off');
                 cdEl.classList.remove('hidden');
                 let secs = 10;
                 cdEl.textContent = secs + 's';
@@ -1455,17 +1464,15 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 pwEyeCountdown = setTimeout(() => {
                     clearInterval(pwEyeTimer);
                     inp.type = 'password';
-                    btn.querySelector('i').setAttribute('data-lucide', 'eye');
+                    swapEyeIcon(btn, 'eye');
                     cdEl.classList.add('hidden');
-                    lucide.createIcons();
                 }, 10000);
             } else {
                 clearInterval(pwEyeTimer);
                 clearTimeout(pwEyeCountdown);
                 inp.type = 'password';
-                btn.querySelector('i').setAttribute('data-lucide', 'eye');
+                swapEyeIcon(btn, 'eye');
                 cdEl.classList.add('hidden');
-                lucide.createIcons();
             }
         }
 

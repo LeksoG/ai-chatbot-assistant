@@ -54,8 +54,12 @@ module.exports = async function handler(req, res) {
         if (req.method === 'GET') {
             const r = await fetch(
                 `${SUPABASE_URL}/rest/v1/users?id=eq.${authUser.id}&select=*`,
-                { headers: sbHeaders }
+                { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
             );
+            if (!r.ok) {
+                console.error('[user.js] GET failed:', r.status, await r.text().catch(() => ''));
+                return res.json(null);
+            }
             const data = await r.json();
             return res.json(Array.isArray(data) ? data[0] : null);
         }
