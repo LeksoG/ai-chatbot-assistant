@@ -372,7 +372,7 @@
         </div>
         <!-- Live preview iframe -->
         <div id="canvas-preview-tab" class="hidden flex-1 min-h-0">
-            <iframe id="canvas-iframe" class="w-full h-full border-0 bg-white" sandbox="allow-scripts allow-modals allow-forms"></iframe>
+            <iframe id="canvas-iframe" class="w-full h-full border-0 bg-white" sandbox="allow-scripts allow-same-origin allow-modals allow-forms allow-popups"></iframe>
         </div>
     </div>
 
@@ -569,15 +569,16 @@
             updateModelCards();
             if (canvasEnabled) document.getElementById('canvas-toggle-track').classList.add('on');
             updateUserUI();
-            // Fetch fresh profile so initials/name always reflect the latest DB data
+            // Fetch fresh profile so initials/name/2FA always reflect the latest DB data
             try {
                 const r = await fetch('/api/auth/user', { headers: authHeaders() });
                 if (r.ok) {
                     const profile = await r.json();
-                    if (profile && (profile.first_name || profile.last_name)) {
-                        currentUser.first_name     = profile.first_name || currentUser.first_name;
-                        currentUser.last_name      = profile.last_name  || currentUser.last_name;
-                        currentUser.two_fa_enabled = profile.two_fa_enabled ?? currentUser.two_fa_enabled;
+                    if (profile) {
+                        if (profile.first_name) currentUser.first_name = profile.first_name;
+                        if (profile.last_name)  currentUser.last_name  = profile.last_name;
+                        // Always sync 2FA state from the database
+                        currentUser.two_fa_enabled = !!profile.two_fa_enabled;
                         localStorage.setItem('clarity_user', JSON.stringify(currentUser));
                         updateUserUI();
                     }
@@ -903,10 +904,19 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
         }
 
         // ── Custom marked renderer (copy button on code blocks) ──
+        // marked.js v14+ passes a token object { text, lang } instead of (code, lang) strings
         const _renderer = new marked.Renderer();
-        _renderer.code = (code, lang) => {
-            const esc = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            return `<div class="code-block-wrapper"><button class="code-copy-btn" onclick="copyCode(this)">Copy</button><pre><code class="language-${lang||''}">${esc}</code></pre></div>`;
+        _renderer.code = function(codeOrToken, lang) {
+            let text, language;
+            if (typeof codeOrToken === 'object' && codeOrToken !== null) {
+                text = codeOrToken.text || '';
+                language = codeOrToken.lang || '';
+            } else {
+                text = codeOrToken || '';
+                language = lang || '';
+            }
+            const esc = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            return `<div class="code-block-wrapper"><button class="code-copy-btn" onclick="copyCode(this)">Copy</button><pre><code class="language-${language}">${esc}</code></pre></div>`;
         };
         marked.setOptions({ renderer: _renderer });
 
@@ -963,15 +973,31 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                     topBrand.style.pointerEvents = 'auto';
                 }
 
+                let lastCanvasCode = null;
+                let lastCanvasPrompt = '';
                 for (const msg of msgs) {
                     if (msg.role === 'user') {
                         appendUserMessage(msg.content);
+                        lastCanvasPrompt = msg.content;
                     } else {
+                        const codeBlock = canvasEnabled ? extractCodeBlock(msg.content) : null;
                         const { responseEl, avatarEl } = appendAIMessageShell();
-                        responseEl.innerHTML = marked.parse(msg.content);
-                        avatarEl.innerHTML   = STATIC_LOGO_SVG;
+                        if (canvasEnabled && codeBlock) {
+                            const chatText = removeCodeBlocks(msg.content);
+                            responseEl.innerHTML = marked.parse(chatText || '*Code is rendering in Canvas →*');
+                            appendCanvasReopenCard(responseEl, lastCanvasPrompt, codeBlock);
+                            lastCanvasCode = codeBlock;
+                        } else {
+                            responseEl.innerHTML = marked.parse(msg.content);
+                        }
+                        avatarEl.innerHTML = STATIC_LOGO_SVG;
                     }
                     conversationHistory.push({ role: msg.role, content: msg.content });
+                }
+
+                // Reopen canvas with the last code block if canvas mode is enabled
+                if (canvasEnabled && lastCanvasCode) {
+                    openCanvas(lastCanvasPrompt, lastCanvasCode);
                 }
 
                 scrollToBottom();

@@ -71,11 +71,15 @@ module.exports = async function handler(req, res) {
             if (two_fa_enabled !== undefined) profileUpdates.two_fa_enabled = two_fa_enabled;
 
             if (Object.keys(profileUpdates).length) {
-                await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${authUser.id}`, {
+                const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${authUser.id}`, {
                     method: 'PATCH',
-                    headers: sbHeaders,
+                    headers: { ...sbHeaders, 'Prefer': 'return=minimal' },
                     body: JSON.stringify(profileUpdates)
                 });
+                if (!patchRes.ok) {
+                    const errBody = await patchRes.text().catch(() => '');
+                    return res.status(500).json({ error: 'Failed to update profile: ' + (errBody || patchRes.statusText) });
+                }
             }
 
             // Change password — verify current password first

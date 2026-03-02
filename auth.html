@@ -188,6 +188,10 @@
         function completeLogin(data) {
             localStorage.setItem('clarity_token', data.access_token);
             localStorage.setItem('clarity_user',  JSON.stringify(data.user));
+            // If we just verified 2FA, mark the session so app.html doesn't prompt again
+            if (awaiting2FA) {
+                sessionStorage.setItem('clarity_2fa_ok', '1');
+            }
             window.location.href = '/app.html';
         }
 
