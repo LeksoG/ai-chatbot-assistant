@@ -73,12 +73,13 @@ module.exports = async function handler(req, res) {
             if (Object.keys(profileUpdates).length) {
                 const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${authUser.id}`, {
                     method: 'PATCH',
-                    headers: { ...sbHeaders, 'Prefer': 'return=minimal' },
+                    headers: sbHeaders,
                     body: JSON.stringify(profileUpdates)
                 });
                 if (!patchRes.ok) {
                     const errBody = await patchRes.text().catch(() => '');
-                    return res.status(500).json({ error: 'Failed to update profile: ' + (errBody || patchRes.statusText) });
+                    console.error('[user.js] PATCH failed:', patchRes.status, errBody);
+                    return res.status(500).json({ error: 'Failed to update profile.' });
                 }
             }
 
