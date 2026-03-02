@@ -7,54 +7,65 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { background: #0a0a0a; }
-        input:-webkit-autofill { -webkit-box-shadow: 0 0 0 30px #111 inset !important; -webkit-text-fill-color: #fff !important; }
-        .tab-active   { background: rgba(255,255,255,0.08); color: #fff; }
-        .tab-inactive { color: #6b7280; }
+        body { background: #0a0a0a; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+        input:-webkit-autofill { -webkit-box-shadow: 0 0 0 30px #131313 inset !important; -webkit-text-fill-color: #fff !important; }
+        .tab-active   { background: rgba(124,58,237,0.15); color: #c4b5fd; border-color: rgba(124,58,237,0.3); }
+        .tab-inactive { color: #6b7280; border-color: transparent; }
+        .auth-glow { position:fixed; width:600px; height:600px; background:radial-gradient(circle,rgba(124,58,237,0.08) 0%,transparent 70%); top:-200px; left:50%; transform:translateX(-50%); pointer-events:none; }
+        .auth-input { width:100%; background:#131313; border:1px solid rgba(255,255,255,0.07); border-radius:0.75rem; padding:0.75rem 1rem; color:white; font-size:0.875rem; outline:none; transition:border-color 0.2s, box-shadow 0.2s; }
+        .auth-input:focus { border-color:rgba(124,58,237,0.5); box-shadow:0 0 0 3px rgba(124,58,237,0.08); }
+        .auth-input::placeholder { color:#374151; }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4 font-sans">
+<body class="min-h-screen flex items-center justify-center p-4 text-white">
 
-    <div class="w-full max-w-sm">
+    <div class="auth-glow"></div>
+
+    <div class="w-full max-w-sm relative z-10">
 
         <!-- Logo -->
-        <a href="/" class="flex items-center justify-center gap-2.5 mb-8 group">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-violet-900/40">
+        <a href="/" class="flex items-center justify-center gap-2.5 mb-2 group">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-xl shadow-violet-900/40">
                 <i data-lucide="gem" class="text-white w-5"></i>
             </div>
-            <span class="text-2xl font-bold text-white tracking-tight">Clarity AI</span>
         </a>
+        <h2 class="text-center text-xl font-bold text-white mb-1">Welcome to Clarity AI</h2>
+        <p class="text-center text-gray-500 text-sm mb-7">Sign in to your account to continue</p>
 
         <!-- Alert -->
         <div id="alert" class="hidden mb-4 p-3 rounded-xl text-sm border"></div>
 
         <!-- Tab switcher -->
-        <div class="flex bg-white/5 rounded-xl p-1 mb-5 border border-white/5">
-            <button id="tab-login"  onclick="showLogin()"  class="flex-1 py-2 text-sm font-medium rounded-lg transition-all tab-active">Log In</button>
-            <button id="tab-signup" onclick="showSignup()" class="flex-1 py-2 text-sm font-medium rounded-lg transition-all tab-inactive">Sign Up</button>
+        <div class="flex bg-white/[0.03] rounded-xl p-1 mb-5 border border-white/5">
+            <button id="tab-login"  onclick="showLogin()"  class="flex-1 py-2.5 text-sm font-medium rounded-lg transition-all border tab-active">Log In</button>
+            <button id="tab-signup" onclick="showSignup()" class="flex-1 py-2.5 text-sm font-medium rounded-lg transition-all border tab-inactive">Sign Up</button>
         </div>
 
         <!-- Login Form -->
         <div id="login-form">
             <div class="space-y-3">
-                <input id="login-email"    type="email"    placeholder="Email address"
-                    class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors">
-                <input id="login-password" type="password" placeholder="Password"
-                    class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors">
+                <div>
+                    <label class="text-[11px] text-gray-500 mb-1.5 block font-medium uppercase tracking-wide">Email</label>
+                    <input id="login-email" type="email" placeholder="you@example.com" class="auth-input">
+                </div>
+                <div>
+                    <label class="text-[11px] text-gray-500 mb-1.5 block font-medium uppercase tracking-wide">Password</label>
+                    <input id="login-password" type="password" placeholder="Enter your password" class="auth-input">
+                </div>
             </div>
 
             <!-- 2FA section (hidden until needed) -->
-            <div id="twofa-section" class="hidden mt-3 p-3 bg-violet-950/30 border border-violet-800/30 rounded-xl">
-                <p class="text-xs text-violet-300 mb-2.5">
-                    <i data-lucide="mail" class="inline w-3 mr-1"></i>
+            <div id="twofa-section" class="hidden mt-3 p-4 bg-violet-950/20 border border-violet-800/25 rounded-xl">
+                <p class="text-xs text-violet-300 mb-3 flex items-center gap-1.5">
+                    <i data-lucide="mail" class="w-3.5"></i>
                     A 6-digit code was sent to your email.
                 </p>
                 <input id="twofa-code" type="text" placeholder="000000" maxlength="6"
-                    class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors tracking-[0.5em] text-center font-mono">
+                    class="auth-input tracking-[0.5em] text-center font-mono">
             </div>
 
             <button id="login-btn" onclick="handleLogin()"
-                class="w-full mt-4 py-3 bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white font-semibold rounded-xl transition-colors text-sm">
+                class="w-full mt-5 py-3 bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white font-semibold rounded-full transition-all text-sm shadow-lg shadow-violet-900/25 hover:shadow-violet-900/40">
                 Log In
             </button>
         </div>
@@ -63,20 +74,30 @@
         <div id="signup-form" class="hidden">
             <div class="space-y-3">
                 <div class="grid grid-cols-2 gap-3">
-                    <input id="signup-firstname" type="text" placeholder="First name"
-                        class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors">
-                    <input id="signup-lastname"  type="text" placeholder="Last name"
-                        class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors">
+                    <div>
+                        <label class="text-[11px] text-gray-500 mb-1.5 block font-medium uppercase tracking-wide">First name</label>
+                        <input id="signup-firstname" type="text" placeholder="John" class="auth-input">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-gray-500 mb-1.5 block font-medium uppercase tracking-wide">Last name</label>
+                        <input id="signup-lastname" type="text" placeholder="Doe" class="auth-input">
+                    </div>
                 </div>
-                <input id="signup-email"    type="email"    placeholder="Email address"
-                    class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors">
-                <input id="signup-password" type="password" placeholder="Password (min 6 characters)"
-                    class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors">
-                <input id="signup-confirm"  type="password" placeholder="Confirm password"
-                    class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors">
+                <div>
+                    <label class="text-[11px] text-gray-500 mb-1.5 block font-medium uppercase tracking-wide">Email</label>
+                    <input id="signup-email" type="email" placeholder="you@example.com" class="auth-input">
+                </div>
+                <div>
+                    <label class="text-[11px] text-gray-500 mb-1.5 block font-medium uppercase tracking-wide">Password</label>
+                    <input id="signup-password" type="password" placeholder="Min 6 characters" class="auth-input">
+                </div>
+                <div>
+                    <label class="text-[11px] text-gray-500 mb-1.5 block font-medium uppercase tracking-wide">Confirm password</label>
+                    <input id="signup-confirm" type="password" placeholder="Re-enter password" class="auth-input">
+                </div>
             </div>
             <button id="signup-btn" onclick="handleSignup()"
-                class="w-full mt-4 py-3 bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white font-semibold rounded-xl transition-colors text-sm">
+                class="w-full mt-5 py-3 bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white font-semibold rounded-full transition-all text-sm shadow-lg shadow-violet-900/25 hover:shadow-violet-900/40">
                 Create Account
             </button>
         </div>
@@ -102,15 +123,15 @@
         function showLogin() {
             document.getElementById('login-form').classList.remove('hidden');
             document.getElementById('signup-form').classList.add('hidden');
-            document.getElementById('tab-login').className  = 'flex-1 py-2 text-sm font-medium rounded-lg transition-all tab-active';
-            document.getElementById('tab-signup').className = 'flex-1 py-2 text-sm font-medium rounded-lg transition-all tab-inactive';
+            document.getElementById('tab-login').className  = 'flex-1 py-2.5 text-sm font-medium rounded-lg transition-all border tab-active';
+            document.getElementById('tab-signup').className = 'flex-1 py-2.5 text-sm font-medium rounded-lg transition-all border tab-inactive';
             clearAlert();
         }
         function showSignup() {
             document.getElementById('signup-form').classList.remove('hidden');
             document.getElementById('login-form').classList.add('hidden');
-            document.getElementById('tab-signup').className = 'flex-1 py-2 text-sm font-medium rounded-lg transition-all tab-active';
-            document.getElementById('tab-login').className  = 'flex-1 py-2 text-sm font-medium rounded-lg transition-all tab-inactive';
+            document.getElementById('tab-signup').className = 'flex-1 py-2.5 text-sm font-medium rounded-lg transition-all border tab-active';
+            document.getElementById('tab-login').className  = 'flex-1 py-2.5 text-sm font-medium rounded-lg transition-all border tab-inactive';
             clearAlert();
         }
 
@@ -234,4 +255,3 @@
     </script>
 </body>
 </html>
-
