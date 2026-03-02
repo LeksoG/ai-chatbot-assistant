@@ -1442,9 +1442,11 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
         function togglePasswordVisibility(inputId, btn) {
             const inp = document.getElementById(inputId);
             const cdEl = document.getElementById('pw-eye-countdown');
+            const icon = btn.querySelector('[data-lucide]');
+            if (!inp || !icon) return;
             if (inp.type === 'password') {
                 inp.type = 'text';
-                btn.querySelector('i').setAttribute('data-lucide', 'eye-off');
+                icon.setAttribute('data-lucide', 'eye-off');
                 lucide.createIcons();
                 cdEl.classList.remove('hidden');
                 let secs = 10;
@@ -1455,7 +1457,8 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 pwEyeCountdown = setTimeout(() => {
                     clearInterval(pwEyeTimer);
                     inp.type = 'password';
-                    btn.querySelector('i').setAttribute('data-lucide', 'eye');
+                    const ic = btn.querySelector('[data-lucide]');
+                    if (ic) ic.setAttribute('data-lucide', 'eye');
                     cdEl.classList.add('hidden');
                     lucide.createIcons();
                 }, 10000);
@@ -1463,7 +1466,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 clearInterval(pwEyeTimer);
                 clearTimeout(pwEyeCountdown);
                 inp.type = 'password';
-                btn.querySelector('i').setAttribute('data-lucide', 'eye');
+                icon.setAttribute('data-lucide', 'eye');
                 cdEl.classList.add('hidden');
                 lucide.createIcons();
             }
