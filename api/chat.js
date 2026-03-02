@@ -14,7 +14,7 @@ module.exports = async function handler(req, res) {
             return res.status(405).json({ error: 'Method not allowed' });
         }
 
-        const { message, history = [] } = req.body || {};
+        const { message, history = [], modelVersion = '3.0' } = req.body || {};
 
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
@@ -27,6 +27,10 @@ module.exports = async function handler(req, res) {
                 error: 'MISTRAL_API_KEY is not set. Go to Vercel → Project → Settings → Environment Variables and add it, then redeploy.'
             });
         }
+
+        // Model routing: 3.0 = fast/small, 3.5 = large/advanced
+        const model     = modelVersion === '3.5' ? 'mistral-large-latest' : 'mistral-small-latest';
+        const maxTokens = modelVersion === '3.5' ? 8000 : 500;
 
         const systemPrompt = `You are Clarity AI, a helpful and intelligent AI assistant. Be concise — keep responses short and to the point (2–3 paragraphs max for explanations, fewer for simple questions). Only expand with lists, headers, or code blocks when truly necessary. Structure with markdown only when it adds real clarity:
 - Use **bold** for key terms
@@ -48,10 +52,10 @@ module.exports = async function handler(req, res) {
                 'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: 'mistral-large-latest',
+                model,
                 messages,
                 temperature: 0.7,
-                max_tokens: 800
+                max_tokens: maxTokens
             })
         });
 
