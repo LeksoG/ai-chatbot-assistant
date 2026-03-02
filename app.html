@@ -372,7 +372,7 @@
         </div>
         <!-- Live preview iframe -->
         <div id="canvas-preview-tab" class="hidden flex-1 min-h-0">
-            <iframe id="canvas-iframe" class="w-full h-full border-0 bg-white" sandbox="allow-scripts allow-modals allow-forms"></iframe>
+            <iframe id="canvas-iframe" class="w-full h-full border-0 bg-white" sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-popups allow-pointer-lock allow-downloads"></iframe>
         </div>
     </div>
 
@@ -574,9 +574,12 @@
                 const r = await fetch('/api/auth/user', { headers: authHeaders() });
                 if (r.ok) {
                     const profile = await r.json();
-                    if (profile && (profile.first_name || profile.last_name)) {
-                        currentUser.first_name     = profile.first_name || currentUser.first_name;
-                        currentUser.last_name      = profile.last_name  || currentUser.last_name;
+                    if (profile) {
+                        // Always sync two_fa_enabled from DB so the gate/toggle is accurate
+                        if (profile.first_name || profile.last_name) {
+                            currentUser.first_name = profile.first_name || currentUser.first_name;
+                            currentUser.last_name  = profile.last_name  || currentUser.last_name;
+                        }
                         currentUser.two_fa_enabled = profile.two_fa_enabled ?? currentUser.two_fa_enabled;
                         localStorage.setItem('clarity_user', JSON.stringify(currentUser));
                         updateUserUI();
@@ -904,9 +907,12 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
 
         // ── Custom marked renderer (copy button on code blocks) ──
         const _renderer = new marked.Renderer();
-        _renderer.code = (code, lang) => {
-            const esc = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            return `<div class="code-block-wrapper"><button class="code-copy-btn" onclick="copyCode(this)">Copy</button><pre><code class="language-${lang||''}">${esc}</code></pre></div>`;
+        // Handle both old marked API (code, lang) and new token-object API (v5+)
+        _renderer.code = function(codeOrToken, lang) {
+            const text     = (codeOrToken && typeof codeOrToken === 'object') ? (codeOrToken.text || '') : String(codeOrToken || '');
+            const language = (codeOrToken && typeof codeOrToken === 'object') ? (codeOrToken.lang || '') : (lang || '');
+            const esc = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            return `<div class="code-block-wrapper"><button class="code-copy-btn" onclick="copyCode(this)">Copy</button><pre><code class="language-${language}">${esc}</code></pre></div>`;
         };
         marked.setOptions({ renderer: _renderer });
 
@@ -968,8 +974,15 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                         appendUserMessage(msg.content);
                     } else {
                         const { responseEl, avatarEl } = appendAIMessageShell();
-                        responseEl.innerHTML = marked.parse(msg.content);
-                        avatarEl.innerHTML   = STATIC_LOGO_SVG;
+                        const codeBlock = extractCodeBlock(msg.content);
+                        if (codeBlock) {
+                            const chatText = removeCodeBlocks(msg.content);
+                            responseEl.innerHTML = marked.parse(chatText || '*Code rendered in Canvas*');
+                            appendCanvasReopenCard(responseEl, '', codeBlock);
+                        } else {
+                            responseEl.innerHTML = marked.parse(msg.content);
+                        }
+                        avatarEl.innerHTML = STATIC_LOGO_SVG;
                     }
                     conversationHistory.push({ role: msg.role, content: msg.content });
                 }
