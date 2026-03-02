@@ -4,6 +4,37 @@
 -- https://supabase.com/dashboard → your project → SQL Editor
 -- ============================================================
 
+-- Users profile table (stores names + 2FA flag alongside Supabase Auth)
+CREATE TABLE IF NOT EXISTS users (
+    id            UUID        PRIMARY KEY,  -- matches Supabase Auth user UUID
+    email         TEXT        NOT NULL UNIQUE,
+    first_name    TEXT        DEFAULT '',
+    last_name     TEXT        DEFAULT '',
+    two_fa_enabled BOOLEAN    DEFAULT false,
+    created_at    TIMESTAMPTZ DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "service_all_users" ON users FOR ALL USING (true) WITH CHECK (true);
+
+-- 2FA codes table (temporary codes sent by email on login)
+CREATE TABLE IF NOT EXISTS two_fa_codes (
+    id           UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id      UUID        NOT NULL,
+    email        TEXT        NOT NULL,
+    code         TEXT        NOT NULL,
+    access_token TEXT        NOT NULL DEFAULT '',
+    expires_at   TIMESTAMPTZ NOT NULL,
+    created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_two_fa_codes_user_id ON two_fa_codes(user_id);
+CREATE INDEX IF NOT EXISTS idx_two_fa_codes_expires_at ON two_fa_codes(expires_at);
+
+ALTER TABLE two_fa_codes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "service_all_two_fa_codes" ON two_fa_codes FOR ALL USING (true) WITH CHECK (true);
+
 -- Conversations table
 CREATE TABLE conversations (
     id            UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
