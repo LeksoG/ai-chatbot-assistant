@@ -30,7 +30,7 @@ module.exports = async function handler(req, res) {
 
         // Model routing: 3.0 = fast/small, 3.5 = large/advanced
         const model     = modelVersion === '3.5' ? 'mistral-large-latest' : 'mistral-small-latest';
-        const maxTokens = modelVersion === '3.5' ? 8000 : 500;
+        const maxTokens = modelVersion === '3.5' ? 8000 : 5000;
 
         const systemPrompt = `You are Clarity AI, a helpful and intelligent AI assistant. Be concise — keep responses short and to the point (2–3 paragraphs max for explanations, fewer for simple questions). Only expand with lists, headers, or code blocks when truly necessary. Structure with markdown only when it adds real clarity:
 - Use **bold** for key terms
