@@ -56,8 +56,13 @@ module.exports = async function handler(req, res) {
                 `${SUPABASE_URL}/rest/v1/users?id=eq.${authUser.id}&select=*`,
                 { headers: sbHeaders }
             );
+            if (!r.ok) {
+                const errBody = await r.text().catch(() => '');
+                console.error('[user.js] GET profile failed:', r.status, errBody);
+                return res.status(500).json({ error: 'Failed to load user profile.' });
+            }
             const data = await r.json();
-            return res.json(Array.isArray(data) ? data[0] : null);
+            return res.json(Array.isArray(data) ? data[0] || null : null);
         }
 
         // PATCH — update profile / password / 2FA
