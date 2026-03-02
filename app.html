@@ -112,6 +112,17 @@
         /* ── Canvas sidebar ── */
         #canvas-sidebar { position:fixed; right:0; top:0; bottom:0; z-index:100; width:0; overflow:hidden; background:#0d0d0d; border-left:1px solid transparent; border-radius:24px 0 0 24px; display:flex; flex-direction:column; transition:width 0.42s cubic-bezier(0.4,0,0.2,1), border-color 0.42s ease; }
         #canvas-sidebar.cs-open { width:52%; border-color:rgba(255,255,255,0.07); }
+        /* ── Canvas page nav ── */
+        #canvas-page-nav { display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.35rem 0; background:#0d0d0d; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; }
+        .cpn-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:8px; color:#6b7280; cursor:pointer; transition:all 0.15s; }
+        .cpn-btn:hover:not(:disabled) { background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.15); color:#d1d5db; }
+        .cpn-btn:disabled { opacity:0.25; cursor:not-allowed; }
+        #canvas-page-label { font-size:0.7rem; color:#9ca3af; font-weight:500; min-width:4.5rem; text-align:center; }
+        /* ── Canvas page loading overlay ── */
+        #canvas-page-loader { position:absolute; inset:0; z-index:20; display:none; align-items:center; justify-content:center; flex-direction:column; gap:0.75rem; background:rgba(13,13,13,0.92); backdrop-filter:blur(4px); }
+        #canvas-page-loader.active { display:flex; }
+        .cpl-spinner { width:28px; height:28px; border:3px solid rgba(124,58,237,0.2); border-top-color:#7c3aed; border-radius:50%; animation:cpl-spin 0.8s linear infinite; }
+        @keyframes cpl-spin { to { transform:rotate(360deg); } }
         /* ── Canvas error panel ── */
         #canvas-error-divider { height:6px; background:#1a1a1a; cursor:ns-resize; display:flex; align-items:center; justify-content:center; flex-shrink:0; border-top:1px solid rgba(255,255,255,0.06); transition:background 0.15s; }
         #canvas-error-divider:hover, #canvas-error-divider.dragging { background:#252525; }
@@ -399,6 +410,16 @@
                 </button>
             </div>
         </div>
+        <!-- Page navigation -->
+        <div id="canvas-page-nav">
+            <button onclick="canvasPagePrev()" id="cpn-prev" class="cpn-btn" disabled title="Previous page (←)">
+                <i data-lucide="chevron-left" class="w-3.5"></i>
+            </button>
+            <span id="canvas-page-label">Page 1 / 1</span>
+            <button onclick="canvasPageNext()" id="cpn-next" class="cpn-btn" disabled title="Next page (→)">
+                <i data-lucide="chevron-right" class="w-3.5"></i>
+            </button>
+        </div>
         <!-- Tabs -->
         <div class="flex border-b border-white/6 px-3 bg-[#0d0d0d] shrink-0">
             <button id="cs-tab-code"    onclick="switchCanvasTab('code')"    class="cs-tab active">Code</button>
@@ -408,6 +429,11 @@
         <div id="canvas-code-tab" class="flex-1 min-h-0 relative">
             <div id="monaco-container" class="absolute inset-0"></div>
             <div id="canvas-shimmer"></div>
+            <!-- Page loading overlay -->
+            <div id="canvas-page-loader">
+                <div class="cpl-spinner"></div>
+                <span class="text-xs text-gray-500 font-medium">Retrieving page…</span>
+            </div>
         </div>
         <!-- Live preview iframe -->
         <div id="canvas-preview-tab" class="hidden flex-1 min-h-0">
@@ -651,6 +677,11 @@
         let monacoReady          = false;
         let monacoEditor         = null;
 
+        // ── Canvas pages state ──────────────────────────────────
+        let canvasPages          = [];   // [{code, prompt, pageIndex}]
+        let canvasPageIndex      = 0;    // current page (0-based)
+        let canvasPagesSaving    = false;
+
         // ── Init ──────────────────────────────────────────────────
         window.addEventListener('load', async () => {
             lucide.createIcons();
@@ -877,12 +908,15 @@
         // ── Canvas sidebar open/close ─────────────────────────────
         async function openCanvas(prompt, code) {
             const sb = document.getElementById('canvas-sidebar');
+            const wasOpen = sb.classList.contains('cs-open');
             sb.classList.add('cs-open');
             document.body.classList.add('canvas-open');
             switchCanvasTab('code');
             lucide.createIcons();
             await loadMonaco();
             if (code) {
+                // Add as a new page in the same canvas container
+                addCanvasPage(code, prompt);
                 monaco.editor.setModelLanguage(monacoEditor.getModel(), detectLang(code));
                 monacoEditor.setValue(code);
                 updateCanvasPreview();
@@ -890,6 +924,7 @@
                 // Show loading dots while waiting for response
                 monacoEditor.setValue('// Generating…');
             }
+            updateCanvasPageNav();
         }
 
         async function typeWriterMonaco(code) {
@@ -911,6 +946,11 @@
             document.getElementById('canvas-sidebar').classList.remove('cs-open');
             document.body.classList.remove('canvas-open');
             clearCanvasErrors();
+        }
+        function resetCanvasPages() {
+            canvasPages = [];
+            canvasPageIndex = 0;
+            updateCanvasPageNav();
         }
         function updateCanvasPreview() {
             if (!monacoEditor) return;
@@ -1056,6 +1096,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                     const fixed = extractCodeBlock(data.reply) || data.reply;
                     avatarEl.innerHTML = STATIC_LOGO_SVG;
                     aiEl.innerHTML = marked.parse('*Error fixed! Code updated in Canvas \u2192*');
+                    addCanvasPage(fixed, fixPrompt);
                     await typeWriterMonaco(fixed);
                     clearCanvasErrors();
                     conversationHistory.push({ role: 'user', content: fixPrompt }, { role: 'assistant', content: data.reply });
@@ -1104,6 +1145,104 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             }
         }
 
+        // ── Canvas pages management ───────────────────────────────
+        function updateCanvasPageNav() {
+            const label = document.getElementById('canvas-page-label');
+            const prev  = document.getElementById('cpn-prev');
+            const next  = document.getElementById('cpn-next');
+            const total = canvasPages.length || 1;
+            label.textContent = `Page ${canvasPageIndex + 1} / ${total}`;
+            prev.disabled = canvasPageIndex <= 0;
+            next.disabled = canvasPageIndex >= total - 1;
+        }
+
+        function addCanvasPage(code, prompt) {
+            const page = { code, prompt: prompt || '', pageIndex: canvasPages.length };
+            canvasPages.push(page);
+            canvasPageIndex = canvasPages.length - 1;
+            updateCanvasPageNav();
+            // Persist to DB
+            saveCanvasPage(page);
+        }
+
+        async function saveCanvasPage(page) {
+            if (!activeConversationId || canvasPagesSaving) return;
+            canvasPagesSaving = true;
+            try {
+                await fetch('/api/canvas-pages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        conversationId: activeConversationId,
+                        pageIndex: page.pageIndex,
+                        code: page.code,
+                        prompt: page.prompt
+                    })
+                });
+            } catch (_) {}
+            canvasPagesSaving = false;
+        }
+
+        async function loadCanvasPages() {
+            if (!activeConversationId) return;
+            try {
+                const res = await fetch(`/api/canvas-pages?conversationId=${encodeURIComponent(activeConversationId)}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    canvasPages = data.map(p => ({ code: p.code, prompt: p.prompt || '', pageIndex: p.page_index }));
+                    canvasPageIndex = canvasPages.length - 1;
+                    updateCanvasPageNav();
+                }
+            } catch (_) {}
+        }
+
+        async function showCanvasPageLoading() {
+            const loader = document.getElementById('canvas-page-loader');
+            loader.classList.add('active');
+            await sleep(2000);
+            loader.classList.remove('active');
+        }
+
+        async function canvasPagePrev() {
+            if (canvasPageIndex <= 0 || !monacoEditor) return;
+            canvasPageIndex--;
+            updateCanvasPageNav();
+            switchCanvasTab('code');
+            await showCanvasPageLoading();
+            const page = canvasPages[canvasPageIndex];
+            monaco.editor.setModelLanguage(monacoEditor.getModel(), detectLang(page.code));
+            monacoEditor.setValue(page.code);
+            updateCanvasPreview();
+        }
+
+        async function canvasPageNext() {
+            if (canvasPageIndex >= canvasPages.length - 1 || !monacoEditor) return;
+            canvasPageIndex++;
+            updateCanvasPageNav();
+            switchCanvasTab('code');
+            await showCanvasPageLoading();
+            const page = canvasPages[canvasPageIndex];
+            monaco.editor.setModelLanguage(monacoEditor.getModel(), detectLang(page.code));
+            monacoEditor.setValue(page.code);
+            updateCanvasPreview();
+        }
+
+        // Keyboard left/right arrows to navigate canvas pages
+        document.addEventListener('keydown', function(e) {
+            const sb = document.getElementById('canvas-sidebar');
+            if (!sb.classList.contains('cs-open')) return;
+            // Don't intercept when typing in input fields
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.closest('.monaco-editor')) return;
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                canvasPagePrev();
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                canvasPageNext();
+            }
+        });
+
         // ── Canvas reopen card (shown in chat after canvas response) ──
         function appendCanvasReopenCard(aiResponseEl, prompt, code) {
             const card = document.createElement('div');
@@ -1119,9 +1258,34 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                     <p class="text-[11px] text-gray-500 truncate">${escapeHtml((prompt||'').slice(0,55))}…</p>
                 </div>
                 <i data-lucide="panel-right-open" class="w-3.5 text-gray-500 shrink-0"></i>`;
-            card.onclick = () => openCanvas(prompt, code);
+            // Navigate to corresponding canvas page instead of opening a new canvas
+            const targetPageIndex = canvasPages.length > 0 ? canvasPages.length - 1 : 0;
+            card.onclick = () => navigateToCanvasPage(targetPageIndex, code);
             aiResponseEl.appendChild(card);
             lucide.createIcons();
+        }
+
+        async function navigateToCanvasPage(pageIdx, fallbackCode) {
+            const sb = document.getElementById('canvas-sidebar');
+            if (!sb.classList.contains('cs-open')) {
+                sb.classList.add('cs-open');
+                document.body.classList.add('canvas-open');
+                lucide.createIcons();
+                await loadMonaco();
+            }
+            switchCanvasTab('code');
+            if (pageIdx >= 0 && pageIdx < canvasPages.length) {
+                canvasPageIndex = pageIdx;
+                updateCanvasPageNav();
+                await showCanvasPageLoading();
+                const page = canvasPages[canvasPageIndex];
+                monaco.editor.setModelLanguage(monacoEditor.getModel(), detectLang(page.code));
+                monacoEditor.setValue(page.code);
+            } else if (fallbackCode) {
+                monaco.editor.setModelLanguage(monacoEditor.getModel(), detectLang(fallbackCode));
+                monacoEditor.setValue(fallbackCode);
+            }
+            updateCanvasPreview();
         }
 
         // ── Copy functions ────────────────────────────────────────
@@ -1205,6 +1369,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 activeConversationId = id;
                 conversationHistory  = [];
                 chatResults.innerHTML = '';
+                resetCanvasPages();
 
                 if (!document.body.classList.contains('conversation-started')) {
                     document.body.classList.add('conversation-started');
@@ -1234,9 +1399,25 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                     conversationHistory.push({ role: msg.role, content: msg.content });
                 }
 
-                // Reopen canvas with the last code block if canvas mode is enabled
-                if (canvasEnabled && lastCanvasCode) {
-                    openCanvas(lastCanvasPrompt, lastCanvasCode);
+                // Load canvas pages from DB and reopen canvas if we have pages
+                if (canvasEnabled) {
+                    await loadCanvasPages();
+                    if (canvasPages.length > 0) {
+                        const sb = document.getElementById('canvas-sidebar');
+                        sb.classList.add('cs-open');
+                        document.body.classList.add('canvas-open');
+                        switchCanvasTab('code');
+                        lucide.createIcons();
+                        await loadMonaco();
+                        const lastPage = canvasPages[canvasPageIndex];
+                        monaco.editor.setModelLanguage(monacoEditor.getModel(), detectLang(lastPage.code));
+                        monacoEditor.setValue(lastPage.code);
+                        updateCanvasPreview();
+                        updateCanvasPageNav();
+                    } else if (lastCanvasCode) {
+                        // Fallback: no DB pages yet, use last code from messages
+                        openCanvas(lastCanvasPrompt, lastCanvasCode);
+                    }
                 }
 
                 scrollToBottom();
@@ -1339,6 +1520,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             document.body.classList.remove('conversation-started');
             topBrand.style.opacity = '0';
             topBrand.style.pointerEvents = 'none';
+            resetCanvasPages();
             closeCanvas();
             toggleSidebar(false);
             input.value = '';
@@ -1570,9 +1752,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             const el = document.createElement('div');
             el.className = 'flex justify-end msg-enter';
             el.innerHTML = `
-                <div class="bg-[#1a1a1a] border border-white/8 py-2.5 px-4 rounded-2xl rounded-tr-sm max-w-[72%] text-sm text-gray-200 leading-relaxed break-words whitespace-pre-wrap">
-                    ${escapeHtml(text)}
-                </div>`;
+                <div class="bg-[#1a1a1a] border border-white/8 py-2 px-3.5 rounded-2xl rounded-tr-sm max-w-[72%] w-fit text-sm text-gray-200 leading-relaxed break-words whitespace-pre-wrap">${escapeHtml(text)}</div>`;
             chatResults.appendChild(el);
         }
 
@@ -1643,8 +1823,23 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             scrollToBottom();
             saveMessage('user', val);
 
-            // If canvas mode is on, open the sidebar immediately (loading state)
-            if (canvasEnabled) openCanvas(val, null);
+            // If canvas mode is on, ensure sidebar is open with loading state
+            if (canvasEnabled) {
+                const sb = document.getElementById('canvas-sidebar');
+                if (!sb.classList.contains('cs-open')) {
+                    // First time opening canvas — open with loading
+                    sb.classList.add('cs-open');
+                    document.body.classList.add('canvas-open');
+                    switchCanvasTab('code');
+                    lucide.createIcons();
+                    await loadMonaco();
+                    updateCanvasPageNav();
+                }
+                // Show shimmer to indicate generating
+                const shimmer = document.getElementById('canvas-shimmer');
+                shimmer.classList.add('active');
+                if (monacoEditor) monacoEditor.setValue('// Generating…');
+            }
 
             const { responseEl: aiEl, avatarEl } = appendAIMessageShell();
             scrollToBottom();
@@ -1656,26 +1851,38 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                     body: JSON.stringify({ message: val, history: conversationHistory, modelVersion: selectedModel })
                 });
                 const data = await res.json();
+                if (canvasEnabled) document.getElementById('canvas-shimmer').classList.remove('active');
 
                 if (!res.ok) {
                     avatarEl.innerHTML = STATIC_LOGO_SVG;
-                    if (canvasEnabled) closeCanvas();
                     aiEl.innerHTML = `<div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3"><i data-lucide="alert-circle" class="w-4 shrink-0 mt-0.5"></i><span>${escapeHtml(data.error || 'Something went wrong.')}</span></div>`;
                     lucide.createIcons();
+                    // Restore previous page code if we have pages
+                    if (canvasEnabled && canvasPages.length > 0) {
+                        const curPage = canvasPages[canvasPageIndex];
+                        monacoEditor.setValue(curPage.code);
+                    }
                 } else {
                     conversationHistory.push({ role: 'user', content: val }, { role: 'assistant', content: data.reply });
                     const codeBlock = canvasEnabled ? extractCodeBlock(data.reply) : null;
 
                     if (canvasEnabled && codeBlock) {
-                        // Show explanation in chat (no code block), type code in Monaco
+                        // Add as new page in same canvas container
                         const chatText = removeCodeBlocks(data.reply);
                         await typeWriter(aiEl, chatText || '*Code is rendering in Canvas →*');
                         avatarEl.innerHTML = STATIC_LOGO_SVG;
+                        addCanvasPage(codeBlock, val);
                         await typeWriterMonaco(codeBlock);
                         appendCanvasReopenCard(aiEl, val, codeBlock);
                     } else {
                         // Normal mode: full response in chat
-                        if (canvasEnabled) closeCanvas(); // no code found, close loading canvas
+                        if (canvasEnabled && canvasPages.length > 0) {
+                            // Restore last page since no new code was generated
+                            const curPage = canvasPages[canvasPageIndex];
+                            monacoEditor.setValue(curPage.code);
+                        } else if (canvasEnabled) {
+                            closeCanvas(); // no code found and no previous pages
+                        }
                         await typeWriter(aiEl, data.reply);
                         avatarEl.innerHTML = STATIC_LOGO_SVG;
                     }
@@ -1683,7 +1890,13 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 }
             } catch {
                 avatarEl.innerHTML = STATIC_LOGO_SVG;
-                if (canvasEnabled) closeCanvas();
+                if (canvasEnabled) document.getElementById('canvas-shimmer').classList.remove('active');
+                if (canvasEnabled && canvasPages.length > 0) {
+                    const curPage = canvasPages[canvasPageIndex];
+                    monacoEditor.setValue(curPage.code);
+                } else if (canvasEnabled) {
+                    closeCanvas();
+                }
                 aiEl.innerHTML = `<div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3"><i data-lucide="wifi-off" class="w-4 shrink-0 mt-0.5"></i><span>Connection error. Check your network.</span></div>`;
                 lucide.createIcons();
             }
