@@ -27,6 +27,10 @@
         #chat-results { display:none; opacity:0; }
         .conversation-started #chat-results { display:flex; animation:fade-up 0.5s ease forwards; }
         @keyframes fade-up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        /* ── Bottom fade mask so messages dissolve before input bar ── */
+        .conversation-started #bottom-fade { display:block; }
+        #bottom-fade { display:none; position:fixed; bottom:0; left:0; right:0; height:8rem; pointer-events:none; z-index:40; background:linear-gradient(to bottom, transparent 0%, var(--bg) 85%); }
+        body.canvas-open #bottom-fade { right:52%; }
 
         /* ── Sidebar ── */
         #sidebar { transition:transform 0.5s cubic-bezier(0.4,0,0.2,1); }
@@ -221,7 +225,7 @@
     </button>
 
     <!-- Top brand — full-width sectioned header, shown after first message -->
-    <header id="top-brand" class="fixed top-0 left-0 right-0 z-20 opacity-0 pointer-events-none border-b border-white/6 bg-[#0a0a0a]/90 backdrop-blur-md">
+    <header id="top-brand" class="fixed top-0 left-0 right-0 z-20 opacity-0 pointer-events-none bg-[#0a0a0a]/95 backdrop-blur-xl shadow-[0_1px_0_rgba(255,255,255,0.04),0_4px_24px_rgba(0,0,0,0.5)]">
         <div id="top-brand-inner" class="flex items-center justify-center gap-2 py-3.5">
             <svg class="w-6 h-6" viewBox="-15 -15 130 130">
                 <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
@@ -356,6 +360,9 @@
         </div><!-- /chat-input-wrapper -->
     </main>
 
+    <!-- Bottom fade mask — ChatGPT-style dissolve before input bar -->
+    <div id="bottom-fade"></div>
+
     <!-- ═══════════════════════════════════════════════════════
          CANVAS SIDEBAR (slides in from right)
     ═══════════════════════════════════════════════════════ -->
@@ -433,9 +440,9 @@
     <div id="account-page" class="fixed inset-0 z-[200] bg-[#0a0a0a] hidden flex-col overflow-y-auto">
 
         <!-- Top bar -->
-        <div class="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/6 px-6 py-4 flex items-center gap-3">
-            <button onclick="closeAccountPage()" class="p-1.5 hover:bg-white/8 rounded-lg transition-colors group">
-                <i data-lucide="arrow-left" class="w-4 text-gray-400 group-hover:text-white group-hover:-translate-x-0.5 transition-all"></i>
+        <div class="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-md shadow-[0_1px_0_rgba(255,255,255,0.04)] px-6 py-4 flex items-center gap-3">
+            <button onclick="closeAccountPage()" class="w-8 h-8 flex items-center justify-center bg-white/6 hover:bg-white/12 border border-white/8 rounded-full transition-colors group">
+                <i data-lucide="arrow-left" class="w-3.5 text-gray-400 group-hover:text-white group-hover:-translate-x-0.5 transition-all"></i>
             </button>
             <span class="text-white font-semibold text-sm">Account Settings</span>
         </div>
@@ -498,9 +505,24 @@
                     </div>
                 </div>
                 <div class="space-y-2.5 mb-4">
-                    <input id="current-password" type="password" placeholder="Current password" class="account-input">
-                    <input id="new-password"     type="password" placeholder="New password (min 6 chars)" class="account-input">
-                    <input id="confirm-password" type="password" placeholder="Confirm new password" class="account-input">
+                    <div class="relative">
+                        <input id="current-password" type="password" placeholder="Current password" class="account-input pr-10">
+                        <button type="button" onclick="togglePasswordVisibility('current-password',this)" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-600 hover:text-gray-300 transition-colors" title="Show password">
+                            <i data-lucide="eye" class="w-4"></i>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <input id="new-password" type="password" placeholder="New password (min 6 chars)" class="account-input pr-10">
+                        <button type="button" onclick="togglePasswordVisibility('new-password',this)" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-600 hover:text-gray-300 transition-colors" title="Show password">
+                            <i data-lucide="eye" class="w-4"></i>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <input id="confirm-password" type="password" placeholder="Confirm new password" class="account-input pr-10">
+                        <button type="button" onclick="togglePasswordVisibility('confirm-password',this)" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-600 hover:text-gray-300 transition-colors" title="Show password">
+                            <i data-lucide="eye" class="w-4"></i>
+                        </button>
+                    </div>
                 </div>
                 <button onclick="changePassword()" class="account-btn">
                     <i data-lucide="key" class="w-3.5"></i> Update password
@@ -1274,6 +1296,27 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 document.getElementById('confirm-password').value = '';
                 showAccountToast('Password updated!', 'success');
             } catch { showAccountToast('Connection error.'); }
+        }
+
+        function togglePasswordVisibility(inputId, btn) {
+            const inp = document.getElementById(inputId);
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                btn.innerHTML = '<i data-lucide="eye-off" class="w-4"></i>';
+                btn.classList.add('text-violet-400');
+                lucide.createIcons();
+                setTimeout(() => {
+                    inp.type = 'password';
+                    btn.innerHTML = '<i data-lucide="eye" class="w-4"></i>';
+                    btn.classList.remove('text-violet-400');
+                    lucide.createIcons();
+                }, 10000);
+            } else {
+                inp.type = 'password';
+                btn.innerHTML = '<i data-lucide="eye" class="w-4"></i>';
+                btn.classList.remove('text-violet-400');
+                lucide.createIcons();
+            }
         }
 
         async function toggle2FA() {
