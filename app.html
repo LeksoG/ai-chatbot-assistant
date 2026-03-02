@@ -29,7 +29,7 @@
         @keyframes fade-up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         /* ── Bottom fade mask so messages dissolve before input bar ── */
         .conversation-started #bottom-fade { display:block; }
-        #bottom-fade { display:none; position:fixed; bottom:0; left:0; right:0; height:8rem; pointer-events:none; z-index:40; background:linear-gradient(to bottom, transparent 0%, var(--bg) 85%); }
+        #bottom-fade { display:none; position:fixed; bottom:5rem; left:0; right:0; height:6rem; pointer-events:none; z-index:40; background:linear-gradient(to bottom, transparent 0%, var(--bg) 90%); }
         body.canvas-open #bottom-fade { right:52%; }
 
         /* ── Sidebar ── */
@@ -87,7 +87,9 @@
         .toggle-track.on .toggle-thumb { transform:translateX(20px); }
 
         /* ── Account page ── */
-        #account-page { transition:opacity 0.3s ease; }
+        #account-page { transition:transform 0.38s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease; }
+        #account-page.ap-hidden { transform:translateX(100%); opacity:0; }
+        #account-page.ap-visible { transform:translateX(0); opacity:1; }
         .account-section { background:#111; border:1px solid rgba(255,255,255,0.06); border-radius:1rem; padding:1.5rem; margin-bottom:0.875rem; }
         .account-section-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
         .account-input { width:100%; background:#181818; border:1px solid rgba(255,255,255,0.08); border-radius:0.65rem; padding:0.7rem 1rem; color:white; font-size:0.875rem; outline:none; transition:border-color 0.2s; }
@@ -110,6 +112,16 @@
         /* ── Canvas sidebar ── */
         #canvas-sidebar { position:fixed; right:0; top:0; bottom:0; z-index:100; width:0; overflow:hidden; background:#0d0d0d; border-left:1px solid transparent; border-radius:24px 0 0 24px; display:flex; flex-direction:column; transition:width 0.42s cubic-bezier(0.4,0,0.2,1), border-color 0.42s ease; }
         #canvas-sidebar.cs-open { width:52%; border-color:rgba(255,255,255,0.07); }
+        /* ── Canvas error panel ── */
+        #canvas-error-divider { height:6px; background:#1a1a1a; cursor:ns-resize; display:flex; align-items:center; justify-content:center; flex-shrink:0; border-top:1px solid rgba(255,255,255,0.06); transition:background 0.15s; }
+        #canvas-error-divider:hover, #canvas-error-divider.dragging { background:#252525; }
+        #canvas-error-divider::after { content:''; width:32px; height:3px; background:#444; border-radius:2px; }
+        #canvas-error-panel { background:#141414; flex-shrink:0; display:flex; flex-direction:column; overflow:hidden; height:0; transition:height 0.2s ease; }
+        #canvas-error-panel.cep-open { height:180px; }
+        /* ── Canvas fix shimmer ── */
+        @keyframes shimmer-wave { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+        #canvas-shimmer { position:absolute; inset:0; z-index:10; pointer-events:none; display:none; }
+        #canvas-shimmer.active { display:block; background:linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.02) 20%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.02) 80%, transparent 100%); background-size:200% 100%; animation:shimmer-wave 1.8s ease-in-out infinite; }
         .cs-tab { padding:0.65rem 1.1rem; font-size:0.72rem; font-weight:500; border-bottom:2px solid transparent; color:#6b7280; transition:color 0.15s, border-color 0.15s; cursor:pointer; white-space:nowrap; }
         .cs-tab.active { color:#fff; border-bottom-color:#fff; }
         .cs-tab:hover:not(.active) { color:#d1d5db; }
@@ -395,10 +407,27 @@
         <!-- Monaco editor -->
         <div id="canvas-code-tab" class="flex-1 min-h-0 relative">
             <div id="monaco-container" class="absolute inset-0"></div>
+            <div id="canvas-shimmer"></div>
         </div>
         <!-- Live preview iframe -->
         <div id="canvas-preview-tab" class="hidden flex-1 min-h-0">
             <iframe id="canvas-iframe" class="w-full h-full border-0 bg-white" sandbox="allow-scripts allow-same-origin allow-modals allow-forms allow-popups"></iframe>
+        </div>
+        <!-- Error divider + panel -->
+        <div id="canvas-error-divider" class="hidden"></div>
+        <div id="canvas-error-panel">
+            <div class="flex items-center justify-between px-3 py-2 border-b border-white/5 shrink-0">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="terminal" class="w-3 text-red-400"></i>
+                    <span class="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Console</span>
+                    <span id="canvas-error-count" class="text-[10px] bg-red-900/40 text-red-400 px-1.5 py-0.5 rounded-full font-mono hidden">0</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="fixCanvasCode(lastCanvasError)" id="canvas-fix-btn" class="hidden text-[10px] font-medium text-violet-400 hover:text-violet-300 bg-violet-950/40 hover:bg-violet-950/60 border border-violet-800/30 px-2.5 py-1 rounded-lg transition-all">Fix it</button>
+                    <button onclick="clearCanvasErrors()" class="text-[10px] text-gray-600 hover:text-gray-300 transition-colors">Clear</button>
+                </div>
+            </div>
+            <div id="canvas-error-list" class="flex-1 overflow-y-auto p-3 space-y-1.5 font-mono text-xs"></div>
         </div>
     </div>
 
@@ -506,23 +535,14 @@
                 </div>
                 <div class="space-y-2.5 mb-4">
                     <div class="relative">
-                        <input id="current-password" type="password" placeholder="Current password" class="account-input pr-10">
-                        <button type="button" onclick="togglePasswordVisibility('current-password',this)" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-600 hover:text-gray-300 transition-colors" title="Show password">
+                        <input id="current-password" type="password" placeholder="Current password" class="account-input pr-16">
+                        <button id="pw-eye-btn" type="button" onclick="togglePasswordVisibility('current-password',this)" class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 p-1 text-gray-600 hover:text-gray-300 transition-colors" title="Show password">
+                            <span id="pw-eye-countdown" class="text-[10px] font-mono text-violet-400 hidden"></span>
                             <i data-lucide="eye" class="w-4"></i>
                         </button>
                     </div>
-                    <div class="relative">
-                        <input id="new-password" type="password" placeholder="New password (min 6 chars)" class="account-input pr-10">
-                        <button type="button" onclick="togglePasswordVisibility('new-password',this)" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-600 hover:text-gray-300 transition-colors" title="Show password">
-                            <i data-lucide="eye" class="w-4"></i>
-                        </button>
-                    </div>
-                    <div class="relative">
-                        <input id="confirm-password" type="password" placeholder="Confirm new password" class="account-input pr-10">
-                        <button type="button" onclick="togglePasswordVisibility('confirm-password',this)" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-600 hover:text-gray-300 transition-colors" title="Show password">
-                            <i data-lucide="eye" class="w-4"></i>
-                        </button>
-                    </div>
+                    <input id="new-password" type="password" placeholder="New password (min 6 chars)" class="account-input">
+                    <input id="confirm-password" type="password" placeholder="Confirm new password" class="account-input">
                 </div>
                 <button onclick="changePassword()" class="account-btn">
                     <i data-lucide="key" class="w-3.5"></i> Update password
@@ -890,28 +910,21 @@
         function closeCanvas() {
             document.getElementById('canvas-sidebar').classList.remove('cs-open');
             document.body.classList.remove('canvas-open');
+            clearCanvasErrors();
         }
         function updateCanvasPreview() {
             if (!monacoEditor) return;
-            // Red error bar at bottom + "Fix it" button + block external nav
+            // Capture errors and send to parent error panel via postMessage
             const guard = `<script>
-var __ce='';
 window.onerror=function(m,s,l){
-    __ce=(m.length>100?m.slice(0,100)+'\u2026':m)+(l?' \u2022 line '+l:'');
-    var c=document.getElementById('__cc');
-    if(!c){
-        c=document.createElement('div');c.id='__cc';
-        c.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#2d0a0a;border-top:2px solid #7f1d1d;color:#fca5a5;font:12px/1.4 monospace;padding:9px 12px;z-index:9999;display:flex;align-items:center;gap:10px;box-shadow:0 -4px 20px rgba(0,0,0,.5)';
-        var t=document.createElement('span');t.id='__cm';t.style.cssText='flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-        var b=document.createElement('button');b.textContent='Fix it';
-        b.style.cssText='background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b;padding:3px 10px;border-radius:6px;font:11px monospace;cursor:pointer;white-space:nowrap;flex-shrink:0';
-        b.onclick=function(){window.parent.postMessage({type:'canvas-fix',error:__ce},'*');};
-        c.appendChild(t);c.appendChild(b);document.body.appendChild(c);
-    }
-    document.getElementById('__cm').textContent='\u26a0 '+__ce;
+    var msg=(m.length>120?m.slice(0,120)+'\u2026':m)+(l?' \u2022 line '+l:'');
+    window.parent.postMessage({type:'canvas-error',error:msg},'*');
     return true;
 };
-window.addEventListener('unhandledrejection',function(e){window.onerror(e.reason&&e.reason.message?e.reason.message:String(e.reason));});
+window.addEventListener('unhandledrejection',function(e){
+    var msg=e.reason&&e.reason.message?e.reason.message:String(e.reason);
+    window.parent.postMessage({type:'canvas-error',error:msg},'*');
+});
 document.addEventListener('click',function(e){var a=e.target.closest('a[href]');if(a){var h=a.getAttribute('href')||'';if(h&&h[0]!=='#'&&h.indexOf('javascript:')!==0){e.preventDefault();}}});
 <\/script>`;
             const code = monacoEditor.getValue();
@@ -919,35 +932,150 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             document.getElementById('canvas-iframe').srcdoc = html;
         }
 
-        // ── Canvas "Fix it" — receives postMessage from preview iframe ──
+        // ── Canvas error panel — receives postMessage from preview iframe ──
+        let lastCanvasError = '';
         window.addEventListener('message', function(e) {
-            if (e.data && e.data.type === 'canvas-fix') fixCanvasCode(e.data.error);
+            if (e.data && e.data.type === 'canvas-error') showCanvasError(e.data.error);
         });
+
+        function showCanvasError(errorMsg) {
+            lastCanvasError = errorMsg;
+            const divider = document.getElementById('canvas-error-divider');
+            const panel   = document.getElementById('canvas-error-panel');
+            const list    = document.getElementById('canvas-error-list');
+            const countEl = document.getElementById('canvas-error-count');
+            const fixBtn  = document.getElementById('canvas-fix-btn');
+
+            divider.classList.remove('hidden');
+            panel.classList.add('cep-open');
+            fixBtn.classList.remove('hidden');
+
+            const entry = document.createElement('div');
+            entry.className = 'flex items-start gap-2 text-red-400/90 leading-relaxed';
+            entry.innerHTML = `<span class="text-red-500 shrink-0 mt-0.5">\u26a0</span><span>${escapeHtml(errorMsg)}</span>`;
+            list.appendChild(entry);
+            list.scrollTop = list.scrollHeight;
+
+            const count = list.children.length;
+            countEl.textContent = count;
+            countEl.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function clearCanvasErrors() {
+            const divider = document.getElementById('canvas-error-divider');
+            const panel   = document.getElementById('canvas-error-panel');
+            const list    = document.getElementById('canvas-error-list');
+            const countEl = document.getElementById('canvas-error-count');
+            const fixBtn  = document.getElementById('canvas-fix-btn');
+
+            list.innerHTML = '';
+            countEl.classList.add('hidden');
+            fixBtn.classList.add('hidden');
+            panel.classList.remove('cep-open');
+            panel.style.height = '';
+            divider.classList.add('hidden');
+            lastCanvasError = '';
+        }
+
+        // ── Error panel drag resize ──
+        (function() {
+            const divider = document.getElementById('canvas-error-divider');
+            let dragging = false, startY = 0, startH = 0;
+
+            divider.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                dragging = true;
+                startY = e.clientY;
+                startH = document.getElementById('canvas-error-panel').offsetHeight;
+                divider.classList.add('dragging');
+                document.body.style.cursor = 'ns-resize';
+                document.body.style.userSelect = 'none';
+            });
+            document.addEventListener('mousemove', function(e) {
+                if (!dragging) return;
+                const panel = document.getElementById('canvas-error-panel');
+                const delta = startY - e.clientY;
+                const newH = Math.max(60, Math.min(startH + delta, window.innerHeight * 0.6));
+                panel.style.height = newH + 'px';
+            });
+            document.addEventListener('mouseup', function() {
+                if (!dragging) return;
+                dragging = false;
+                document.getElementById('canvas-error-divider').classList.remove('dragging');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            });
+        })();
+
+        // ── Canvas "Fix it" — sends chat prompt, shows shimmer, auto-switches to code tab ──
         async function fixCanvasCode(errorMsg) {
             if (!monacoEditor || isTyping) return;
             const broken = monacoEditor.getValue();
-            if (!broken || broken === '// Generating…' || broken === '// Fixing error…') return;
+            if (!broken || broken === '// Generating\u2026' || broken === '// Fixing\u2026') return;
+
             isTyping = true;
-            monacoEditor.setValue('// Fixing error…');
+            const fixPrompt = `Fix this error in my canvas code: "${errorMsg}"`;
+
+            // Ensure conversation started
+            if (!document.body.classList.contains('conversation-started')) {
+                document.body.classList.add('conversation-started');
+                topBrand.style.opacity = '1';
+                topBrand.style.pointerEvents = 'auto';
+                greetingActive = false;
+            }
+
+            // 1. Show visible user message in chat
+            await ensureConversation(fixPrompt);
+            appendUserMessage(fixPrompt);
+            scrollToBottom();
+
+            // 2. Auto-switch to code tab
+            switchCanvasTab('code');
+
+            // 3. Show shimmer overlay + placeholder in editor
+            const shimmer = document.getElementById('canvas-shimmer');
+            shimmer.classList.add('active');
+            monacoEditor.setValue('// Fixing\u2026');
+
+            // 4. Show AI thinking shell in chat
+            const { responseEl: aiEl, avatarEl } = appendAIMessageShell();
+            scrollToBottom();
+
             try {
-                const res  = await fetch('/api/chat', {
+                const fixMessage = `Fix this error in my code: "${errorMsg}"\n\nFull code:\n\`\`\`\n${broken}\n\`\`\`\n\nReturn only the complete corrected code with no explanation.`;
+                const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: `Fix this error in my code: "${errorMsg}"\n\nFull code:\n\`\`\`\n${broken}\n\`\`\`\n\nReturn only the complete corrected code with no explanation.`,
-                        history: [],
-                        modelVersion: selectedModel
-                    })
+                    body: JSON.stringify({ message: fixMessage, history: [], modelVersion: selectedModel })
                 });
                 const data = await res.json();
+                shimmer.classList.remove('active');
+
                 if (res.ok && data.reply) {
                     const fixed = extractCodeBlock(data.reply) || data.reply;
+                    avatarEl.innerHTML = STATIC_LOGO_SVG;
+                    aiEl.innerHTML = marked.parse('*Error fixed! Code updated in Canvas \u2192*');
                     await typeWriterMonaco(fixed);
+                    clearCanvasErrors();
+                    conversationHistory.push({ role: 'user', content: fixPrompt }, { role: 'assistant', content: data.reply });
+                    saveMessage('user', fixPrompt);
+                    saveMessage('assistant', data.reply);
                 } else {
                     monacoEditor.setValue(broken);
+                    avatarEl.innerHTML = STATIC_LOGO_SVG;
+                    aiEl.innerHTML = `<div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3"><span>Failed to fix the error. Please try again.</span></div>`;
                 }
-            } catch (_) { monacoEditor.setValue(broken); }
+            } catch (_) {
+                shimmer.classList.remove('active');
+                monacoEditor.setValue(broken);
+                avatarEl.innerHTML = STATIC_LOGO_SVG;
+                aiEl.innerHTML = `<div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3"><span>Connection error. Check your network.</span></div>`;
+            }
+
             isTyping = false;
+            updateButtonState(input.value.trim().length > 0);
+            input.focus();
         }
 
         // ── Rainbow glow replay ───────────────────────────────────
@@ -1227,7 +1355,12 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
         function openAccountPage() {
             toggleSidebar(false);
             const page = document.getElementById('account-page');
-            page.classList.remove('hidden'); page.classList.add('flex');
+            page.classList.remove('hidden');
+            page.classList.add('flex', 'ap-hidden');
+            requestAnimationFrame(() => {
+                page.classList.remove('ap-hidden');
+                page.classList.add('ap-visible');
+            });
             lucide.createIcons();
 
             document.getElementById('account-initials').textContent    = getInitials(currentUser);
@@ -1247,7 +1380,13 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
         }
         function closeAccountPage() {
             const page = document.getElementById('account-page');
-            page.classList.add('hidden'); page.classList.remove('flex');
+            page.classList.remove('ap-visible');
+            page.classList.add('ap-hidden');
+            page.addEventListener('transitionend', function handler() {
+                page.removeEventListener('transitionend', handler);
+                page.classList.add('hidden');
+                page.classList.remove('flex', 'ap-hidden');
+            });
         }
 
         function showAccountToast(msg, type = 'error') {
@@ -1298,23 +1437,34 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             } catch { showAccountToast('Connection error.'); }
         }
 
+        let pwEyeTimer = null;
+        let pwEyeCountdown = null;
         function togglePasswordVisibility(inputId, btn) {
             const inp = document.getElementById(inputId);
+            const cdEl = document.getElementById('pw-eye-countdown');
             if (inp.type === 'password') {
                 inp.type = 'text';
-                btn.innerHTML = '<i data-lucide="eye-off" class="w-4"></i>';
-                btn.classList.add('text-violet-400');
+                btn.querySelector('i').setAttribute('data-lucide', 'eye-off');
                 lucide.createIcons();
-                setTimeout(() => {
+                cdEl.classList.remove('hidden');
+                let secs = 10;
+                cdEl.textContent = secs + 's';
+                if (pwEyeTimer) clearInterval(pwEyeTimer);
+                if (pwEyeCountdown) clearTimeout(pwEyeCountdown);
+                pwEyeTimer = setInterval(() => { secs--; cdEl.textContent = secs + 's'; }, 1000);
+                pwEyeCountdown = setTimeout(() => {
+                    clearInterval(pwEyeTimer);
                     inp.type = 'password';
-                    btn.innerHTML = '<i data-lucide="eye" class="w-4"></i>';
-                    btn.classList.remove('text-violet-400');
+                    btn.querySelector('i').setAttribute('data-lucide', 'eye');
+                    cdEl.classList.add('hidden');
                     lucide.createIcons();
                 }, 10000);
             } else {
+                clearInterval(pwEyeTimer);
+                clearTimeout(pwEyeCountdown);
                 inp.type = 'password';
-                btn.innerHTML = '<i data-lucide="eye" class="w-4"></i>';
-                btn.classList.remove('text-violet-400');
+                btn.querySelector('i').setAttribute('data-lucide', 'eye');
+                cdEl.classList.add('hidden');
                 lucide.createIcons();
             }
         }
