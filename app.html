@@ -23,7 +23,7 @@
         .hide-on-start { transition:all 0.6s ease; }
         .conversation-started .hide-on-start { opacity:0; transform:translateY(-20px); pointer-events:none; display:none; }
         #main-ui { transition:justify-content 0.5s ease; }
-        .conversation-started #main-ui { justify-content:flex-start; padding-top:5rem; }
+        .conversation-started #main-ui { justify-content:flex-start; padding-top:5.5rem; }
         #chat-results { display:none; opacity:0; }
         .conversation-started #chat-results { display:flex; animation:fade-up 0.5s ease forwards; }
         @keyframes fade-up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
@@ -66,12 +66,15 @@
         @keyframes msg-in { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
         .msg-enter { animation:msg-in 0.35s ease forwards; }
 
-        /* ── Top brand ── */
-        #top-brand { transition:opacity 0.5s ease, left 0.42s cubic-bezier(0.4,0,0.2,1); }
-        body.canvas-open #top-brand { left:24% !important; }
+        /* ── Top brand header bar ── */
+        #top-brand { transition:opacity 0.5s ease; }
+        #top-brand-inner { transition:margin-right 0.42s cubic-bezier(0.4,0,0.2,1); }
+        body.canvas-open #top-brand-inner { margin-right:52%; }
         /* ── Main area shifts when canvas opens ── */
         #main-ui { transition:margin-right 0.42s cubic-bezier(0.4,0,0.2,1); }
         body.canvas-open #main-ui { margin-right:52%; }
+        /* ── Greeting typing cursor ── */
+        .greeting-cursor { display:inline-block; width:2px; height:1.1em; background:#a78bfa; margin-left:1px; vertical-align:text-bottom; border-radius:1px; animation:blink 0.65s step-end infinite; }
 
         /* ── 2FA toggle ── */
         .toggle-track { width:44px; height:24px; background:rgba(255,255,255,0.1); border-radius:12px; position:relative; transition:background 0.2s; cursor:pointer; }
@@ -81,11 +84,21 @@
 
         /* ── Account page ── */
         #account-page { transition:opacity 0.3s ease; }
-        .account-section { background:#111; border:1px solid rgba(255,255,255,0.05); border-radius:1rem; padding:1.25rem 1.5rem; margin-bottom:1rem; }
-        .account-input { width:100%; background:#1a1a1a; border:1px solid rgba(255,255,255,0.08); border-radius:0.75rem; padding:0.75rem 1rem; color:white; font-size:0.875rem; outline:none; transition:border-color 0.2s; }
-        .account-input:focus { border-color:rgba(124,58,237,0.6); }
-        .account-input::placeholder { color:#4b5563; }
-        input:-webkit-autofill { -webkit-box-shadow:0 0 0 30px #1a1a1a inset !important; -webkit-text-fill-color:#fff !important; }
+        .account-section { background:#111; border:1px solid rgba(255,255,255,0.06); border-radius:1rem; padding:1.5rem; margin-bottom:0.875rem; }
+        .account-section-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .account-input { width:100%; background:#181818; border:1px solid rgba(255,255,255,0.08); border-radius:0.65rem; padding:0.7rem 1rem; color:white; font-size:0.875rem; outline:none; transition:border-color 0.2s; }
+        .account-input:focus { border-color:rgba(124,58,237,0.5); box-shadow:0 0 0 3px rgba(124,58,237,0.08); }
+        .account-input::placeholder { color:#374151; }
+        .account-btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.5rem 1rem; background:#1a1a1a; border:1px solid rgba(255,255,255,0.1); border-radius:0.6rem; color:#d1d5db; font-size:0.8rem; font-weight:500; cursor:pointer; transition:all 0.15s; }
+        .account-btn:hover { background:#222; border-color:rgba(255,255,255,0.2); color:#fff; }
+        .account-btn.primary { background:rgba(124,58,237,0.15); border-color:rgba(124,58,237,0.4); color:#c4b5fd; }
+        .account-btn.primary:hover { background:rgba(124,58,237,0.25); border-color:rgba(124,58,237,0.6); color:#ddd6fe; }
+        .account-btn.danger { background:rgba(153,27,27,0.15); border-color:rgba(153,27,27,0.35); color:#fca5a5; }
+        .account-btn.danger:hover { background:rgba(153,27,27,0.25); border-color:rgba(153,27,27,0.55); }
+        input:-webkit-autofill { -webkit-box-shadow:0 0 0 30px #181818 inset !important; -webkit-text-fill-color:#fff !important; }
+        /* ── Sidebar manage account btn ── */
+        .sidebar-manage-btn { display:flex; align-items:center; justify-content:center; gap:0.5rem; width:100%; padding:0.6rem 1rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:0.75rem; color:#6b7280; font-size:0.75rem; font-weight:500; cursor:pointer; transition:all 0.15s; margin-top:0.5rem; }
+        .sidebar-manage-btn:hover { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.14); color:#d1d5db; }
 
         ::-webkit-scrollbar { width:5px; }
         ::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:4px; }
@@ -186,18 +199,19 @@
 
         <!-- User profile -->
         <div class="p-3 border-t border-white/5 shrink-0">
-            <div class="flex items-center gap-2.5 bg-white/5 border border-white/8 rounded-xl px-3 py-2.5">
+            <div class="flex items-center gap-2.5 bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 mb-1.5">
                 <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shrink-0 shadow-md">
                     <span id="user-initials" class="text-white text-xs font-bold"></span>
                 </div>
                 <div class="flex-1 min-w-0">
                     <p id="user-display-name" class="text-sm text-white font-medium truncate"></p>
-                    <p id="user-email-display" class="text-xs text-gray-600 truncate"></p>
+                    <p id="user-email-display" class="text-xs text-gray-500 truncate"></p>
                 </div>
-                <button onclick="openAccountPage()" title="Manage account" class="p-1.5 hover:bg-white/10 rounded-lg transition-colors shrink-0">
-                    <i data-lucide="settings" class="w-3.5 text-gray-500 hover:text-gray-300 transition-colors"></i>
-                </button>
             </div>
+            <button onclick="openAccountPage()" class="sidebar-manage-btn">
+                <i data-lucide="settings" class="w-3.5"></i>
+                Manage account
+            </button>
         </div>
     </div>
 
@@ -206,15 +220,17 @@
         <i data-lucide="panel-left" class="text-gray-300 w-[22px]"></i>
     </button>
 
-    <!-- Top brand -->
-    <div id="top-brand" class="fixed top-5 left-1/2 -translate-x-1/2 z-20 opacity-0 pointer-events-none flex items-center gap-2">
-        <svg class="w-7 h-7" viewBox="-15 -15 130 130">
-            <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
-            <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
-            <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
-        </svg>
-        <span class="font-bold text-white text-sm tracking-tight">Clarity AI</span>
-    </div>
+    <!-- Top brand — full-width sectioned header, shown after first message -->
+    <header id="top-brand" class="fixed top-0 left-0 right-0 z-20 opacity-0 pointer-events-none border-b border-white/6 bg-[#0a0a0a]/90 backdrop-blur-md">
+        <div id="top-brand-inner" class="flex items-center justify-center gap-2 py-3.5">
+            <svg class="w-6 h-6" viewBox="-15 -15 130 130">
+                <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
+                <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
+                <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,75 55,75 55,75 Z"/>
+            </svg>
+            <span class="font-bold text-white text-sm tracking-tight">Clarity AI</span>
+        </div>
+    </header>
 
     <!-- Main UI -->
     <main id="main-ui" class="min-h-screen flex flex-col items-center justify-center p-4">
@@ -229,7 +245,10 @@
                 </svg>
                 <h1 class="text-5xl font-extrabold tracking-tight">Clarity AI</h1>
             </div>
-            <p class="text-gray-500 text-lg font-light">Ask me anything — I'm here to assist.</p>
+            <!-- Animated cycling greeting -->
+            <p class="text-gray-400 text-xl font-light min-h-[2rem]">
+                <span id="greeting-text"></span><span class="greeting-cursor"></span>
+            </p>
         </div>
 
         <!-- Suggestion cards -->
@@ -412,85 +431,114 @@
          ACCOUNT MANAGEMENT PAGE
     ═══════════════════════════════════════════════════════ -->
     <div id="account-page" class="fixed inset-0 z-[200] bg-[#0a0a0a] hidden flex-col overflow-y-auto">
-        <div class="max-w-3xl mx-auto w-full p-6 pb-16">
 
-            <!-- Back -->
-            <button onclick="closeAccountPage()" class="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8 group">
-                <i data-lucide="arrow-left" class="w-4 group-hover:-translate-x-0.5 transition-transform"></i>
-                <span class="text-sm">Back to chat</span>
+        <!-- Top bar -->
+        <div class="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/6 px-6 py-4 flex items-center gap-3">
+            <button onclick="closeAccountPage()" class="p-1.5 hover:bg-white/8 rounded-lg transition-colors group">
+                <i data-lucide="arrow-left" class="w-4 text-gray-400 group-hover:text-white group-hover:-translate-x-0.5 transition-all"></i>
             </button>
+            <span class="text-white font-semibold text-sm">Account Settings</span>
+        </div>
 
-            <!-- Avatar + name -->
-            <div class="flex items-center gap-4 mb-8">
-                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-xl shadow-violet-900/30">
-                    <span id="account-initials" class="text-white text-2xl font-bold"></span>
-                </div>
-                <div>
-                    <h1 id="account-fullname" class="text-xl font-bold text-white"></h1>
-                    <p id="account-email" class="text-gray-500 text-sm"></p>
+        <div class="max-w-xl mx-auto w-full px-5 pb-16 pt-6">
+
+            <!-- Profile hero card -->
+            <div class="relative overflow-hidden rounded-2xl mb-5 border border-white/6 bg-gradient-to-br from-[#1a0f2e] via-[#110d1f] to-[#0d0d16] p-6">
+                <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(124,58,237,0.12),transparent_60%)]"></div>
+                <div class="relative flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-xl shadow-violet-900/40 shrink-0">
+                        <span id="account-initials" class="text-white text-2xl font-bold tracking-tight"></span>
+                    </div>
+                    <div class="min-w-0">
+                        <h1 id="account-fullname" class="text-lg font-bold text-white truncate"></h1>
+                        <p id="account-email" class="text-violet-300/70 text-sm truncate mt-0.5"></p>
+                    </div>
                 </div>
             </div>
 
             <!-- Profile section -->
             <div class="account-section">
-                <h2 class="text-white font-semibold text-sm mb-4 flex items-center gap-2">
-                    <i data-lucide="user" class="w-4 text-gray-500"></i> Profile
-                </h2>
-                <div class="grid grid-cols-2 gap-3 mb-3">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="account-section-icon bg-blue-500/10">
+                        <i data-lucide="user" class="w-4 text-blue-400"></i>
+                    </div>
                     <div>
-                        <label class="text-xs text-gray-500 mb-1.5 block">First name</label>
+                        <h2 class="text-white font-semibold text-sm">Profile</h2>
+                        <p class="text-gray-600 text-[11px]">Update your display name</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5 mb-2.5">
+                    <div>
+                        <label class="text-[11px] text-gray-500 mb-1.5 block font-medium uppercase tracking-wide">First name</label>
                         <input id="account-fname" type="text" class="account-input" placeholder="First name">
                     </div>
                     <div>
-                        <label class="text-xs text-gray-500 mb-1.5 block">Last name</label>
+                        <label class="text-[11px] text-gray-500 mb-1.5 block font-medium uppercase tracking-wide">Last name</label>
                         <input id="account-lname" type="text" class="account-input" placeholder="Last name">
                     </div>
                 </div>
                 <div class="mb-4">
-                    <label class="text-xs text-gray-500 mb-1.5 block">Email</label>
-                    <input id="account-email-input" type="email" class="account-input opacity-50 cursor-not-allowed" readonly>
+                    <label class="text-[11px] text-gray-500 mb-1.5 block font-medium uppercase tracking-wide">Email</label>
+                    <input id="account-email-input" type="email" class="account-input opacity-40 cursor-not-allowed" readonly>
                 </div>
-                <button onclick="saveProfile()" class="px-4 py-2 bg-black border border-white text-white text-sm font-medium rounded-xl transition-colors hover:bg-white/10">
-                    Save changes
+                <button onclick="saveProfile()" class="account-btn primary">
+                    <i data-lucide="check" class="w-3.5"></i> Save changes
                 </button>
             </div>
 
             <!-- Password section -->
             <div class="account-section">
-                <h2 class="text-white font-semibold text-sm mb-4 flex items-center gap-2">
-                    <i data-lucide="lock" class="w-4 text-gray-500"></i> Change Password
-                </h2>
-                <div class="space-y-3 mb-4">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="account-section-icon bg-amber-500/10">
+                        <i data-lucide="lock" class="w-4 text-amber-400"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-white font-semibold text-sm">Password</h2>
+                        <p class="text-gray-600 text-[11px]">Change your login password</p>
+                    </div>
+                </div>
+                <div class="space-y-2.5 mb-4">
                     <input id="current-password" type="password" placeholder="Current password" class="account-input">
                     <input id="new-password"     type="password" placeholder="New password (min 6 chars)" class="account-input">
                     <input id="confirm-password" type="password" placeholder="Confirm new password" class="account-input">
                 </div>
-                <button onclick="changePassword()" class="px-4 py-2 bg-black border border-white text-white text-sm font-medium rounded-xl transition-colors hover:bg-white/10">
-                    Update password
+                <button onclick="changePassword()" class="account-btn">
+                    <i data-lucide="key" class="w-3.5"></i> Update password
                 </button>
             </div>
 
             <!-- 2FA section -->
             <div class="account-section">
-                <h2 class="text-white font-semibold text-sm mb-1 flex items-center gap-2">
-                    <i data-lucide="shield" class="w-4 text-gray-500"></i> Two-Factor Authentication
-                </h2>
-                <p class="text-gray-600 text-xs mb-4">When enabled, a 6-digit code is sent to your email each time you log in.</p>
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="account-section-icon bg-emerald-500/10">
+                        <i data-lucide="shield" class="w-4 text-emerald-400"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-white font-semibold text-sm">Two-Factor Auth</h2>
+                        <p class="text-gray-600 text-[11px]">Email code required at every login</p>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-white/3 rounded-xl border border-white/5">
+                    <span id="twofa-label" class="text-sm text-gray-400">Disabled</span>
                     <div id="twofa-track" class="toggle-track" onclick="toggle2FA()">
                         <div class="toggle-thumb"></div>
                     </div>
-                    <span id="twofa-label" class="text-sm text-gray-400">Disabled</span>
                 </div>
             </div>
 
             <!-- Sign out -->
             <div class="account-section">
-                <h2 class="text-white font-semibold text-sm mb-3 flex items-center gap-2">
-                    <i data-lucide="log-out" class="w-4 text-gray-500"></i> Session
-                </h2>
-                <button onclick="signOut()" class="px-4 py-2 bg-white/5 hover:bg-red-900/30 border border-white/5 hover:border-red-900/40 text-gray-400 hover:text-red-400 text-sm font-medium rounded-xl transition-all">
-                    Sign out
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="account-section-icon bg-red-500/10">
+                        <i data-lucide="log-out" class="w-4 text-red-400"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-white font-semibold text-sm">Session</h2>
+                        <p class="text-gray-600 text-[11px]">Sign out of your account</p>
+                    </div>
+                </div>
+                <button onclick="signOut()" class="account-btn danger">
+                    <i data-lucide="log-out" class="w-3.5"></i> Sign out
                 </button>
             </div>
         </div>
@@ -589,6 +637,7 @@
                 initTwofaGate();
             }
             loadConversations();
+            runGreeting();
         });
 
         // ── Auth headers helper ───────────────────────────────────
@@ -616,6 +665,45 @@
             document.getElementById('user-display-name').textContent =
                 [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
             document.getElementById('user-email-display').textContent = currentUser.email || '';
+        }
+
+        // ── Greeting cycling animation ────────────────────────────
+        let greetingActive = true;
+        async function runGreeting() {
+            const firstName = (currentUser.first_name || '').trim() || 'there';
+            const messages = [
+                `Hi ${firstName}, how can I help?`,
+                `What can I build for you, ${firstName}?`,
+                `Hey ${firstName}, what's on your mind?`,
+                `Ready to help, ${firstName}. Ask away!`,
+                `Welcome back, ${firstName}!`,
+            ];
+            let idx = 0;
+            while (greetingActive) {
+                const el = document.getElementById('greeting-text');
+                if (!el) break;
+                const msg = messages[idx % messages.length];
+                idx++;
+                // Type out
+                for (let i = 0; i <= msg.length; i++) {
+                    if (!greetingActive) return;
+                    const e2 = document.getElementById('greeting-text');
+                    if (!e2) return;
+                    e2.textContent = msg.slice(0, i);
+                    await sleep(38);
+                }
+                // Pause
+                await sleep(2600);
+                // Erase
+                for (let i = msg.length; i >= 0; i--) {
+                    if (!greetingActive) return;
+                    const e2 = document.getElementById('greeting-text');
+                    if (!e2) return;
+                    e2.textContent = msg.slice(0, i);
+                    await sleep(22);
+                }
+                await sleep(300);
+            }
         }
 
         // ── Input ─────────────────────────────────────────────────
@@ -671,6 +759,7 @@
         document.addEventListener('click', e => {
             if (!e.target.closest('#version-pill') && !e.target.closest('#version-popup')) closeVersionPopup();
         });
+        window.addEventListener('scroll', () => { if (versionPopupOpen) closeVersionPopup(); }, { passive: true });
 
         function selectModel(v) {
             selectedModel = v;
@@ -1107,6 +1196,9 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             window.scrollTo({ top: 0, behavior: 'smooth' });
             loadConversations();
             triggerRainbowGlow();
+            // Restart greeting cycle
+            greetingActive = true;
+            runGreeting();
         }
 
         // ── Account page ──────────────────────────────────────────
@@ -1347,6 +1439,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 document.body.classList.add('conversation-started');
                 topBrand.style.opacity = '1';
                 topBrand.style.pointerEvents = 'auto';
+                greetingActive = false; // stop the greeting cycle
             }
 
             await ensureConversation(val);
