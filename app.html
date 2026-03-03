@@ -198,7 +198,7 @@
         .pp-slide-card.active { border-color:#7c3aed; }
         .pp-slide-card-num { position:absolute; top:0.25rem; left:0.4rem; font-size:0.55rem; color:#6b7280; font-weight:600; }
         /* Active slide view */
-        .pp-active-slide { width:100%; max-width:960px; aspect-ratio:16/9; background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:1rem; overflow:hidden; position:relative; }
+        .pp-active-slide { width:100%; max-width:1100px; aspect-ratio:16/9; background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:1rem; overflow:hidden; position:relative; }
         .pp-active-slide iframe { width:100%; height:100%; border:0; }
 
         /* ── Presentation page fade-in ── */
@@ -224,7 +224,8 @@
         .pp-gen-orb { width:220px; height:220px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #1f1235, #0d0d0d 70%); border:1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; overflow:hidden; transition:all 0.8s cubic-bezier(0.4,0,0.2,1); }
         .pp-gen-orb.expanding { width:100%; height:100%; border-radius:1rem; }
         .pp-gen-orb-rainbow { position:absolute; inset:-14px; border-radius:inherit; background:conic-gradient(from 0deg,#ff0040,#ff8000,#ffe000,#00ff80,#00c8ff,#8000ff,#ff0080,#ff0040); animation:pp-orb-spin 3s linear infinite; filter:blur(35px); opacity:0.28; }
-        .pp-gen-orb-inner-bg { position:absolute; inset:0; border-radius:inherit; background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); }
+        @keyframes pp-orb-inner-rainbow { 0% { background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); } 25% { background:radial-gradient(circle at 40% 35%, #1a1040 0%, #0d0d10 70%); } 50% { background:radial-gradient(circle at 40% 35%, #15102a 0%, #0d0d0d 70%); } 75% { background:radial-gradient(circle at 40% 35%, #181540 0%, #0d0d10 70%); } 100% { background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); } }
+        .pp-gen-orb-inner-bg { position:absolute; inset:0; border-radius:inherit; background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); animation:pp-orb-inner-rainbow 5s ease-in-out infinite; }
         /* ── Per-slide blackout overlay for editing ── */
         .pp-slide-card-overlay { position:absolute; inset:0; z-index:5; border-radius:0.5rem; background:#0a0a0a; display:flex; align-items:center; justify-content:center; }
         .pp-slide-card-overlay .pp-gen-text { font-size:0.5rem; }
@@ -240,6 +241,11 @@
         .pres-card-actions { position:absolute; right:0.4rem; top:50%; transform:translateY(-50%); display:flex; gap:2px; opacity:0; transition:opacity 0.15s; }
         .pres-card:hover .pres-card-actions { opacity:1; }
         .pres-card:hover > i[data-lucide="chevron-right"] { opacity:0; }
+
+        /* ── Presentation modals (shared) ── */
+        .pp-modal-backdrop { position:fixed; inset:0; z-index:310; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); backdrop-filter:blur(6px); }
+        .pp-modal-backdrop.pp-modal-open { display:flex; }
+        .pp-modal-card { background:#111; border:1px solid rgba(255,255,255,0.1); border-radius:1.25rem; padding:1.5rem; box-shadow:0 20px 60px rgba(0,0,0,0.6); animation:splash-in 0.3s ease; }
 
         /* ── Splash screen / what's new ── */
         #splash-modal { position:fixed; inset:0; z-index:300; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); }
@@ -652,12 +658,60 @@
     </div>
 
     <!-- ═══════════════════════════════════════════════════════
+         PRESENTATION RENAME MODAL
+    ═══════════════════════════════════════════════════════ -->
+    <div id="pp-rename-modal" class="pp-modal-backdrop">
+        <div class="absolute inset-0" onclick="closePPRenameModal()"></div>
+        <div class="relative pp-modal-card w-80 mx-4">
+            <h3 class="text-white font-semibold text-sm mb-3">Rename presentation</h3>
+            <input id="pp-rename-input" type="text" placeholder="Presentation title"
+                class="w-full bg-[#1a1a1a] border border-white/8 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-violet-600/70 transition-colors mb-3 placeholder-gray-600"
+                onkeydown="if(event.key==='Enter') confirmPPRename()">
+            <div class="flex gap-2">
+                <button onclick="closePPRenameModal()" class="flex-1 py-2 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Cancel</button>
+                <button onclick="confirmPPRename()" class="flex-1 py-2 text-sm text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition-colors">Rename</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PRESENTATION DELETE MODAL
+    ═══════════════════════════════════════════════════════ -->
+    <div id="pp-delete-modal" class="pp-modal-backdrop">
+        <div class="absolute inset-0" onclick="closePPDeleteModal()"></div>
+        <div class="relative pp-modal-card w-72 mx-4">
+            <h3 class="text-white font-semibold text-sm mb-1.5">Delete presentation?</h3>
+            <p class="text-gray-500 text-xs mb-4">This cannot be undone.</p>
+            <div class="flex gap-2">
+                <button onclick="closePPDeleteModal()" class="flex-1 py-2 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Cancel</button>
+                <button onclick="confirmPPDelete()" class="flex-1 py-2 text-sm text-white bg-red-600 hover:bg-red-500 rounded-xl transition-colors">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PRESENTATION SAVE/DISCARD MODAL (on back)
+    ═══════════════════════════════════════════════════════ -->
+    <div id="pp-save-modal" class="pp-modal-backdrop">
+        <div class="absolute inset-0" onclick="closePPSaveModal()"></div>
+        <div class="relative pp-modal-card w-80 mx-4">
+            <h3 class="text-white font-semibold text-sm mb-1.5">Save changes?</h3>
+            <p class="text-gray-500 text-xs mb-4">Do you want to save your presentation before leaving?</p>
+            <div class="flex gap-2">
+                <button onclick="ppDiscardAndClose()" class="flex-1 py-2 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Don't Save</button>
+                <button onclick="closePPSaveModal()" class="flex-1 py-2 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Cancel</button>
+                <button onclick="ppSaveAndClose()" class="flex-1 py-2 text-sm text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition-colors">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
          PRESENTATION PAGE (full-screen)
     ═══════════════════════════════════════════════════════ -->
     <div id="presentation-page">
         <!-- Top bar -->
         <div class="pp-topbar">
-            <button onclick="closePresentationPage()" class="w-8 h-8 flex items-center justify-center bg-white/6 hover:bg-white/12 border border-white/8 rounded-full transition-colors group">
+            <button onclick="ppBackButton()" class="w-8 h-8 flex items-center justify-center bg-white/6 hover:bg-white/12 border border-white/8 rounded-full transition-colors group">
                 <i data-lucide="arrow-left" class="w-3.5 text-gray-400 group-hover:text-white group-hover:-translate-x-0.5 transition-all"></i>
             </button>
             <div class="flex-1 min-w-0">
@@ -1762,20 +1816,52 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             lucide.createIcons();
         }
 
-        async function renamePresentationPrompt(id, currentTitle) {
-            const newTitle = prompt('Rename presentation:', currentTitle);
-            if (!newTitle || newTitle === currentTitle) return;
+        // ── Presentation rename modal ──
+        let pendingPPRenameId = null;
+        function renamePresentationPrompt(id, currentTitle) {
+            pendingPPRenameId = id;
+            document.getElementById('pp-rename-input').value = currentTitle;
+            const m = document.getElementById('pp-rename-modal');
+            m.classList.add('pp-modal-open');
+            setTimeout(() => document.getElementById('pp-rename-input').focus(), 50);
+        }
+        function closePPRenameModal() {
+            pendingPPRenameId = null;
+            document.getElementById('pp-rename-modal').classList.remove('pp-modal-open');
+        }
+        async function confirmPPRename() {
+            const title = document.getElementById('pp-rename-input').value.trim();
+            if (!title || !pendingPPRenameId) { closePPRenameModal(); return; }
+            const id = pendingPPRenameId;
+            closePPRenameModal();
             try {
                 await fetch('/api/presentations?id=' + id, {
                     method: 'PATCH', headers: authHeaders(),
-                    body: JSON.stringify({ title: newTitle })
+                    body: JSON.stringify({ title })
                 });
+                // Also update title in editor if this is the active one
+                if (activePresentationId === id && activePresentationData) {
+                    activePresentationData.title = title;
+                    document.getElementById('pp-title').value = title;
+                }
                 loadPresentations();
             } catch (_) {}
         }
 
-        async function deletePresentationFromSidebar(id) {
-            if (!confirm('Delete this presentation?')) return;
+        // ── Presentation delete modal ──
+        let pendingPPDeleteId = null;
+        function deletePresentationFromSidebar(id) {
+            pendingPPDeleteId = id;
+            document.getElementById('pp-delete-modal').classList.add('pp-modal-open');
+        }
+        function closePPDeleteModal() {
+            pendingPPDeleteId = null;
+            document.getElementById('pp-delete-modal').classList.remove('pp-modal-open');
+        }
+        async function confirmPPDelete() {
+            if (!pendingPPDeleteId) { closePPDeleteModal(); return; }
+            const id = pendingPPDeleteId;
+            closePPDeleteModal();
             try {
                 await fetch('/api/presentations?id=' + id, { method: 'DELETE', headers: authHeaders() });
                 if (activePresentationId === id) closePresentationPage();
@@ -1811,6 +1897,30 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             activeSlideIndex = 0;
             renderPPSlides();
             lucide.createIcons();
+        }
+
+        function ppBackButton() {
+            // If there are slides, show save/discard modal
+            if (activePresentationData && activePresentationData.slides.length > 0) {
+                document.getElementById('pp-save-modal').classList.add('pp-modal-open');
+                return;
+            }
+            closePresentationPage();
+        }
+
+        function closePPSaveModal() {
+            document.getElementById('pp-save-modal').classList.remove('pp-modal-open');
+        }
+
+        async function ppSaveAndClose() {
+            closePPSaveModal();
+            await savePresentationToDB();
+            closePresentationPage();
+        }
+
+        function ppDiscardAndClose() {
+            closePPSaveModal();
+            closePresentationPage();
         }
 
         function closePresentationPage() {
@@ -2024,6 +2134,11 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
 
         // Show a blackout + wave text overlay on a specific slide card in the sidebar
         function ppShowSlideOverlay(slideIndex, text) {
+            // Navigate to the targeted slide first so user sees it
+            if (slideIndex !== activeSlideIndex) {
+                activeSlideIndex = slideIndex;
+                renderPPSlides();
+            }
             const card = document.querySelectorAll('.pp-slide-card')[slideIndex];
             if (!card) return;
             // Also blackout the main slide iframe
@@ -2081,25 +2196,52 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
         // Parse user intent from prompt
         function ppParseIntent(val, existingSlides) {
             const lower = val.toLowerCase();
-            // Check for specific slide count request
+
+            // Check for specific slide count request (e.g. "make 10 slides", "5 slides")
             const countMatch = lower.match(/(\d+)\s*slides?/);
             const requestedCount = countMatch ? parseInt(countMatch[1], 10) : null;
 
-            // Check for edit intent (targeting current/specific slide)
-            const editKeywords = /\b(change|modify|update|edit|fix|make|adjust|tweak|improve|redo|rewrite|redesign)\b/;
-            const slideRefMatch = lower.match(/\bslide\s*(\d+)/);
-            const isEdit = editKeywords.test(lower) && existingSlides > 0;
+            // Check for add intent first (takes priority)
             const addKeywords = /\b(add|append|insert|create|new)\b.*\bslide/;
             const isAddMore = addKeywords.test(lower) && existingSlides > 0;
 
+            // Check for edit intent (targeting current/specific slide)
+            const editKeywords = /\b(change|modify|update|edit|fix|make|adjust|tweak|improve|redo|rewrite|redesign|move|remove|replace|restyle)\b/;
+            const isEdit = editKeywords.test(lower) && existingSlides > 0 && !isAddMore;
+
+            // Parse which slide is being referenced
+            const ordinals = { first:1, second:2, third:3, fourth:4, fifth:5, sixth:6, seventh:7, eighth:8, ninth:9, tenth:10 };
             let targetSlideIndex = null;
-            if (slideRefMatch) {
-                targetSlideIndex = parseInt(slideRefMatch[1], 10) - 1; // 1-based to 0-based
-            } else if (isEdit && !isAddMore) {
-                targetSlideIndex = activeSlideIndex; // Edit currently viewed slide
+
+            // "slide 3", "slide #3"
+            const slideNumMatch = lower.match(/\bslide\s*#?\s*(\d+)/);
+            // "the third slide", "first slide"
+            const ordinalMatch = lower.match(/\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s*slide/);
+            // "this slide", "current slide"
+            const currentMatch = lower.match(/\b(this|current|the)\s*slide\b/);
+            // "last slide"
+            const lastMatch = lower.match(/\blast\s*slide\b/);
+
+            if (slideNumMatch) {
+                targetSlideIndex = parseInt(slideNumMatch[1], 10) - 1;
+            } else if (ordinalMatch) {
+                targetSlideIndex = (ordinals[ordinalMatch[1]] || 1) - 1;
+            } else if (lastMatch && existingSlides > 0) {
+                targetSlideIndex = existingSlides - 1;
+            } else if (currentMatch || (isEdit && !isAddMore)) {
+                targetSlideIndex = activeSlideIndex;
             }
 
-            return { requestedCount, isEdit, isAddMore, targetSlideIndex };
+            // Clamp to valid range
+            if (targetSlideIndex !== null && existingSlides > 0) {
+                targetSlideIndex = Math.max(0, Math.min(targetSlideIndex, existingSlides - 1));
+            }
+
+            // If user references a specific slide with edit keywords, it's an edit even without explicit "edit" word
+            const hasSlideRef = slideNumMatch || ordinalMatch || currentMatch || lastMatch;
+            const finalIsEdit = (isEdit || (hasSlideRef && existingSlides > 0)) && !isAddMore;
+
+            return { requestedCount, isEdit: finalIsEdit, isAddMore, targetSlideIndex };
         }
 
         async function handlePresentationSend() {
@@ -2142,12 +2284,16 @@ Design requirements for EVERY slide:
 - Layout: use CSS flexbox/grid for clean alignment. Add generous padding (60-80px). Use visual hierarchy with spacing
 - Visual polish: subtle box-shadows, rounded corners on content blocks, semi-transparent overlay cards (rgba backgrounds with backdrop-filter:blur)
 - Icons: use Unicode symbols (▸ ◆ ★ ● ○ ◉ ✦ ⚡ 🎯 📊 💡 🚀) for bullet points and decoration
+- IMAGES: Include relevant images on 2-3 slides using https://picsum.photos with specific seeds for consistency, e.g. <img src="https://picsum.photos/seed/topic/400/250" style="border-radius:12px;object-fit:cover;"> — use different seeds per image. Place images alongside text in two-column layouts or as background accents
+- DETAIL: Include 2-4 sentences of real explanation or context per content slide, not just bullet headers. Add specific data points, percentages, or examples where relevant
 - Each slide is a complete HTML page with <html><head><style>...</style></head><body>...</body></html>, viewport 960x540
 
 Slide structure:
 - Slide 1: Bold title slide with large title, subtitle, and a striking gradient background
-- Middle slides: Content slides with key points, statistics, or concepts. Use cards, columns, or icon grids. Each slide should have a unique layout
-- Last 1-2 slides: Key takeaways / summary and a professional closing slide
+- Slide 2: Overview / agenda slide with key topics listed
+- Middle slides: Content slides with detailed explanations, key points, statistics, or concepts. Use cards, columns, icon grids, or image+text layouts. Each slide should have a unique layout. At least 2 slides should include an illustrative image
+- Second to last: Key takeaways / summary slide
+- Last slide: Professional closing slide with a call-to-action or thank you
 
 Return ONLY the JSON object: {"title":"Short Title","slides":[{"html":"..."},{"html":"..."}]}`;
             } else if (isEditingSingle) {
