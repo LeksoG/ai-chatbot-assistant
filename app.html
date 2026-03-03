@@ -29,8 +29,12 @@
         @keyframes fade-up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         /* ── Bottom fade mask so messages dissolve before input bar ── */
         .conversation-started #bottom-fade { display:block; }
-        #bottom-fade { display:none; position:fixed; bottom:5rem; left:0; right:0; height:6rem; pointer-events:none; z-index:40; background:linear-gradient(to bottom, transparent 0%, var(--bg) 90%); }
+        #bottom-fade { display:none; position:fixed; bottom:4.5rem; left:0; right:0; height:8rem; pointer-events:none; z-index:40; background:linear-gradient(to bottom, transparent 0%, var(--bg) 70%); }
         body.canvas-open #bottom-fade { right:52%; }
+        /* ── Scroll to bottom button ── */
+        #scroll-to-bottom { position:fixed; bottom:6.5rem; left:50%; transform:translateX(-50%) translateY(10px); z-index:45; opacity:0; pointer-events:none; transition:opacity 0.25s ease, transform 0.25s ease; }
+        #scroll-to-bottom.stb-visible { opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0); }
+        body.canvas-open #scroll-to-bottom { left:24%; }
 
         /* ── Sidebar ── */
         #sidebar { transition:transform 0.5s cubic-bezier(0.4,0,0.2,1); }
@@ -65,6 +69,16 @@
         .loading-dots span { display:inline-block; width:6px; height:6px; background:#7c3aed; border-radius:50%; margin:0 2px; animation:dot-bounce 1.4s infinite ease-in-out; }
         .loading-dots span:nth-child(2){animation-delay:.2s} .loading-dots span:nth-child(3){animation-delay:.4s}
         @keyframes dot-bounce { 0%,80%,100%{transform:scale(0.7);opacity:0.4} 40%{transform:scale(1.2);opacity:1} }
+
+        /* ── Send button generating spinner ── */
+        @keyframes send-spin { to { transform:rotate(360deg); } }
+        #send-btn.generating { background:rgba(124,58,237,0.2) !important; border:2px solid transparent !important; opacity:1 !important; cursor:pointer !important; rotate:0deg !important; }
+        #send-btn.generating .send-spinner { display:block; }
+        #send-btn.generating .send-icon { display:none; }
+        #send-btn .send-spinner { display:none; width:20px; height:20px; border:2.5px solid rgba(124,58,237,0.3); border-top-color:#a78bfa; border-radius:50%; animation:send-spin 0.7s linear infinite; }
+        #send-btn .send-stop { display:none; width:10px; height:10px; background:#a78bfa; border-radius:2px; }
+        #send-btn.generating:hover .send-spinner { display:none; }
+        #send-btn.generating:hover .send-stop { display:block; }
 
         /* ── Message entrance ── */
         @keyframes msg-in { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
@@ -216,9 +230,20 @@
             </button>
         </div>
 
+        <!-- Search -->
+        <div class="px-3 pt-1 pb-1 shrink-0">
+            <div class="relative">
+                <i data-lucide="search" class="w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none"></i>
+                <input id="sidebar-search" type="text" placeholder="Search conversations…"
+                    autocomplete="off" spellcheck="false"
+                    class="w-full bg-white/5 border border-white/5 rounded-xl pl-9 pr-3 py-2 text-sm text-gray-300 placeholder-gray-600 outline-none focus:border-violet-600/40 focus:bg-white/8 transition-all"
+                    oninput="filterConversations(this.value)">
+            </div>
+        </div>
+
         <!-- Conversation history -->
         <div class="px-3 flex-1 overflow-y-auto min-h-0">
-            <p class="px-2 text-[10px] text-gray-600 uppercase tracking-widest mb-2">Recent</p>
+            <p id="history-label" class="px-2 text-[10px] text-gray-600 uppercase tracking-widest mb-2">Recent</p>
             <div id="history-list">
                 <div class="p-3 text-gray-600 text-sm text-center">No history yet</div>
             </div>
@@ -372,10 +397,12 @@
                         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
                         class="flex-1 bg-transparent border-none outline-none text-white text-base placeholder-gray-600 min-w-0 px-1">
 
-                    <!-- Send button -->
-                    <button id="send-btn" onclick="handleSend()" disabled
+                    <!-- Send / Stop button -->
+                    <button id="send-btn" onclick="handleSendOrStop()" disabled
                         class="shrink-0 p-2.5 rounded-full transition-all duration-500 bg-white/5 text-gray-600 opacity-40 cursor-not-allowed rotate-45">
-                        <i data-lucide="arrow-up" class="w-5 stroke-[3]"></i>
+                        <i data-lucide="arrow-up" class="send-icon w-5 stroke-[3]"></i>
+                        <div class="send-spinner"></div>
+                        <div class="send-stop"></div>
                     </button>
                 </div><!-- /input flex row -->
             </div><!-- /relative group -->
@@ -385,6 +412,13 @@
 
     <!-- Bottom fade mask — ChatGPT-style dissolve before input bar -->
     <div id="bottom-fade"></div>
+
+    <!-- Scroll to bottom button -->
+    <button id="scroll-to-bottom" onclick="scrollToBottom(); hideScrollToBottom();"
+        class="flex items-center gap-1.5 px-3.5 py-2 bg-[#1a1a1a] border border-white/10 rounded-full text-xs text-gray-400 hover:text-white hover:bg-[#222] hover:border-white/20 shadow-xl transition-all">
+        <i data-lucide="arrow-down" class="w-3.5"></i>
+        <span>New response</span>
+    </button>
 
     <!-- ═══════════════════════════════════════════════════════
          CANVAS SIDEBAR (slides in from right)
@@ -532,16 +566,16 @@
                 <div class="grid grid-cols-2 gap-2.5 mb-2.5">
                     <div>
                         <label class="text-[11px] text-gray-500 mb-1.5 block font-medium uppercase tracking-wide">First name</label>
-                        <input id="account-fname" type="text" class="account-input" placeholder="First name">
+                        <input id="account-fname" type="text" class="account-input" placeholder="First name" autocomplete="off" data-form-type="other">
                     </div>
                     <div>
                         <label class="text-[11px] text-gray-500 mb-1.5 block font-medium uppercase tracking-wide">Last name</label>
-                        <input id="account-lname" type="text" class="account-input" placeholder="Last name">
+                        <input id="account-lname" type="text" class="account-input" placeholder="Last name" autocomplete="off" data-form-type="other">
                     </div>
                 </div>
                 <div class="mb-4">
                     <label class="text-[11px] text-gray-500 mb-1.5 block font-medium uppercase tracking-wide">Email</label>
-                    <input id="account-email-input" type="email" class="account-input opacity-40 cursor-not-allowed" readonly>
+                    <input id="account-email-input" type="text" class="account-input opacity-40 cursor-not-allowed" readonly autocomplete="off" data-form-type="other">
                 </div>
                 <button onclick="saveProfile()" class="account-btn primary">
                     <i data-lucide="check" class="w-3.5"></i> Save changes
@@ -561,14 +595,14 @@
                 </div>
                 <div class="space-y-2.5 mb-4">
                     <div class="relative">
-                        <input id="current-password" type="password" placeholder="Current password" class="account-input pr-16">
+                        <input id="current-password" type="password" placeholder="Current password" class="account-input pr-16" autocomplete="new-password" data-form-type="other">
                         <button id="pw-eye-btn" type="button" onclick="togglePasswordVisibility('current-password',this)" class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 p-1 text-gray-600 hover:text-gray-300 transition-colors" title="Show password">
                             <span id="pw-eye-countdown" class="text-[10px] font-mono text-violet-400 hidden"></span>
                             <i data-lucide="eye" class="w-4"></i>
                         </button>
                     </div>
-                    <input id="new-password" type="password" placeholder="New password (min 6 chars)" class="account-input">
-                    <input id="confirm-password" type="password" placeholder="Confirm new password" class="account-input">
+                    <input id="new-password" type="password" placeholder="New password (min 6 chars)" class="account-input" autocomplete="new-password" data-form-type="other">
+                    <input id="confirm-password" type="password" placeholder="Confirm new password" class="account-input" autocomplete="new-password" data-form-type="other">
                 </div>
                 <button onclick="changePassword()" class="account-btn">
                     <i data-lucide="key" class="w-3.5"></i> Update password
@@ -681,6 +715,7 @@
         let canvasPages          = [];   // [{code, prompt, pageIndex}]
         let canvasPageIndex      = 0;    // current page (0-based)
         let canvasPagesSaving    = false;
+        let abortController      = null; // for pausing generation
 
         // ── Init ──────────────────────────────────────────────────
         window.addEventListener('load', async () => {
@@ -786,7 +821,7 @@
         const topBrand    = document.getElementById('top-brand');
 
         input.addEventListener('input', e => updateButtonState(e.target.value.trim().length > 0));
-        input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } });
+        input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendOrStop(); } });
 
         function updateButtonState(active) {
             const en = active && !isTyping;
@@ -1324,13 +1359,29 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
         marked.setOptions({ renderer: _renderer });
 
         // ── Conversations ─────────────────────────────────────────
+        let allConversations = []; // cached for search filtering
         async function loadConversations() {
             try {
                 const res = await fetch(`/api/conversations?userId=${encodeURIComponent(currentUser.id || '')}`, { headers: authHeaders() });
                 if (res.status === 401) { signOut(); return; }
                 if (!res.ok) return;
-                renderConversationList(await res.json());
+                const convs = await res.json();
+                allConversations = convs || [];
+                renderConversationList(allConversations);
             } catch (_) {}
+        }
+
+        function filterConversations(query) {
+            const q = query.trim().toLowerCase();
+            const label = document.getElementById('history-label');
+            if (!q) {
+                label.textContent = 'Recent';
+                renderConversationList(allConversations);
+                return;
+            }
+            label.textContent = 'Results';
+            const filtered = allConversations.filter(c => c.title.toLowerCase().includes(q));
+            renderConversationList(filtered);
         }
 
         function renderConversationList(convs) {
@@ -1787,20 +1838,67 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
         }
 
         // ── Typewriter ────────────────────────────────────────────
+        let typewriterAborted = false;
         async function typeWriter(el, text) {
+            typewriterAborted = false;
             let built = '';
             for (let i = 0; i < text.length; i += 3) {
+                if (typewriterAborted) { el.innerHTML = marked.parse(text); return; }
                 built += text.slice(i, i + 3);
                 el.innerHTML = marked.parse(built) + '<span class="typing-cursor"></span>';
-                scrollToBottom();
+                if (userIsNearBottom) scrollToBottom();
                 await sleep(14);
             }
             el.innerHTML = marked.parse(text);
-            scrollToBottom();
+            if (userIsNearBottom) scrollToBottom();
         }
 
+        // ── Scroll management ────────────────────────────────────
+        let userIsNearBottom = true;
         function scrollToBottom() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }
         function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        // Track if user has scrolled away from bottom
+        window.addEventListener('scroll', () => {
+            const distFromBottom = document.body.scrollHeight - window.innerHeight - window.scrollY;
+            userIsNearBottom = distFromBottom < 120;
+            const scrollBtn = document.getElementById('scroll-to-bottom');
+            if (scrollBtn) {
+                if (!userIsNearBottom && isTyping) {
+                    scrollBtn.classList.add('stb-visible');
+                } else if (userIsNearBottom) {
+                    scrollBtn.classList.remove('stb-visible');
+                }
+            }
+        }, { passive: true });
+
+        function showScrollToBottom() {
+            const btn = document.getElementById('scroll-to-bottom');
+            if (!userIsNearBottom) btn.classList.add('stb-visible');
+        }
+        function hideScrollToBottom() {
+            document.getElementById('scroll-to-bottom').classList.remove('stb-visible');
+        }
+
+        // ── Send button state: generating spinner ────────────────
+        function setGeneratingState(on) {
+            if (on) {
+                sendBtn.classList.add('generating');
+                sendBtn.disabled = false;
+            } else {
+                sendBtn.classList.remove('generating');
+            }
+        }
+
+        function handleSendOrStop() {
+            if (isTyping) {
+                // Stop / abort generation
+                if (abortController) abortController.abort();
+                typewriterAborted = true;
+                return;
+            }
+            handleSend();
+        }
 
         // ── Send handler ──────────────────────────────────────────
         async function handleSend() {
@@ -1808,14 +1906,16 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             if (!val || isTyping) return;
 
             isTyping = true;
+            userIsNearBottom = true;
             input.value = '';
             updateButtonState(false);
+            setGeneratingState(true);
 
             if (!document.body.classList.contains('conversation-started')) {
                 document.body.classList.add('conversation-started');
                 topBrand.style.opacity = '1';
                 topBrand.style.pointerEvents = 'auto';
-                greetingActive = false; // stop the greeting cycle
+                greetingActive = false;
             }
 
             await ensureConversation(val);
@@ -1823,86 +1923,65 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             scrollToBottom();
             saveMessage('user', val);
 
-            // If canvas mode is on, ensure sidebar is open with loading state
-            if (canvasEnabled) {
-                const sb = document.getElementById('canvas-sidebar');
-                if (!sb.classList.contains('cs-open')) {
-                    // First time opening canvas — open with loading
-                    sb.classList.add('cs-open');
-                    document.body.classList.add('canvas-open');
-                    switchCanvasTab('code');
-                    lucide.createIcons();
-                    await loadMonaco();
-                    updateCanvasPageNav();
-                }
-                // Show shimmer to indicate generating
-                const shimmer = document.getElementById('canvas-shimmer');
-                shimmer.classList.add('active');
-                if (monacoEditor) monacoEditor.setValue('// Generating…');
-            }
-
             const { responseEl: aiEl, avatarEl } = appendAIMessageShell();
             scrollToBottom();
 
+            abortController = new AbortController();
             try {
-                const res  = await fetch('/api/chat', {
+                const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: val, history: conversationHistory, modelVersion: selectedModel })
+                    body: JSON.stringify({ message: val, history: conversationHistory, modelVersion: selectedModel }),
+                    signal: abortController.signal
                 });
                 const data = await res.json();
-                if (canvasEnabled) document.getElementById('canvas-shimmer').classList.remove('active');
 
                 if (!res.ok) {
                     avatarEl.innerHTML = STATIC_LOGO_SVG;
                     aiEl.innerHTML = `<div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3"><i data-lucide="alert-circle" class="w-4 shrink-0 mt-0.5"></i><span>${escapeHtml(data.error || 'Something went wrong.')}</span></div>`;
                     lucide.createIcons();
-                    // Restore previous page code if we have pages
-                    if (canvasEnabled && canvasPages.length > 0) {
-                        const curPage = canvasPages[canvasPageIndex];
-                        monacoEditor.setValue(curPage.code);
-                    }
                 } else {
                     conversationHistory.push({ role: 'user', content: val }, { role: 'assistant', content: data.reply });
                     const codeBlock = canvasEnabled ? extractCodeBlock(data.reply) : null;
 
                     if (canvasEnabled && codeBlock) {
-                        // Add as new page in same canvas container
+                        const sb = document.getElementById('canvas-sidebar');
+                        if (!sb.classList.contains('cs-open')) {
+                            sb.classList.add('cs-open');
+                            document.body.classList.add('canvas-open');
+                            switchCanvasTab('code');
+                            lucide.createIcons();
+                            await loadMonaco();
+                            updateCanvasPageNav();
+                        }
                         const chatText = removeCodeBlocks(data.reply);
-                        await typeWriter(aiEl, chatText || '*Code is rendering in Canvas →*');
+                        await typeWriter(aiEl, chatText || '*Code is rendering in Canvas \u2192*');
                         avatarEl.innerHTML = STATIC_LOGO_SVG;
                         addCanvasPage(codeBlock, val);
                         await typeWriterMonaco(codeBlock);
                         appendCanvasReopenCard(aiEl, val, codeBlock);
                     } else {
-                        // Normal mode: full response in chat
-                        if (canvasEnabled && canvasPages.length > 0) {
-                            // Restore last page since no new code was generated
-                            const curPage = canvasPages[canvasPageIndex];
-                            monacoEditor.setValue(curPage.code);
-                        } else if (canvasEnabled) {
-                            closeCanvas(); // no code found and no previous pages
-                        }
                         await typeWriter(aiEl, data.reply);
                         avatarEl.innerHTML = STATIC_LOGO_SVG;
                     }
                     saveMessage('assistant', data.reply);
                 }
-            } catch {
+            } catch (err) {
                 avatarEl.innerHTML = STATIC_LOGO_SVG;
-                if (canvasEnabled) document.getElementById('canvas-shimmer').classList.remove('active');
-                if (canvasEnabled && canvasPages.length > 0) {
-                    const curPage = canvasPages[canvasPageIndex];
-                    monacoEditor.setValue(curPage.code);
-                } else if (canvasEnabled) {
-                    closeCanvas();
+                if (err.name === 'AbortError') {
+                    aiEl.innerHTML = `<div class="text-gray-500 text-sm italic">Generation stopped.</div>`;
+                } else {
+                    aiEl.innerHTML = `<div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3"><i data-lucide="wifi-off" class="w-4 shrink-0 mt-0.5"></i><span>Connection error. Check your network.</span></div>`;
+                    lucide.createIcons();
                 }
-                aiEl.innerHTML = `<div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3"><i data-lucide="wifi-off" class="w-4 shrink-0 mt-0.5"></i><span>Connection error. Check your network.</span></div>`;
-                lucide.createIcons();
             }
 
+            abortController = null;
             isTyping = false;
+            setGeneratingState(false);
             updateButtonState(input.value.trim().length > 0);
+            // Show scroll-to-bottom if user scrolled away during generation
+            if (!userIsNearBottom) showScrollToBottom();
             input.focus();
         }
     </script>
