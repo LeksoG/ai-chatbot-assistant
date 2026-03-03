@@ -201,26 +201,42 @@
         .pp-active-slide { width:100%; max-width:960px; aspect-ratio:16/9; background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:1rem; overflow:hidden; position:relative; }
         .pp-active-slide iframe { width:100%; height:100%; border:0; }
 
-        /* ── Rainbow ring + generation animations ── */
-        @keyframes pp-ring-spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
+        /* ── Presentation page fade-in ── */
+        @keyframes pp-page-fade { from { opacity:0; } to { opacity:1; } }
+        #presentation-page.pp-open { animation:pp-page-fade 0.4s ease forwards; }
+
+        /* ── Rainbow orb (filled circle) ── */
+        @keyframes pp-orb-spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
         @keyframes pp-rainbow-shift { 0% { filter:hue-rotate(0deg); } 100% { filter:hue-rotate(360deg); } }
-        @keyframes pp-fade-in { 0% { opacity:0; transform:scale(0.92); } 100% { opacity:1; transform:scale(1); } }
+        @keyframes pp-orb-pulse { 0%,100% { transform:scale(1); opacity:0.7; } 50% { transform:scale(1.06); opacity:1; } }
+        .pp-orb-wrap { position:relative; width:160px; height:160px; display:flex; align-items:center; justify-content:center; margin-bottom:2rem; }
+        .pp-orb-bg { position:absolute; inset:0; border-radius:50%; background:conic-gradient(from 0deg, #ff0040, #ff8000, #ffe000, #00ff80, #00c8ff, #8000ff, #ff0080, #ff0040); animation:pp-orb-spin 4s linear infinite, pp-rainbow-shift 6s linear infinite; filter:blur(20px); opacity:0.5; }
+        .pp-orb-fill { position:absolute; inset:8px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); animation:pp-orb-pulse 3s ease-in-out infinite; border:1px solid rgba(255,255,255,0.06); }
+        .pp-orb-text { position:relative; z-index:2; color:#fff; font-size:0.82rem; font-weight:500; text-align:center; max-width:240px; line-height:1.5; opacity:0.85; }
+
+        /* ── Generation orb overlay ── */
         @keyframes pp-wave-char { 0%,100% { opacity:0.4; transform:translateY(0); } 50% { opacity:1; transform:translateY(-3px); } }
-        @keyframes pp-container-pulse { 0%,100% { box-shadow:0 0 40px rgba(255,50,80,0.15), 0 0 80px rgba(255,50,80,0.08); } 50% { box-shadow:0 0 60px rgba(255,50,80,0.25), 0 0 120px rgba(255,50,80,0.12); } }
-        @keyframes pp-rainbow-bg { 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
-
-        .pp-rainbow-ring-wrap { position:relative; width:180px; height:180px; display:flex; align-items:center; justify-content:center; margin-bottom:2rem; }
-        .pp-rainbow-ring { position:absolute; inset:-8px; border-radius:50%; background:conic-gradient(from 0deg, #ff0040, #ff8000, #ffe000, #00ff80, #00c8ff, #8000ff, #ff0080, #ff0040); animation:pp-ring-spin 4s linear infinite, pp-rainbow-shift 6s linear infinite; filter:blur(18px); opacity:0.55; }
-        .pp-rainbow-ring-inner { position:absolute; inset:6px; border-radius:50%; background:var(--bg); }
-        .pp-prompt-text { color:#fff; font-size:0.85rem; font-weight:500; text-align:center; max-width:260px; line-height:1.5; opacity:0.85; }
-
-        .pp-gen-overlay { position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:10; border-radius:1rem; overflow:hidden; animation:pp-fade-in 0.5s ease-out; }
-        .pp-gen-overlay.active { display:flex; }
-        .pp-gen-bg { position:absolute; inset:0; background:linear-gradient(135deg, #1a0a0e, #0d0d0d 40%, #1a0a0e); }
-        .pp-gen-rainbow-bg { position:absolute; inset:0; background:linear-gradient(270deg, rgba(255,0,80,0.08), rgba(255,140,0,0.08), rgba(0,200,255,0.08), rgba(128,0,255,0.08), rgba(255,0,80,0.08)); background-size:400% 400%; animation:pp-rainbow-bg 6s ease infinite; filter:blur(40px); opacity:0.6; }
-        .pp-gen-container { position:relative; z-index:2; padding:2rem 3rem; border-radius:1.5rem; border:1px solid rgba(255,60,80,0.15); background:rgba(255,30,60,0.04); backdrop-filter:blur(12px); animation:pp-container-pulse 3s ease-in-out infinite; }
-        .pp-gen-text { font-size:1.1rem; font-weight:600; color:#fff; letter-spacing:0.02em; display:flex; gap:1px; }
+        @keyframes pp-gen-fade { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+        @keyframes pp-rainbow-bg-shift { 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
+        @keyframes pp-orb-to-rect { 0% { width:180px; height:180px; border-radius:50%; } 100% { width:100%; height:100%; border-radius:1rem; } }
+        .pp-gen-overlay { position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:10; border-radius:1rem; overflow:hidden; }
+        .pp-gen-overlay.active { display:flex; animation:pp-gen-fade 0.5s ease-out; }
+        .pp-gen-orb { width:180px; height:180px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #1f1235, #0d0d0d 70%); border:1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; overflow:hidden; transition:all 0.8s cubic-bezier(0.4,0,0.2,1); }
+        .pp-gen-orb.expanding { width:100%; height:100%; border-radius:1rem; }
+        .pp-gen-orb-rainbow { position:absolute; inset:-10px; border-radius:inherit; background:conic-gradient(from 0deg,#ff0040,#ff8000,#ffe000,#00ff80,#00c8ff,#8000ff,#ff0080,#ff0040); animation:pp-orb-spin 3s linear infinite; filter:blur(25px); opacity:0.35; }
+        .pp-gen-orb-inner-bg { position:absolute; inset:0; border-radius:inherit; background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); }
+        .pp-gen-text { position:relative; z-index:2; font-size:0.95rem; font-weight:600; color:#fff; letter-spacing:0.02em; display:flex; gap:1px; flex-wrap:wrap; justify-content:center; }
         .pp-gen-char { display:inline-block; }
+
+        /* ── Slide card stagger (ladder) animation ── */
+        @keyframes pp-slide-ladder { from { opacity:0; transform:translateY(18px) scale(0.95); } to { opacity:1; transform:translateY(0) scale(1); } }
+        .pp-slide-card.ladder-in { animation:pp-slide-ladder 0.35s ease forwards; opacity:0; }
+
+        /* ── Sidebar pres card hover actions ── */
+        .pres-card { position:relative; }
+        .pres-card-actions { position:absolute; right:0.4rem; top:50%; transform:translateY(-50%); display:flex; gap:2px; opacity:0; transition:opacity 0.15s; }
+        .pres-card:hover .pres-card-actions { opacity:1; }
+        .pres-card:hover > i[data-lucide="chevron-right"] { opacity:0; }
 
         /* ── Splash screen / what's new ── */
         #splash-modal { position:fixed; inset:0; z-index:300; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); }
@@ -292,14 +308,14 @@
         </div>
 
         <!-- New conversation -->
-        <div class="p-3 pb-2 shrink-0">
+        <div class="p-3 pb-1.5 shrink-0">
             <button onclick="newConversation()" class="w-full flex items-center gap-2.5 p-3 bg-white/5 hover:bg-white/10 rounded-xl text-sm text-gray-300 transition-colors border border-white/5 group">
                 <i data-lucide="plus" class="w-4 group-hover:text-violet-400 transition-colors"></i>
                 <span>New Conversation</span>
             </button>
         </div>
 
-        <!-- Presentation shortcut -->
+        <!-- Presentation shortcut (below new chat) -->
         <div class="px-3 pb-2 shrink-0">
             <button onclick="openPresentationPage(null)" class="w-full flex items-center justify-between gap-2.5 p-2.5 bg-white/[0.03] hover:bg-white/[0.07] rounded-xl text-sm text-gray-400 hover:text-gray-200 transition-all border border-white/5 hover:border-white/10 group">
                 <div class="flex items-center gap-2.5">
@@ -646,6 +662,11 @@
                     class="bg-transparent text-white font-semibold text-sm outline-none border-b border-transparent hover:border-white/10 focus:border-violet-500/50 transition-colors w-full max-w-xs"
                     onchange="updatePresentationTitle(this.value)">
             </div>
+            <!-- New Presentation button (center) -->
+            <button onclick="newPresentationFromEditor()" class="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 hover:bg-violet-600/35 border border-violet-500/25 rounded-full text-xs text-violet-300 hover:text-violet-200 font-medium transition-all">
+                <i data-lucide="plus" class="w-3"></i>
+                <span>New Presentation</span>
+            </button>
             <div class="flex items-center gap-2">
                 <span id="pp-slide-count" class="text-[10px] text-gray-500 font-medium">0 slides</span>
                 <button onclick="deletePresentationConfirm()" class="p-1.5 hover:bg-red-900/30 rounded-lg transition-colors" title="Delete presentation">
@@ -670,19 +691,19 @@
                 <div class="pp-slide-view" id="pp-slide-view">
                     <div class="pp-active-slide" id="pp-active-slide">
                         <iframe id="pp-slide-iframe" class="w-full h-full border-0 bg-white" sandbox="allow-scripts allow-same-origin"></iframe>
-                        <!-- Empty state: rainbow ring -->
+                        <!-- Empty state: filled rainbow orb -->
                         <div id="pp-empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8" style="background:var(--bg);">
-                            <div class="pp-rainbow-ring-wrap">
-                                <div class="pp-rainbow-ring"></div>
-                                <div class="pp-rainbow-ring-inner"></div>
+                            <div class="pp-orb-wrap">
+                                <div class="pp-orb-bg"></div>
+                                <div class="pp-orb-fill"></div>
                             </div>
-                            <p class="pp-prompt-text">Type a prompt to generate a presentation in minutes</p>
+                            <p class="pp-orb-text">Type a prompt to generate a presentation in minutes</p>
                         </div>
-                        <!-- Generation animation overlay -->
+                        <!-- Generation overlay (orb that morphs to rectangle) -->
                         <div id="pp-gen-overlay" class="pp-gen-overlay">
-                            <div class="pp-gen-bg"></div>
-                            <div class="pp-gen-rainbow-bg"></div>
-                            <div class="pp-gen-container">
+                            <div class="pp-gen-orb" id="pp-gen-orb">
+                                <div class="pp-gen-orb-rainbow"></div>
+                                <div class="pp-gen-orb-inner-bg"></div>
                                 <div id="pp-gen-text" class="pp-gen-text"></div>
                             </div>
                         </div>
@@ -1714,6 +1735,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             }
             list.innerHTML = pres.map(p => {
                 const slideCount = (p.slides || []).length;
+                const safeTitle = escapeHtml(p.title).replace(/'/g, "\\'");
                 return `
                 <div class="pres-card ${activePresentationId === p.id ? 'active-pres' : ''}" onclick="openPresentationPage('${p.id}')">
                     <div class="pres-card-thumb">
@@ -1724,19 +1746,51 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                         <p class="text-[10px] text-gray-600 mt-0.5">${slideCount} slide${slideCount !== 1 ? 's' : ''}</p>
                     </div>
                     <i data-lucide="chevron-right" class="w-3.5 text-gray-600 shrink-0"></i>
+                    <div class="pres-card-actions" onclick="event.stopPropagation()">
+                        <button onclick="renamePresentationPrompt('${p.id}','${safeTitle}')" class="p-1.5 hover:bg-white/10 rounded-lg transition-colors" title="Rename">
+                            <i data-lucide="pencil" class="w-3 text-gray-500 hover:text-gray-200"></i>
+                        </button>
+                        <button onclick="deletePresentationFromSidebar('${p.id}')" class="p-1.5 hover:bg-red-900/30 rounded-lg transition-colors" title="Delete">
+                            <i data-lucide="trash-2" class="w-3 text-gray-500 hover:text-red-400"></i>
+                        </button>
+                    </div>
                 </div>`;
             }).join('');
             lucide.createIcons();
+        }
+
+        async function renamePresentationPrompt(id, currentTitle) {
+            const newTitle = prompt('Rename presentation:', currentTitle);
+            if (!newTitle || newTitle === currentTitle) return;
+            try {
+                await fetch('/api/presentations?id=' + id, {
+                    method: 'PATCH', headers: authHeaders(),
+                    body: JSON.stringify({ title: newTitle })
+                });
+                loadPresentations();
+            } catch (_) {}
+        }
+
+        async function deletePresentationFromSidebar(id) {
+            if (!confirm('Delete this presentation?')) return;
+            try {
+                await fetch('/api/presentations?id=' + id, { method: 'DELETE', headers: authHeaders() });
+                if (activePresentationId === id) closePresentationPage();
+                loadPresentations();
+            } catch (_) {}
         }
 
         // ── Presentation page ────────────────────────────────────
         function openPresentationPage(id) {
             toggleSidebar(false);
             const page = document.getElementById('presentation-page');
+            // Fade-in animation: reset and re-trigger
+            page.style.animation = 'none';
+            page.offsetHeight; // force reflow
+            page.style.animation = '';
             page.classList.add('pp-open');
 
             if (id) {
-                // Load existing presentation
                 const pres = allPresentations.find(p => p.id === id);
                 if (pres) {
                     activePresentationId = pres.id;
@@ -1757,13 +1811,41 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
         }
 
         function closePresentationPage() {
-            document.getElementById('presentation-page').classList.remove('pp-open');
-            activePresentationId = null;
-            activePresentationData = null;
-            loadPresentations();
+            const page = document.getElementById('presentation-page');
+            page.style.transition = 'opacity 0.3s ease';
+            page.style.opacity = '0';
+            setTimeout(() => {
+                page.classList.remove('pp-open');
+                page.style.transition = '';
+                page.style.opacity = '';
+                activePresentationId = null;
+                activePresentationData = null;
+                loadPresentations();
+            }, 300);
         }
 
-        function renderPPSlides() {
+        async function newPresentationFromEditor() {
+            // Auto-save current one if it has slides
+            if (activePresentationData && activePresentationData.slides.length > 0) {
+                await savePresentationToDB();
+            }
+            // Smooth transition to fresh state
+            const slideView = document.getElementById('pp-active-slide');
+            slideView.style.transition = 'opacity 0.3s ease';
+            slideView.style.opacity = '0';
+            setTimeout(() => {
+                activePresentationId = null;
+                activePresentationData = { id: null, title: 'Untitled Presentation', slides: [] };
+                document.getElementById('pp-title').value = 'Untitled Presentation';
+                activeSlideIndex = 0;
+                renderPPSlides();
+                lucide.createIcons();
+                slideView.style.opacity = '1';
+            }, 300);
+        }
+
+        let ppLastSlideCount = 0; // track for ladder animation trigger
+        function renderPPSlides(useLadder) {
             if (!activePresentationData) return;
             const slides = activePresentationData.slides || [];
             const list = document.getElementById('pp-slide-list');
@@ -1776,13 +1858,17 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 list.innerHTML = '';
                 emptyState.style.display = 'flex';
                 document.getElementById('pp-slide-iframe').srcdoc = '';
+                ppLastSlideCount = 0;
                 lucide.createIcons();
                 return;
             }
             emptyState.style.display = 'none';
 
+            const shouldLadder = useLadder || (ppLastSlideCount === 0 && slides.length > 0);
+            ppLastSlideCount = slides.length;
+
             list.innerHTML = slides.map((s, i) => `
-                <div class="pp-slide-card ${i === activeSlideIndex ? 'active' : ''}" onclick="selectSlide(${i})">
+                <div class="pp-slide-card ${i === activeSlideIndex ? 'active' : ''}${shouldLadder ? ' ladder-in' : ''}" onclick="selectSlide(${i})" style="${shouldLadder ? 'animation-delay:' + (i * 0.08) + 's' : ''}">
                     <span class="pp-slide-card-num">${i + 1}</span>
                     <div style="transform:scale(0.18);transform-origin:top left;width:555%;height:555%;pointer-events:none;overflow:hidden;">
                         <iframe srcdoc="${escapeHtml(s.html || '<div></div>')}" style="width:100%;height:100%;border:0;" sandbox="allow-scripts"></iframe>
@@ -1870,20 +1956,44 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
         }
 
         // ── Presentation AI generation ───────────────────────────
-        /* ── Presentation generation animation helpers ── */
         let ppGenAnimInterval = null;
+
         function ppShowGenOverlay() {
             const overlay = document.getElementById('pp-gen-overlay');
+            const orb = document.getElementById('pp-gen-orb');
             const emptyState = document.getElementById('pp-empty-state');
             if (emptyState) emptyState.style.display = 'none';
+            orb.classList.remove('expanding');
             overlay.classList.add('active');
             ppAnimateGenText(['Generating...', 'Creating slides...', 'Assembling presentation...']);
         }
+
         function ppHideGenOverlay() {
-            const overlay = document.getElementById('pp-gen-overlay');
-            overlay.classList.remove('active');
-            if (ppGenAnimInterval) { clearInterval(ppGenAnimInterval); ppGenAnimInterval = null; }
+            return new Promise(resolve => {
+                if (ppGenAnimInterval) { clearInterval(ppGenAnimInterval); ppGenAnimInterval = null; }
+                const orb = document.getElementById('pp-gen-orb');
+                const overlay = document.getElementById('pp-gen-overlay');
+                const textEl = document.getElementById('pp-gen-text');
+                // Expand orb into rectangle
+                textEl.style.transition = 'opacity 0.3s';
+                textEl.style.opacity = '0';
+                orb.classList.add('expanding');
+                setTimeout(() => {
+                    overlay.style.transition = 'opacity 0.6s ease';
+                    overlay.style.opacity = '0';
+                    setTimeout(() => {
+                        overlay.classList.remove('active');
+                        overlay.style.transition = '';
+                        overlay.style.opacity = '';
+                        textEl.style.transition = '';
+                        textEl.style.opacity = '';
+                        orb.classList.remove('expanding');
+                        resolve();
+                    }, 600);
+                }, 800);
+            });
         }
+
         function ppAnimateGenText(phases) {
             const container = document.getElementById('pp-gen-text');
             let phaseIdx = 0;
@@ -1901,7 +2011,6 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             setPhase(0);
             ppGenAnimInterval = setInterval(() => {
                 phaseIdx = (phaseIdx + 1) % phases.length;
-                // Fade out then in
                 container.style.transition = 'opacity 0.35s ease';
                 container.style.opacity = '0';
                 setTimeout(() => {
@@ -1920,21 +2029,28 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             input.value = '';
             ppShowGenOverlay();
 
-            // Build prompt for slide generation
             const existingSlides = (activePresentationData?.slides || []).length;
             let prompt;
             if (existingSlides === 0) {
-                prompt = `Create a professional slide presentation about: "${val}"
+                prompt = `Create a professional, visually stunning slide presentation about: "${val}"
 
-Return a JSON array of slide objects. Each slide has an "html" field containing a complete self-contained HTML page for that slide (inline CSS, no external resources). Make 5-8 slides with beautiful, modern design using gradients, large typography, clean layout. Each slide should be 960x540 viewport.
+Return a JSON array of slide objects. Each slide has an "html" field containing a complete self-contained HTML page for that slide (inline CSS only, no external resources). Create 6-8 slides.
 
-Rules:
-- First slide: title slide with large title + subtitle
-- Middle slides: content with bullet points, icons (use Unicode), or key stats
-- Last slide: summary or thank you slide
-- Use a consistent color scheme throughout
-- Make text readable: large fonts, high contrast
-- Return ONLY the JSON array, no explanation: [{"html":"..."},{"html":"..."}]`;
+Design requirements for EVERY slide:
+- Full-bleed backgrounds: use bold CSS gradients (linear-gradient, radial-gradient) or dark rich backgrounds. Never leave a slide with a plain white background
+- Color palette: pick a cohesive 3-4 color theme (e.g. deep navy/electric blue/white, dark purple/coral/cream, charcoal/gold/white). Apply consistently across all slides
+- Typography: use large, bold headings (2.5-3.5rem), clean sans-serif fonts. Subtitles 1.2-1.5rem. Body text 1-1.1rem with generous line-height
+- Layout: use CSS flexbox/grid for clean alignment. Add generous padding (60-80px). Use visual hierarchy with spacing
+- Visual polish: subtle box-shadows, rounded corners on content blocks, semi-transparent overlay cards (rgba backgrounds with backdrop-filter:blur)
+- Icons: use Unicode symbols (▸ ◆ ★ ● ○ ◉ ✦ ⚡ 🎯 📊 💡 🚀) for bullet points and decoration
+- Each slide is a complete HTML page with <html><head><style>...</style></head><body>...</body></html>, viewport 960x540
+
+Slide structure:
+- Slide 1: Bold title slide with large title, subtitle, and a striking gradient background
+- Slides 2-6: Content slides with key points, statistics, or concepts. Use cards, columns, or icon grids. Each slide should have a unique layout
+- Slide 7-8: Key takeaways / summary and a professional closing slide
+
+Return ONLY the JSON array, no explanation: [{"html":"..."},{"html":"..."}]`;
             } else {
                 const currentHtml = activePresentationData.slides[activeSlideIndex]?.html || '';
                 prompt = `I have an existing slide presentation. Currently viewing slide ${activeSlideIndex + 1} of ${existingSlides}.
@@ -1949,7 +2065,7 @@ User request: "${val}"
 If the user wants to modify the current slide, return a JSON array with just one slide object with updated HTML.
 If the user wants to add new slides, return a JSON array of the new slides to add.
 Return ONLY the JSON array: [{"html":"..."}]
-Keep the same design style. Each slide is a complete self-contained HTML page (inline CSS, 960x540 viewport).`;
+Keep the same design style and color scheme. Use rich gradient backgrounds, polished typography, and visual hierarchy. Each slide is a complete self-contained HTML page (inline CSS, 960x540 viewport). Never use plain white backgrounds.`;
             }
 
             try {
@@ -1961,14 +2077,11 @@ Keep the same design style. Each slide is a complete self-contained HTML page (i
                 const data = await res.json();
 
                 if (res.ok && data.reply) {
-                    // Extract JSON array from response
                     let slides = [];
                     try {
-                        // Try parsing the whole reply as JSON
                         const cleaned = data.reply.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
                         slides = JSON.parse(cleaned);
                     } catch (_) {
-                        // Try extracting JSON array from text
                         const match = data.reply.match(/\[[\s\S]*\]/);
                         if (match) {
                             try { slides = JSON.parse(match[0]); } catch (_2) {}
@@ -1977,37 +2090,42 @@ Keep the same design style. Each slide is a complete self-contained HTML page (i
 
                     if (Array.isArray(slides) && slides.length > 0) {
                         if (existingSlides === 0) {
-                            // New presentation: set all slides
                             activePresentationData.slides = slides;
                             activeSlideIndex = 0;
-                            // Auto-title from the prompt
                             const title = val.slice(0, 80);
                             activePresentationData.title = title;
                             document.getElementById('pp-title').value = title;
                         } else if (slides.length === 1 && val.toLowerCase().match(/change|modify|update|edit|fix|make/)) {
-                            // Modify current slide
                             activePresentationData.slides[activeSlideIndex] = slides[0];
                         } else {
-                            // Add new slides
                             activePresentationData.slides.push(...slides);
                             activeSlideIndex = activePresentationData.slides.length - slides.length;
                         }
-                        renderPPSlides();
-                        savePresentationToDB();
-                    }
-                }
-            } catch (_) {}
 
-            ppHideGenOverlay();
+                        // Orb expands, then reveal slides with ladder animation
+                        await ppHideGenOverlay();
+                        renderPPSlides(true);
+                        savePresentationToDB();
+                    } else {
+                        await ppHideGenOverlay();
+                    }
+                } else {
+                    await ppHideGenOverlay();
+                }
+            } catch (_) {
+                await ppHideGenOverlay();
+            }
+
             ppGenerating = false;
         }
 
         // ── Splash screen (What's New) ───────────────────────────
-        const CLARITY_VERSION = '3.2';
+        const CLARITY_VERSION = '3.3';
         const SPLASH_FEATURES = [
-            { icon: 'presentation', color: 'bg-violet-500/20', iconColor: 'text-violet-400', title: 'Presentations', desc: 'Create beautiful AI-powered slide decks with a dedicated full-screen editor.' },
-            { icon: 'scan-line', color: 'bg-blue-500/20', iconColor: 'text-blue-400', title: 'Smart Canvas Updates', desc: 'Canvas now remembers your code and shows changes line-by-line with blue highlights.' },
-            { icon: 'zap', color: 'bg-amber-500/20', iconColor: 'text-amber-400', title: 'Concise Responses', desc: 'Shorter, more direct answers. Less fluff, more substance.' },
+            { icon: 'presentation', color: 'bg-violet-500/20', iconColor: 'text-violet-400', title: 'AI Presentations', desc: 'Generate stunning slide decks from a prompt. Beautiful gradients, polished layouts, and smooth animations.' },
+            { icon: 'sparkles', color: 'bg-pink-500/20', iconColor: 'text-pink-400', title: 'Generation Animations', desc: 'Watch your presentation come to life with a mesmerizing orb animation that expands into your slides.' },
+            { icon: 'layout-grid', color: 'bg-blue-500/20', iconColor: 'text-blue-400', title: 'Presentation Manager', desc: 'Rename, delete, and organize presentations right from the sidebar — just like conversations.' },
+            { icon: 'zap', color: 'bg-amber-500/20', iconColor: 'text-amber-400', title: 'Higher Quality Slides', desc: 'Rich gradient backgrounds, visual hierarchy, and professional typography in every generated slide.' },
         ];
 
         function checkSplash() {
