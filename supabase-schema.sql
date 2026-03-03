@@ -37,6 +37,24 @@ CREATE POLICY "service_all_conversations" ON conversations FOR ALL USING (true) 
 CREATE POLICY "service_all_messages"      ON messages      FOR ALL USING (true) WITH CHECK (true);
 
 -- ============================================================
+-- Presentations table
+-- ============================================================
+CREATE TABLE presentations (
+    id            UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id       TEXT        NOT NULL,
+    title         TEXT        NOT NULL,
+    slides        JSONB       DEFAULT '[]'::jsonb,
+    created_at    TIMESTAMPTZ DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_presentations_user_id ON presentations(user_id);
+CREATE INDEX idx_presentations_updated_at ON presentations(updated_at DESC);
+
+ALTER TABLE presentations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "service_all_presentations" ON presentations FOR ALL USING (true) WITH CHECK (true);
+
+-- ============================================================
 -- After running this SQL, add these to your Vercel env vars:
 --   SUPABASE_URL          → Project Settings → API → Project URL
 --   SUPABASE_SERVICE_KEY  → Project Settings → API → service_role secret

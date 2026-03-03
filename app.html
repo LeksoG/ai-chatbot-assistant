@@ -172,6 +172,43 @@
         .diff-highlight-line { background: rgba(59, 130, 246, 0.15) !important; }
         .diff-glyph { border-left: 3px solid #3b82f6 !important; margin-left: 3px; }
 
+        /* ── Sidebar tabs (Chat / Presentations) ── */
+        .sidebar-tabs { display:flex; border-bottom:1px solid rgba(255,255,255,0.05); flex-shrink:0; }
+        .sidebar-tab { flex:1; padding:0.6rem 0; font-size:0.7rem; font-weight:500; text-align:center; color:#6b7280; cursor:pointer; border-bottom:2px solid transparent; transition:color 0.15s, border-color 0.15s; }
+        .sidebar-tab.active { color:#fff; border-bottom-color:#7c3aed; }
+        .sidebar-tab:hover:not(.active) { color:#d1d5db; }
+        /* ── Presentation sidebar card ── */
+        .pres-card { display:flex; align-items:center; gap:0.65rem; padding:0.6rem 0.75rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:0.75rem; cursor:pointer; transition:all 0.15s; margin-bottom:0.4rem; }
+        .pres-card:hover { background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.12); }
+        .pres-card.active-pres { border-color:rgba(124,58,237,0.4); background:rgba(124,58,237,0.08); }
+        .pres-card-thumb { width:44px; height:30px; border-radius:4px; background:#1a1a2e; border:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; }
+        .pres-card-thumb svg { width:16px; height:16px; color:#7c3aed; }
+        /* ── Full-screen presentation page ── */
+        #presentation-page { position:fixed; inset:0; z-index:200; background:var(--bg); display:none; flex-direction:column; }
+        #presentation-page.pp-open { display:flex; }
+        #presentation-page .pp-topbar { display:flex; align-items:center; gap:0.75rem; padding:0.75rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; background:#0a0a0a; }
+        #presentation-page .pp-content { flex:1; display:flex; overflow:hidden; }
+        #presentation-page .pp-slides-panel { width:220px; border-right:1px solid rgba(255,255,255,0.06); overflow-y:auto; padding:0.75rem; flex-shrink:0; background:#0d0d0d; }
+        #presentation-page .pp-main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+        #presentation-page .pp-slide-view { flex:1; display:flex; align-items:center; justify-content:center; padding:2rem; overflow:auto; }
+        #presentation-page .pp-input-bar { padding:0.75rem 1.25rem; border-top:1px solid rgba(255,255,255,0.06); flex-shrink:0; background:#0d0d0d; }
+        /* Slide card in left panel */
+        .pp-slide-card { width:100%; aspect-ratio:16/9; background:#111; border:2px solid rgba(255,255,255,0.06); border-radius:0.5rem; margin-bottom:0.5rem; cursor:pointer; transition:border-color 0.15s; overflow:hidden; padding:0.4rem; position:relative; }
+        .pp-slide-card:hover { border-color:rgba(255,255,255,0.15); }
+        .pp-slide-card.active { border-color:#7c3aed; }
+        .pp-slide-card-num { position:absolute; top:0.25rem; left:0.4rem; font-size:0.55rem; color:#6b7280; font-weight:600; }
+        /* Active slide view */
+        .pp-active-slide { width:100%; max-width:960px; aspect-ratio:16/9; background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:1rem; overflow:hidden; position:relative; }
+        .pp-active-slide iframe { width:100%; height:100%; border:0; }
+        /* ── Splash screen / what's new ── */
+        #splash-modal { position:fixed; inset:0; z-index:300; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); }
+        #splash-modal.splash-open { display:flex; }
+        .splash-card { width:420px; max-width:90vw; background:#111; border:1px solid rgba(255,255,255,0.1); border-radius:1.5rem; overflow:hidden; animation:splash-in 0.4s ease; }
+        @keyframes splash-in { from{opacity:0;transform:scale(0.92) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
+        .splash-header { background:linear-gradient(135deg, rgba(124,58,237,0.3) 0%, rgba(59,130,246,0.2) 100%); padding:2rem 2rem 1.5rem; text-align:center; }
+        .splash-body { padding:1.5rem 2rem 2rem; }
+        .splash-feature { display:flex; align-items:flex-start; gap:0.75rem; padding:0.6rem 0; }
+        .splash-feature-icon { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
         /* ── Code logo ── */
         .cl-seg { stroke:none; transform-origin:center; fill:url(#codeRainbow); }
@@ -240,23 +277,51 @@
             </button>
         </div>
 
+        <!-- Sidebar tabs: Chat / Presentations -->
+        <div class="sidebar-tabs px-3">
+            <button id="sidebar-tab-chat" class="sidebar-tab active" onclick="switchSidebarTab('chat')">Chat</button>
+            <button id="sidebar-tab-pres" class="sidebar-tab" onclick="switchSidebarTab('presentations')">Presentations</button>
+        </div>
+
         <!-- Search -->
-        <div class="px-3 pt-1 pb-1 shrink-0">
+        <div class="px-3 pt-2 pb-1 shrink-0">
             <div class="relative">
                 <i data-lucide="search" class="w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none"></i>
                 <input id="sidebar-search" type="text" placeholder="Search conversations…"
                     autocomplete="off" spellcheck="false"
                     class="w-full bg-white/5 border border-white/5 rounded-xl pl-9 pr-3 py-2 text-sm text-gray-300 placeholder-gray-600 outline-none focus:border-violet-600/40 focus:bg-white/8 transition-all"
-                    oninput="filterConversations(this.value)">
+                    oninput="filterSidebarContent(this.value)">
             </div>
         </div>
 
-        <!-- Conversation history -->
-        <div class="px-3 flex-1 overflow-y-auto min-h-0">
+        <!-- Conversation history (Chat tab) -->
+        <div id="sidebar-chat-panel" class="px-3 flex-1 overflow-y-auto min-h-0">
             <p id="history-label" class="px-2 text-[10px] text-gray-600 uppercase tracking-widest mb-2">Recent</p>
             <div id="history-list">
                 <div class="p-3 text-gray-600 text-sm text-center">No history yet</div>
             </div>
+        </div>
+
+        <!-- Presentations list (Presentations tab — hidden by default) -->
+        <div id="sidebar-pres-panel" class="px-3 flex-1 overflow-y-auto min-h-0 hidden">
+            <div class="flex items-center justify-between px-1 mb-2">
+                <p class="text-[10px] text-gray-600 uppercase tracking-widest">Presentations</p>
+                <button onclick="openPresentationPage(null)" class="text-[10px] text-violet-400 hover:text-violet-300 font-medium transition-colors">+ New</button>
+            </div>
+            <div id="presentations-list">
+                <div class="p-3 text-gray-600 text-sm text-center">No presentations yet</div>
+            </div>
+        </div>
+
+        <!-- Presentation shortcut section -->
+        <div class="px-3 pb-1 shrink-0">
+            <button onclick="openPresentationPage(null)" class="w-full flex items-center justify-between gap-2.5 p-2.5 bg-white/[0.03] hover:bg-white/[0.07] rounded-xl text-sm text-gray-400 hover:text-gray-200 transition-all border border-white/5 hover:border-white/10 group">
+                <div class="flex items-center gap-2.5">
+                    <i data-lucide="presentation" class="w-4 text-violet-400 group-hover:text-violet-300 transition-colors"></i>
+                    <span class="text-xs font-medium">Presentations</span>
+                </div>
+                <i data-lucide="arrow-right" class="w-3.5 text-gray-600 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all"></i>
+            </button>
         </div>
 
         <!-- User profile -->
@@ -396,6 +461,16 @@
                 <div class="toggle-thumb"></div>
             </button>
         </div>
+        <!-- Presentation toggle -->
+        <div class="border-t border-white/5 pt-3 mt-3 px-1 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-medium text-white">Presentations</p>
+                <p class="text-[10px] text-gray-500 mt-0.5">Create AI-powered slide decks</p>
+            </div>
+            <button onclick="closeVersionPopup(); openPresentationPage(null);" class="text-[10px] font-medium text-violet-400 hover:text-violet-300 bg-violet-950/40 hover:bg-violet-950/60 border border-violet-800/30 px-2.5 py-1 rounded-lg transition-all cursor-pointer">
+                Open
+            </button>
+        </div>
                         </div><!-- /version-popup -->
                     </div><!-- /pill wrapper -->
 
@@ -532,6 +607,98 @@
             <div class="flex gap-2">
                 <button onclick="closeDeleteModal()" class="flex-1 py-2 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Cancel</button>
                 <button onclick="confirmDelete()" class="flex-1 py-2 text-sm text-white bg-red-600 hover:bg-red-500 rounded-xl transition-colors">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PRESENTATION PAGE (full-screen)
+    ═══════════════════════════════════════════════════════ -->
+    <div id="presentation-page">
+        <!-- Top bar -->
+        <div class="pp-topbar">
+            <button onclick="closePresentationPage()" class="w-8 h-8 flex items-center justify-center bg-white/6 hover:bg-white/12 border border-white/8 rounded-full transition-colors group">
+                <i data-lucide="arrow-left" class="w-3.5 text-gray-400 group-hover:text-white group-hover:-translate-x-0.5 transition-all"></i>
+            </button>
+            <div class="flex-1 min-w-0">
+                <input id="pp-title" type="text" value="Untitled Presentation" placeholder="Presentation title"
+                    class="bg-transparent text-white font-semibold text-sm outline-none border-b border-transparent hover:border-white/10 focus:border-violet-500/50 transition-colors w-full max-w-xs"
+                    onchange="updatePresentationTitle(this.value)">
+            </div>
+            <div class="flex items-center gap-2">
+                <span id="pp-slide-count" class="text-[10px] text-gray-500 font-medium">0 slides</span>
+                <button onclick="deletePresentationConfirm()" class="p-1.5 hover:bg-red-900/30 rounded-lg transition-colors" title="Delete presentation">
+                    <i data-lucide="trash-2" class="w-3.5 text-gray-500 hover:text-red-400"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Content -->
+        <div class="pp-content">
+            <!-- Left: slide thumbnails -->
+            <div class="pp-slides-panel" id="pp-slides-panel">
+                <div id="pp-slide-list" class="space-y-1">
+                    <!-- Slide cards rendered by JS -->
+                </div>
+                <button onclick="addNewSlide()" class="w-full mt-2 py-2 border-2 border-dashed border-white/10 hover:border-violet-500/30 rounded-lg text-xs text-gray-500 hover:text-violet-400 transition-all flex items-center justify-center gap-1.5">
+                    <i data-lucide="plus" class="w-3"></i> Add slide
+                </button>
+            </div>
+            <!-- Right: main area -->
+            <div class="pp-main">
+                <!-- Slide preview -->
+                <div class="pp-slide-view" id="pp-slide-view">
+                    <div class="pp-active-slide" id="pp-active-slide">
+                        <iframe id="pp-slide-iframe" class="w-full h-full border-0 bg-white" sandbox="allow-scripts allow-same-origin"></iframe>
+                        <div id="pp-empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
+                            <i data-lucide="presentation" class="w-12 h-12 text-gray-700 mb-3"></i>
+                            <p class="text-gray-500 text-sm mb-1">No slides yet</p>
+                            <p class="text-gray-600 text-xs">Type a prompt below to generate your presentation</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Input bar -->
+                <div class="pp-input-bar">
+                    <div class="flex items-center gap-2 max-w-3xl mx-auto">
+                        <div class="flex-1 relative">
+                            <input id="pp-input" type="text" placeholder="Describe your presentation or ask to modify a slide…"
+                                autocomplete="off"
+                                class="w-full bg-[#111] border border-white/8 rounded-full px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-violet-500/40 transition-colors"
+                                onkeydown="if(event.key==='Enter') handlePresentationSend()">
+                        </div>
+                        <button id="pp-send-btn" onclick="handlePresentationSend()"
+                            class="shrink-0 p-2.5 rounded-full bg-white/5 hover:bg-white text-gray-400 hover:text-black transition-all">
+                            <i data-lucide="arrow-up" class="w-4 stroke-[3]"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SPLASH SCREEN / WHAT'S NEW
+    ═══════════════════════════════════════════════════════ -->
+    <div id="splash-modal">
+        <div class="absolute inset-0" onclick="closeSplash()"></div>
+        <div class="splash-card relative">
+            <div class="splash-header">
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <svg class="w-8 h-8" viewBox="-15 -15 130 130">
+                        <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
+                        <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
+                        <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
+                    </svg>
+                </div>
+                <h2 id="splash-version-title" class="text-white text-xl font-bold">What's New in Clarity 3.2</h2>
+                <p class="text-gray-400 text-xs mt-1">Here's what we've been working on</p>
+            </div>
+            <div class="splash-body">
+                <div id="splash-features">
+                    <!-- Features injected by JS -->
+                </div>
+                <button onclick="closeSplash()" class="w-full mt-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors">
+                    Got it
+                </button>
             </div>
         </div>
     </div>
@@ -759,6 +926,8 @@
             }
             loadConversations();
             runGreeting();
+            // Show splash screen for new version
+            checkSplash();
         });
 
         // ── Auth headers helper ───────────────────────────────────
@@ -1454,6 +1623,346 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             label.textContent = 'Results';
             const filtered = allConversations.filter(c => c.title.toLowerCase().includes(q));
             renderConversationList(filtered);
+        }
+
+        // ── Sidebar tabs (Chat / Presentations) ──────────────────
+        let activeSidebarTab = 'chat';
+        function switchSidebarTab(tab) {
+            activeSidebarTab = tab;
+            document.getElementById('sidebar-tab-chat').classList.toggle('active', tab === 'chat');
+            document.getElementById('sidebar-tab-pres').classList.toggle('active', tab === 'presentations');
+            document.getElementById('sidebar-chat-panel').classList.toggle('hidden', tab !== 'chat');
+            document.getElementById('sidebar-pres-panel').classList.toggle('hidden', tab !== 'presentations');
+            const searchInput = document.getElementById('sidebar-search');
+            searchInput.placeholder = tab === 'chat' ? 'Search conversations\u2026' : 'Search presentations\u2026';
+            searchInput.value = '';
+            if (tab === 'presentations') loadPresentations();
+        }
+
+        function filterSidebarContent(query) {
+            if (activeSidebarTab === 'chat') {
+                filterConversations(query);
+            } else {
+                filterPresentations(query);
+            }
+        }
+
+        // ── Presentations state ──────────────────────────────────
+        let allPresentations = [];
+        let activePresentationId = null;
+        let activePresentationData = null; // {id, title, slides:[{html,notes}]}
+        let activeSlideIndex = 0;
+        let ppGenerating = false;
+
+        async function loadPresentations() {
+            try {
+                const res = await fetch(`/api/presentations?userId=${encodeURIComponent(currentUser.id || '')}`, { headers: authHeaders() });
+                if (!res.ok) return;
+                const data = await res.json();
+                allPresentations = data || [];
+                renderPresentationsList(allPresentations);
+            } catch (_) {}
+        }
+
+        function filterPresentations(query) {
+            const q = query.trim().toLowerCase();
+            if (!q) {
+                renderPresentationsList(allPresentations);
+                return;
+            }
+            const filtered = allPresentations.filter(p => p.title.toLowerCase().includes(q));
+            renderPresentationsList(filtered);
+        }
+
+        function renderPresentationsList(pres) {
+            const list = document.getElementById('presentations-list');
+            if (!pres || !pres.length) {
+                list.innerHTML = '<div class="p-3 text-gray-600 text-sm text-center">No presentations yet</div>';
+                return;
+            }
+            list.innerHTML = pres.map(p => {
+                const slideCount = (p.slides || []).length;
+                return `
+                <div class="pres-card ${activePresentationId === p.id ? 'active-pres' : ''}" onclick="openPresentationPage('${p.id}')">
+                    <div class="pres-card-thumb">
+                        <i data-lucide="presentation" class="w-4 text-violet-400"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs text-gray-300 font-medium truncate">${escapeHtml(p.title)}</p>
+                        <p class="text-[10px] text-gray-600 mt-0.5">${slideCount} slide${slideCount !== 1 ? 's' : ''}</p>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-3.5 text-gray-600 shrink-0"></i>
+                </div>`;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        // ── Presentation page ────────────────────────────────────
+        function openPresentationPage(id) {
+            toggleSidebar(false);
+            const page = document.getElementById('presentation-page');
+            page.classList.add('pp-open');
+
+            if (id) {
+                // Load existing presentation
+                const pres = allPresentations.find(p => p.id === id);
+                if (pres) {
+                    activePresentationId = pres.id;
+                    activePresentationData = { id: pres.id, title: pres.title, slides: pres.slides || [] };
+                    document.getElementById('pp-title').value = pres.title;
+                    activeSlideIndex = 0;
+                    renderPPSlides();
+                    return;
+                }
+            }
+            // New presentation
+            activePresentationId = null;
+            activePresentationData = { id: null, title: 'Untitled Presentation', slides: [] };
+            document.getElementById('pp-title').value = 'Untitled Presentation';
+            activeSlideIndex = 0;
+            renderPPSlides();
+            lucide.createIcons();
+        }
+
+        function closePresentationPage() {
+            document.getElementById('presentation-page').classList.remove('pp-open');
+            activePresentationId = null;
+            activePresentationData = null;
+            loadPresentations();
+        }
+
+        function renderPPSlides() {
+            if (!activePresentationData) return;
+            const slides = activePresentationData.slides || [];
+            const list = document.getElementById('pp-slide-list');
+            const countEl = document.getElementById('pp-slide-count');
+            const emptyState = document.getElementById('pp-empty-state');
+
+            countEl.textContent = `${slides.length} slide${slides.length !== 1 ? 's' : ''}`;
+
+            if (slides.length === 0) {
+                list.innerHTML = '';
+                emptyState.style.display = 'flex';
+                document.getElementById('pp-slide-iframe').srcdoc = '';
+                lucide.createIcons();
+                return;
+            }
+            emptyState.style.display = 'none';
+
+            list.innerHTML = slides.map((s, i) => `
+                <div class="pp-slide-card ${i === activeSlideIndex ? 'active' : ''}" onclick="selectSlide(${i})">
+                    <span class="pp-slide-card-num">${i + 1}</span>
+                    <div style="transform:scale(0.18);transform-origin:top left;width:555%;height:555%;pointer-events:none;overflow:hidden;">
+                        <iframe srcdoc="${escapeHtml(s.html || '<div></div>')}" style="width:100%;height:100%;border:0;" sandbox="allow-scripts"></iframe>
+                    </div>
+                </div>
+            `).join('');
+
+            // Render active slide
+            if (slides[activeSlideIndex]) {
+                document.getElementById('pp-slide-iframe').srcdoc = slides[activeSlideIndex].html || '';
+            }
+            lucide.createIcons();
+        }
+
+        function selectSlide(index) {
+            if (!activePresentationData) return;
+            activeSlideIndex = index;
+            renderPPSlides();
+        }
+
+        function addNewSlide() {
+            if (!activePresentationData) return;
+            activePresentationData.slides.push({ html: '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:sans-serif;color:#666;"><h2>New Slide</h2></div>', notes: '' });
+            activeSlideIndex = activePresentationData.slides.length - 1;
+            renderPPSlides();
+            savePresentationToDB();
+        }
+
+        async function updatePresentationTitle(title) {
+            if (!activePresentationData) return;
+            activePresentationData.title = title;
+            if (activePresentationId) {
+                try {
+                    await fetch(`/api/presentations?id=${activePresentationId}`, {
+                        method: 'PATCH',
+                        headers: authHeaders(),
+                        body: JSON.stringify({ title })
+                    });
+                } catch (_) {}
+            }
+        }
+
+        async function savePresentationToDB() {
+            if (!activePresentationData) return;
+            if (!activePresentationId) {
+                // Create new
+                try {
+                    const res = await fetch('/api/presentations', {
+                        method: 'POST',
+                        headers: authHeaders(),
+                        body: JSON.stringify({
+                            userId: currentUser.id,
+                            title: activePresentationData.title,
+                            slides: activePresentationData.slides
+                        })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        activePresentationId = data.id;
+                        activePresentationData.id = data.id;
+                    }
+                } catch (_) {}
+            } else {
+                // Update existing
+                try {
+                    await fetch(`/api/presentations?id=${activePresentationId}`, {
+                        method: 'PATCH',
+                        headers: authHeaders(),
+                        body: JSON.stringify({ slides: activePresentationData.slides })
+                    });
+                } catch (_) {}
+            }
+        }
+
+        async function deletePresentationConfirm() {
+            if (!activePresentationId) { closePresentationPage(); return; }
+            if (!confirm('Delete this presentation?')) return;
+            try {
+                await fetch(`/api/presentations?id=${activePresentationId}`, {
+                    method: 'DELETE',
+                    headers: authHeaders()
+                });
+            } catch (_) {}
+            closePresentationPage();
+        }
+
+        // ── Presentation AI generation ───────────────────────────
+        async function handlePresentationSend() {
+            const input = document.getElementById('pp-input');
+            const val = input.value.trim();
+            if (!val || ppGenerating) return;
+
+            ppGenerating = true;
+            input.value = '';
+
+            // Build prompt for slide generation
+            const existingSlides = (activePresentationData?.slides || []).length;
+            let prompt;
+            if (existingSlides === 0) {
+                prompt = `Create a professional slide presentation about: "${val}"
+
+Return a JSON array of slide objects. Each slide has an "html" field containing a complete self-contained HTML page for that slide (inline CSS, no external resources). Make 5-8 slides with beautiful, modern design using gradients, large typography, clean layout. Each slide should be 960x540 viewport.
+
+Rules:
+- First slide: title slide with large title + subtitle
+- Middle slides: content with bullet points, icons (use Unicode), or key stats
+- Last slide: summary or thank you slide
+- Use a consistent color scheme throughout
+- Make text readable: large fonts, high contrast
+- Return ONLY the JSON array, no explanation: [{"html":"..."},{"html":"..."}]`;
+            } else {
+                const currentHtml = activePresentationData.slides[activeSlideIndex]?.html || '';
+                prompt = `I have an existing slide presentation. Currently viewing slide ${activeSlideIndex + 1} of ${existingSlides}.
+
+Current slide HTML:
+\`\`\`
+${currentHtml}
+\`\`\`
+
+User request: "${val}"
+
+If the user wants to modify the current slide, return a JSON array with just one slide object with updated HTML.
+If the user wants to add new slides, return a JSON array of the new slides to add.
+Return ONLY the JSON array: [{"html":"..."}]
+Keep the same design style. Each slide is a complete self-contained HTML page (inline CSS, 960x540 viewport).`;
+            }
+
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: prompt, history: [], modelVersion: selectedModel })
+                });
+                const data = await res.json();
+
+                if (res.ok && data.reply) {
+                    // Extract JSON array from response
+                    let slides = [];
+                    try {
+                        // Try parsing the whole reply as JSON
+                        const cleaned = data.reply.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+                        slides = JSON.parse(cleaned);
+                    } catch (_) {
+                        // Try extracting JSON array from text
+                        const match = data.reply.match(/\[[\s\S]*\]/);
+                        if (match) {
+                            try { slides = JSON.parse(match[0]); } catch (_2) {}
+                        }
+                    }
+
+                    if (Array.isArray(slides) && slides.length > 0) {
+                        if (existingSlides === 0) {
+                            // New presentation: set all slides
+                            activePresentationData.slides = slides;
+                            activeSlideIndex = 0;
+                            // Auto-title from the prompt
+                            const title = val.slice(0, 80);
+                            activePresentationData.title = title;
+                            document.getElementById('pp-title').value = title;
+                        } else if (slides.length === 1 && val.toLowerCase().match(/change|modify|update|edit|fix|make/)) {
+                            // Modify current slide
+                            activePresentationData.slides[activeSlideIndex] = slides[0];
+                        } else {
+                            // Add new slides
+                            activePresentationData.slides.push(...slides);
+                            activeSlideIndex = activePresentationData.slides.length - slides.length;
+                        }
+                        renderPPSlides();
+                        savePresentationToDB();
+                    }
+                }
+            } catch (_) {}
+
+            ppGenerating = false;
+        }
+
+        // ── Splash screen (What's New) ───────────────────────────
+        const CLARITY_VERSION = '3.2';
+        const SPLASH_FEATURES = [
+            { icon: 'presentation', color: 'bg-violet-500/20', iconColor: 'text-violet-400', title: 'Presentations', desc: 'Create beautiful AI-powered slide decks with a dedicated full-screen editor.' },
+            { icon: 'scan-line', color: 'bg-blue-500/20', iconColor: 'text-blue-400', title: 'Smart Canvas Updates', desc: 'Canvas now remembers your code and shows changes line-by-line with blue highlights.' },
+            { icon: 'zap', color: 'bg-amber-500/20', iconColor: 'text-amber-400', title: 'Concise Responses', desc: 'Shorter, more direct answers. Less fluff, more substance.' },
+        ];
+
+        function checkSplash() {
+            const seen = localStorage.getItem('clarity_splash_seen');
+            if (seen === CLARITY_VERSION) return;
+            showSplash();
+        }
+
+        function showSplash() {
+            const modal = document.getElementById('splash-modal');
+            const featuresEl = document.getElementById('splash-features');
+            document.getElementById('splash-version-title').textContent = `What's New in Clarity ${CLARITY_VERSION}`;
+            featuresEl.innerHTML = SPLASH_FEATURES.map(f => `
+                <div class="splash-feature">
+                    <div class="splash-feature-icon ${f.color}">
+                        <i data-lucide="${f.icon}" class="w-4 ${f.iconColor}"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-white">${f.title}</p>
+                        <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">${f.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+            modal.classList.add('splash-open');
+            lucide.createIcons();
+        }
+
+        function closeSplash() {
+            document.getElementById('splash-modal').classList.remove('splash-open');
+            localStorage.setItem('clarity_splash_seen', CLARITY_VERSION);
         }
 
         function renderConversationList(convs) {
