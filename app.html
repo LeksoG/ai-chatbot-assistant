@@ -186,7 +186,7 @@
         /* ── Full-screen presentation page ── */
         #presentation-page { position:fixed; inset:0; z-index:200; background:var(--bg); display:none; flex-direction:column; }
         #presentation-page.pp-open { display:flex; }
-        #presentation-page .pp-topbar { display:flex; align-items:center; gap:0.75rem; padding:0.75rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; background:#0a0a0a; }
+        #presentation-page .pp-topbar { display:flex; align-items:center; gap:0.75rem; padding:0.75rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; background:#0a0a0a; position:relative; }
         #presentation-page .pp-content { flex:1; display:flex; overflow:hidden; }
         #presentation-page .pp-slides-panel { width:220px; border-right:1px solid rgba(255,255,255,0.06); overflow-y:auto; padding:0.75rem; flex-shrink:0; background:#0d0d0d; }
         #presentation-page .pp-main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
@@ -209,22 +209,25 @@
         @keyframes pp-orb-spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
         @keyframes pp-rainbow-shift { 0% { filter:hue-rotate(0deg); } 100% { filter:hue-rotate(360deg); } }
         @keyframes pp-orb-pulse { 0%,100% { transform:scale(1); opacity:0.7; } 50% { transform:scale(1.06); opacity:1; } }
-        .pp-orb-wrap { position:relative; width:160px; height:160px; display:flex; align-items:center; justify-content:center; margin-bottom:2rem; }
-        .pp-orb-bg { position:absolute; inset:0; border-radius:50%; background:conic-gradient(from 0deg, #ff0040, #ff8000, #ffe000, #00ff80, #00c8ff, #8000ff, #ff0080, #ff0040); animation:pp-orb-spin 4s linear infinite, pp-rainbow-shift 6s linear infinite; filter:blur(20px); opacity:0.5; }
-        .pp-orb-fill { position:absolute; inset:8px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); animation:pp-orb-pulse 3s ease-in-out infinite; border:1px solid rgba(255,255,255,0.06); }
+        .pp-orb-wrap { position:relative; width:200px; height:200px; display:flex; align-items:center; justify-content:center; margin-bottom:2rem; }
+        .pp-orb-bg { position:absolute; inset:-12px; border-radius:50%; background:conic-gradient(from 0deg, #ff0040, #ff8000, #ffe000, #00ff80, #00c8ff, #8000ff, #ff0080, #ff0040); animation:pp-orb-spin 4s linear infinite, pp-rainbow-shift 6s linear infinite; filter:blur(32px); opacity:0.35; }
+        .pp-orb-fill { position:absolute; inset:6px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); animation:pp-orb-pulse 3s ease-in-out infinite; border:1px solid rgba(255,255,255,0.06); }
         .pp-orb-text { position:relative; z-index:2; color:#fff; font-size:0.82rem; font-weight:500; text-align:center; max-width:240px; line-height:1.5; opacity:0.85; }
 
         /* ── Generation orb overlay ── */
         @keyframes pp-wave-char { 0%,100% { opacity:0.4; transform:translateY(0); } 50% { opacity:1; transform:translateY(-3px); } }
         @keyframes pp-gen-fade { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
         @keyframes pp-rainbow-bg-shift { 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
-        @keyframes pp-orb-to-rect { 0% { width:180px; height:180px; border-radius:50%; } 100% { width:100%; height:100%; border-radius:1rem; } }
-        .pp-gen-overlay { position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:10; border-radius:1rem; overflow:hidden; }
+        @keyframes pp-orb-to-rect { 0% { width:220px; height:220px; border-radius:50%; } 100% { width:100%; height:100%; border-radius:1rem; } }
+        .pp-gen-overlay { position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:10; border-radius:1rem; overflow:hidden; background:#0a0a0a; }
         .pp-gen-overlay.active { display:flex; animation:pp-gen-fade 0.5s ease-out; }
-        .pp-gen-orb { width:180px; height:180px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #1f1235, #0d0d0d 70%); border:1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; overflow:hidden; transition:all 0.8s cubic-bezier(0.4,0,0.2,1); }
+        .pp-gen-orb { width:220px; height:220px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #1f1235, #0d0d0d 70%); border:1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; overflow:hidden; transition:all 0.8s cubic-bezier(0.4,0,0.2,1); }
         .pp-gen-orb.expanding { width:100%; height:100%; border-radius:1rem; }
-        .pp-gen-orb-rainbow { position:absolute; inset:-10px; border-radius:inherit; background:conic-gradient(from 0deg,#ff0040,#ff8000,#ffe000,#00ff80,#00c8ff,#8000ff,#ff0080,#ff0040); animation:pp-orb-spin 3s linear infinite; filter:blur(25px); opacity:0.35; }
+        .pp-gen-orb-rainbow { position:absolute; inset:-14px; border-radius:inherit; background:conic-gradient(from 0deg,#ff0040,#ff8000,#ffe000,#00ff80,#00c8ff,#8000ff,#ff0080,#ff0040); animation:pp-orb-spin 3s linear infinite; filter:blur(35px); opacity:0.28; }
         .pp-gen-orb-inner-bg { position:absolute; inset:0; border-radius:inherit; background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); }
+        /* ── Per-slide blackout overlay for editing ── */
+        .pp-slide-card-overlay { position:absolute; inset:0; z-index:5; border-radius:0.5rem; background:#0a0a0a; display:flex; align-items:center; justify-content:center; }
+        .pp-slide-card-overlay .pp-gen-text { font-size:0.5rem; }
         .pp-gen-text { position:relative; z-index:2; font-size:0.95rem; font-weight:600; color:#fff; letter-spacing:0.02em; display:flex; gap:1px; flex-wrap:wrap; justify-content:center; }
         .pp-gen-char { display:inline-block; }
 
@@ -662,8 +665,8 @@
                     class="bg-transparent text-white font-semibold text-sm outline-none border-b border-transparent hover:border-white/10 focus:border-violet-500/50 transition-colors w-full max-w-xs"
                     onchange="updatePresentationTitle(this.value)">
             </div>
-            <!-- New Presentation button (center) -->
-            <button onclick="newPresentationFromEditor()" class="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 hover:bg-violet-600/35 border border-violet-500/25 rounded-full text-xs text-violet-300 hover:text-violet-200 font-medium transition-all">
+            <!-- New Presentation button (absolute center) -->
+            <button onclick="newPresentationFromEditor()" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 hover:bg-violet-600/35 border border-violet-500/25 rounded-full text-xs text-violet-300 hover:text-violet-200 font-medium transition-all">
                 <i data-lucide="plus" class="w-3"></i>
                 <span>New Presentation</span>
             </button>
@@ -690,7 +693,7 @@
                 <!-- Slide preview -->
                 <div class="pp-slide-view" id="pp-slide-view">
                     <div class="pp-active-slide" id="pp-active-slide">
-                        <iframe id="pp-slide-iframe" class="w-full h-full border-0 bg-white" sandbox="allow-scripts allow-same-origin"></iframe>
+                        <iframe id="pp-slide-iframe" class="w-full h-full border-0 bg-black" sandbox="allow-scripts allow-same-origin"></iframe>
                         <!-- Empty state: filled rainbow orb -->
                         <div id="pp-empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8" style="background:var(--bg);">
                             <div class="pp-orb-wrap">
@@ -1974,7 +1977,6 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 const orb = document.getElementById('pp-gen-orb');
                 const overlay = document.getElementById('pp-gen-overlay');
                 const textEl = document.getElementById('pp-gen-text');
-                // Expand orb into rectangle
                 textEl.style.transition = 'opacity 0.3s';
                 textEl.style.opacity = '0';
                 orb.classList.add('expanding');
@@ -2020,6 +2022,86 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             }, 3000);
         }
 
+        // Show a blackout + wave text overlay on a specific slide card in the sidebar
+        function ppShowSlideOverlay(slideIndex, text) {
+            const card = document.querySelectorAll('.pp-slide-card')[slideIndex];
+            if (!card) return;
+            // Also blackout the main slide iframe
+            const mainOverlay = document.getElementById('pp-gen-overlay');
+            const orb = document.getElementById('pp-gen-orb');
+            orb.classList.remove('expanding');
+            mainOverlay.classList.add('active');
+            ppAnimateGenText([text || 'Editing...', 'Updating slide...']);
+            // Blackout the card thumbnail
+            const overlay = document.createElement('div');
+            overlay.className = 'pp-slide-card-overlay';
+            overlay.id = 'pp-slide-edit-overlay';
+            const waveContainer = document.createElement('div');
+            waveContainer.className = 'pp-gen-text';
+            const label = text || 'Editing...';
+            [...label].forEach((ch, i) => {
+                const span = document.createElement('span');
+                span.className = 'pp-gen-char';
+                span.textContent = ch === ' ' ? '\u00A0' : ch;
+                span.style.animation = `pp-wave-char 1.2s ease-in-out ${i * 0.04}s infinite`;
+                waveContainer.appendChild(span);
+            });
+            overlay.appendChild(waveContainer);
+            card.appendChild(overlay);
+        }
+
+        function ppHideSlideOverlay() {
+            return new Promise(resolve => {
+                // Remove card overlay
+                const cardOverlay = document.getElementById('pp-slide-edit-overlay');
+                if (cardOverlay) cardOverlay.remove();
+                // Hide main overlay
+                if (ppGenAnimInterval) { clearInterval(ppGenAnimInterval); ppGenAnimInterval = null; }
+                const overlay = document.getElementById('pp-gen-overlay');
+                const orb = document.getElementById('pp-gen-orb');
+                const textEl = document.getElementById('pp-gen-text');
+                textEl.style.transition = 'opacity 0.3s';
+                textEl.style.opacity = '0';
+                setTimeout(() => {
+                    overlay.style.transition = 'opacity 0.5s ease';
+                    overlay.style.opacity = '0';
+                    setTimeout(() => {
+                        overlay.classList.remove('active');
+                        overlay.style.transition = '';
+                        overlay.style.opacity = '';
+                        textEl.style.transition = '';
+                        textEl.style.opacity = '';
+                        orb.classList.remove('expanding');
+                        resolve();
+                    }, 500);
+                }, 300);
+            });
+        }
+
+        // Parse user intent from prompt
+        function ppParseIntent(val, existingSlides) {
+            const lower = val.toLowerCase();
+            // Check for specific slide count request
+            const countMatch = lower.match(/(\d+)\s*slides?/);
+            const requestedCount = countMatch ? parseInt(countMatch[1], 10) : null;
+
+            // Check for edit intent (targeting current/specific slide)
+            const editKeywords = /\b(change|modify|update|edit|fix|make|adjust|tweak|improve|redo|rewrite|redesign)\b/;
+            const slideRefMatch = lower.match(/\bslide\s*(\d+)/);
+            const isEdit = editKeywords.test(lower) && existingSlides > 0;
+            const addKeywords = /\b(add|append|insert|create|new)\b.*\bslide/;
+            const isAddMore = addKeywords.test(lower) && existingSlides > 0;
+
+            let targetSlideIndex = null;
+            if (slideRefMatch) {
+                targetSlideIndex = parseInt(slideRefMatch[1], 10) - 1; // 1-based to 0-based
+            } else if (isEdit && !isAddMore) {
+                targetSlideIndex = activeSlideIndex; // Edit currently viewed slide
+            }
+
+            return { requestedCount, isEdit, isAddMore, targetSlideIndex };
+        }
+
         async function handlePresentationSend() {
             const input = document.getElementById('pp-input');
             const val = input.value.trim();
@@ -2027,14 +2109,31 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
 
             ppGenerating = true;
             input.value = '';
-            ppShowGenOverlay();
 
             const existingSlides = (activePresentationData?.slides || []).length;
+            const intent = ppParseIntent(val, existingSlides);
+
+            // Decide mode: new presentation, edit specific slide, or add slides
+            const isNewPresentation = existingSlides === 0;
+            const isEditingSingle = !isNewPresentation && intent.isEdit && intent.targetSlideIndex !== null && !intent.isAddMore;
+
+            if (isEditingSingle) {
+                // Per-slide blackout animation
+                ppShowSlideOverlay(intent.targetSlideIndex, 'Editing...');
+            } else {
+                // Full orb overlay for new/add
+                ppShowGenOverlay();
+            }
+
+            const slideCount = intent.requestedCount || (isNewPresentation ? 7 : null);
             let prompt;
-            if (existingSlides === 0) {
+
+            if (isNewPresentation) {
                 prompt = `Create a professional, visually stunning slide presentation about: "${val}"
 
-Return a JSON array of slide objects. Each slide has an "html" field containing a complete self-contained HTML page for that slide (inline CSS only, no external resources). Create 6-8 slides.
+Return a JSON object with two fields:
+1. "title": a concise, catchy presentation title (1-3 words max, like "AI Revolution", "Growth Strategy", "Quantum Leap", "Solar Future"). Do NOT just reuse the user's prompt as the title. Create a short branded name.
+2. "slides": a JSON array of slide objects. Each slide has an "html" field containing a complete self-contained HTML page (inline CSS only, no external resources). Create exactly ${slideCount} slides.
 
 Design requirements for EVERY slide:
 - Full-bleed backgrounds: use bold CSS gradients (linear-gradient, radial-gradient) or dark rich backgrounds. Never leave a slide with a plain white background
@@ -2047,25 +2146,45 @@ Design requirements for EVERY slide:
 
 Slide structure:
 - Slide 1: Bold title slide with large title, subtitle, and a striking gradient background
-- Slides 2-6: Content slides with key points, statistics, or concepts. Use cards, columns, or icon grids. Each slide should have a unique layout
-- Slide 7-8: Key takeaways / summary and a professional closing slide
+- Middle slides: Content slides with key points, statistics, or concepts. Use cards, columns, or icon grids. Each slide should have a unique layout
+- Last 1-2 slides: Key takeaways / summary and a professional closing slide
 
-Return ONLY the JSON array, no explanation: [{"html":"..."},{"html":"..."}]`;
-            } else {
-                const currentHtml = activePresentationData.slides[activeSlideIndex]?.html || '';
-                prompt = `I have an existing slide presentation. Currently viewing slide ${activeSlideIndex + 1} of ${existingSlides}.
+Return ONLY the JSON object: {"title":"Short Title","slides":[{"html":"..."},{"html":"..."}]}`;
+            } else if (isEditingSingle) {
+                const targetIdx = intent.targetSlideIndex;
+                const targetHtml = activePresentationData.slides[targetIdx]?.html || '';
+                prompt = `I have a slide presentation with ${existingSlides} slides. I need you to edit ONLY slide ${targetIdx + 1}.
 
-Current slide HTML:
+Current slide ${targetIdx + 1} HTML:
 \`\`\`
-${currentHtml}
+${targetHtml}
 \`\`\`
 
 User request: "${val}"
 
-If the user wants to modify the current slide, return a JSON array with just one slide object with updated HTML.
-If the user wants to add new slides, return a JSON array of the new slides to add.
-Return ONLY the JSON array: [{"html":"..."}]
-Keep the same design style and color scheme. Use rich gradient backgrounds, polished typography, and visual hierarchy. Each slide is a complete self-contained HTML page (inline CSS, 960x540 viewport). Never use plain white backgrounds.`;
+Edit this single slide based on the user's request. Keep the same overall design style and color scheme. Use rich gradient backgrounds, polished typography, and visual hierarchy. The slide is a complete self-contained HTML page (inline CSS, 960x540 viewport). Never use plain white backgrounds.
+
+Return ONLY a JSON object with one field: {"slides":[{"html":"...updated slide html..."}]}`;
+            } else {
+                // Adding more slides or general follow-up
+                const allSlidesOverview = activePresentationData.slides.map((s, i) => `Slide ${i+1}: exists`).join('\n');
+                const addCount = intent.requestedCount || 3;
+                prompt = `I have an existing slide presentation with ${existingSlides} slides. Currently viewing slide ${activeSlideIndex + 1}.
+
+Existing slides overview:
+${allSlidesOverview}
+
+Design style from slide 1:
+\`\`\`
+${activePresentationData.slides[0]?.html?.substring(0, 500) || ''}
+\`\`\`
+
+User request: "${val}"
+
+Add ${addCount} new slides to this presentation based on the user's request.
+Keep the same design style and color scheme as existing slides. Use rich gradient backgrounds, polished typography, and visual hierarchy. Each slide is a complete self-contained HTML page (inline CSS, 960x540 viewport). Never use plain white backgrounds.
+
+Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
 
             try {
@@ -2077,43 +2196,65 @@ Keep the same design style and color scheme. Use rich gradient backgrounds, poli
                 const data = await res.json();
 
                 if (res.ok && data.reply) {
+                    let parsed = null;
                     let slides = [];
+                    let aiTitle = null;
+
                     try {
                         const cleaned = data.reply.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-                        slides = JSON.parse(cleaned);
+                        parsed = JSON.parse(cleaned);
                     } catch (_) {
-                        const match = data.reply.match(/\[[\s\S]*\]/);
-                        if (match) {
-                            try { slides = JSON.parse(match[0]); } catch (_2) {}
+                        // Try extracting JSON object
+                        const objMatch = data.reply.match(/\{[\s\S]*\}/);
+                        if (objMatch) {
+                            try { parsed = JSON.parse(objMatch[0]); } catch (_2) {}
                         }
+                        if (!parsed) {
+                            // Fallback: try extracting JSON array
+                            const arrMatch = data.reply.match(/\[[\s\S]*\]/);
+                            if (arrMatch) {
+                                try { slides = JSON.parse(arrMatch[0]); } catch (_3) {}
+                            }
+                        }
+                    }
+
+                    if (parsed) {
+                        if (parsed.title) aiTitle = parsed.title;
+                        if (Array.isArray(parsed.slides)) slides = parsed.slides;
+                        else if (Array.isArray(parsed)) slides = parsed;
                     }
 
                     if (Array.isArray(slides) && slides.length > 0) {
-                        if (existingSlides === 0) {
+                        if (isNewPresentation) {
                             activePresentationData.slides = slides;
                             activeSlideIndex = 0;
-                            const title = val.slice(0, 80);
+                            const title = aiTitle || val.slice(0, 40);
                             activePresentationData.title = title;
                             document.getElementById('pp-title').value = title;
-                        } else if (slides.length === 1 && val.toLowerCase().match(/change|modify|update|edit|fix|make/)) {
-                            activePresentationData.slides[activeSlideIndex] = slides[0];
+                            await ppHideGenOverlay();
+                            renderPPSlides(true);
+                        } else if (isEditingSingle) {
+                            activePresentationData.slides[intent.targetSlideIndex] = slides[0];
+                            await ppHideSlideOverlay();
+                            renderPPSlides();
                         } else {
                             activePresentationData.slides.push(...slides);
                             activeSlideIndex = activePresentationData.slides.length - slides.length;
+                            await ppHideGenOverlay();
+                            renderPPSlides(true);
                         }
-
-                        // Orb expands, then reveal slides with ladder animation
-                        await ppHideGenOverlay();
-                        renderPPSlides(true);
                         savePresentationToDB();
                     } else {
-                        await ppHideGenOverlay();
+                        if (isEditingSingle) await ppHideSlideOverlay();
+                        else await ppHideGenOverlay();
                     }
                 } else {
-                    await ppHideGenOverlay();
+                    if (isEditingSingle) await ppHideSlideOverlay();
+                    else await ppHideGenOverlay();
                 }
             } catch (_) {
-                await ppHideGenOverlay();
+                if (isEditingSingle) await ppHideSlideOverlay();
+                else await ppHideGenOverlay();
             }
 
             ppGenerating = false;
