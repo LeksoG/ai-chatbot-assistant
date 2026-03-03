@@ -200,6 +200,28 @@
         /* Active slide view */
         .pp-active-slide { width:100%; max-width:960px; aspect-ratio:16/9; background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:1rem; overflow:hidden; position:relative; }
         .pp-active-slide iframe { width:100%; height:100%; border:0; }
+
+        /* ── Rainbow ring + generation animations ── */
+        @keyframes pp-ring-spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
+        @keyframes pp-rainbow-shift { 0% { filter:hue-rotate(0deg); } 100% { filter:hue-rotate(360deg); } }
+        @keyframes pp-fade-in { 0% { opacity:0; transform:scale(0.92); } 100% { opacity:1; transform:scale(1); } }
+        @keyframes pp-wave-char { 0%,100% { opacity:0.4; transform:translateY(0); } 50% { opacity:1; transform:translateY(-3px); } }
+        @keyframes pp-container-pulse { 0%,100% { box-shadow:0 0 40px rgba(255,50,80,0.15), 0 0 80px rgba(255,50,80,0.08); } 50% { box-shadow:0 0 60px rgba(255,50,80,0.25), 0 0 120px rgba(255,50,80,0.12); } }
+        @keyframes pp-rainbow-bg { 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
+
+        .pp-rainbow-ring-wrap { position:relative; width:180px; height:180px; display:flex; align-items:center; justify-content:center; margin-bottom:2rem; }
+        .pp-rainbow-ring { position:absolute; inset:-8px; border-radius:50%; background:conic-gradient(from 0deg, #ff0040, #ff8000, #ffe000, #00ff80, #00c8ff, #8000ff, #ff0080, #ff0040); animation:pp-ring-spin 4s linear infinite, pp-rainbow-shift 6s linear infinite; filter:blur(18px); opacity:0.55; }
+        .pp-rainbow-ring-inner { position:absolute; inset:6px; border-radius:50%; background:var(--bg); }
+        .pp-prompt-text { color:#fff; font-size:0.85rem; font-weight:500; text-align:center; max-width:260px; line-height:1.5; opacity:0.85; }
+
+        .pp-gen-overlay { position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:10; border-radius:1rem; overflow:hidden; animation:pp-fade-in 0.5s ease-out; }
+        .pp-gen-overlay.active { display:flex; }
+        .pp-gen-bg { position:absolute; inset:0; background:linear-gradient(135deg, #1a0a0e, #0d0d0d 40%, #1a0a0e); }
+        .pp-gen-rainbow-bg { position:absolute; inset:0; background:linear-gradient(270deg, rgba(255,0,80,0.08), rgba(255,140,0,0.08), rgba(0,200,255,0.08), rgba(128,0,255,0.08), rgba(255,0,80,0.08)); background-size:400% 400%; animation:pp-rainbow-bg 6s ease infinite; filter:blur(40px); opacity:0.6; }
+        .pp-gen-container { position:relative; z-index:2; padding:2rem 3rem; border-radius:1.5rem; border:1px solid rgba(255,60,80,0.15); background:rgba(255,30,60,0.04); backdrop-filter:blur(12px); animation:pp-container-pulse 3s ease-in-out infinite; }
+        .pp-gen-text { font-size:1.1rem; font-weight:600; color:#fff; letter-spacing:0.02em; display:flex; gap:1px; }
+        .pp-gen-char { display:inline-block; }
+
         /* ── Splash screen / what's new ── */
         #splash-modal { position:fixed; inset:0; z-index:300; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); }
         #splash-modal.splash-open { display:flex; }
@@ -277,6 +299,17 @@
             </button>
         </div>
 
+        <!-- Presentation shortcut -->
+        <div class="px-3 pb-2 shrink-0">
+            <button onclick="openPresentationPage(null)" class="w-full flex items-center justify-between gap-2.5 p-2.5 bg-white/[0.03] hover:bg-white/[0.07] rounded-xl text-sm text-gray-400 hover:text-gray-200 transition-all border border-white/5 hover:border-white/10 group">
+                <div class="flex items-center gap-2.5">
+                    <i data-lucide="presentation" class="w-4 text-violet-400 group-hover:text-violet-300 transition-colors"></i>
+                    <span class="text-xs font-medium">Presentations</span>
+                </div>
+                <i data-lucide="arrow-right" class="w-3.5 text-gray-600 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all"></i>
+            </button>
+        </div>
+
         <!-- Sidebar tabs: Chat / Presentations -->
         <div class="sidebar-tabs px-3">
             <button id="sidebar-tab-chat" class="sidebar-tab active" onclick="switchSidebarTab('chat')">Chat</button>
@@ -306,22 +339,10 @@
         <div id="sidebar-pres-panel" class="px-3 flex-1 overflow-y-auto min-h-0 hidden">
             <div class="flex items-center justify-between px-1 mb-2">
                 <p class="text-[10px] text-gray-600 uppercase tracking-widest">Presentations</p>
-                <button onclick="openPresentationPage(null)" class="text-[10px] text-violet-400 hover:text-violet-300 font-medium transition-colors">+ New</button>
             </div>
             <div id="presentations-list">
                 <div class="p-3 text-gray-600 text-sm text-center">No presentations yet</div>
             </div>
-        </div>
-
-        <!-- Presentation shortcut section -->
-        <div class="px-3 pb-1 shrink-0">
-            <button onclick="openPresentationPage(null)" class="w-full flex items-center justify-between gap-2.5 p-2.5 bg-white/[0.03] hover:bg-white/[0.07] rounded-xl text-sm text-gray-400 hover:text-gray-200 transition-all border border-white/5 hover:border-white/10 group">
-                <div class="flex items-center gap-2.5">
-                    <i data-lucide="presentation" class="w-4 text-violet-400 group-hover:text-violet-300 transition-colors"></i>
-                    <span class="text-xs font-medium">Presentations</span>
-                </div>
-                <i data-lucide="arrow-right" class="w-3.5 text-gray-600 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all"></i>
-            </button>
         </div>
 
         <!-- User profile -->
@@ -649,10 +670,21 @@
                 <div class="pp-slide-view" id="pp-slide-view">
                     <div class="pp-active-slide" id="pp-active-slide">
                         <iframe id="pp-slide-iframe" class="w-full h-full border-0 bg-white" sandbox="allow-scripts allow-same-origin"></iframe>
-                        <div id="pp-empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
-                            <i data-lucide="presentation" class="w-12 h-12 text-gray-700 mb-3"></i>
-                            <p class="text-gray-500 text-sm mb-1">No slides yet</p>
-                            <p class="text-gray-600 text-xs">Type a prompt below to generate your presentation</p>
+                        <!-- Empty state: rainbow ring -->
+                        <div id="pp-empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8" style="background:var(--bg);">
+                            <div class="pp-rainbow-ring-wrap">
+                                <div class="pp-rainbow-ring"></div>
+                                <div class="pp-rainbow-ring-inner"></div>
+                            </div>
+                            <p class="pp-prompt-text">Type a prompt to generate a presentation in minutes</p>
+                        </div>
+                        <!-- Generation animation overlay -->
+                        <div id="pp-gen-overlay" class="pp-gen-overlay">
+                            <div class="pp-gen-bg"></div>
+                            <div class="pp-gen-rainbow-bg"></div>
+                            <div class="pp-gen-container">
+                                <div id="pp-gen-text" class="pp-gen-text"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1838,6 +1870,47 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
         }
 
         // ── Presentation AI generation ───────────────────────────
+        /* ── Presentation generation animation helpers ── */
+        let ppGenAnimInterval = null;
+        function ppShowGenOverlay() {
+            const overlay = document.getElementById('pp-gen-overlay');
+            const emptyState = document.getElementById('pp-empty-state');
+            if (emptyState) emptyState.style.display = 'none';
+            overlay.classList.add('active');
+            ppAnimateGenText(['Generating...', 'Creating slides...', 'Assembling presentation...']);
+        }
+        function ppHideGenOverlay() {
+            const overlay = document.getElementById('pp-gen-overlay');
+            overlay.classList.remove('active');
+            if (ppGenAnimInterval) { clearInterval(ppGenAnimInterval); ppGenAnimInterval = null; }
+        }
+        function ppAnimateGenText(phases) {
+            const container = document.getElementById('pp-gen-text');
+            let phaseIdx = 0;
+            function setPhase(idx) {
+                const text = phases[idx];
+                container.innerHTML = '';
+                [...text].forEach((ch, i) => {
+                    const span = document.createElement('span');
+                    span.className = 'pp-gen-char';
+                    span.textContent = ch === ' ' ? '\u00A0' : ch;
+                    span.style.animation = `pp-wave-char 1.2s ease-in-out ${i * 0.04}s infinite`;
+                    container.appendChild(span);
+                });
+            }
+            setPhase(0);
+            ppGenAnimInterval = setInterval(() => {
+                phaseIdx = (phaseIdx + 1) % phases.length;
+                // Fade out then in
+                container.style.transition = 'opacity 0.35s ease';
+                container.style.opacity = '0';
+                setTimeout(() => {
+                    setPhase(phaseIdx);
+                    container.style.opacity = '1';
+                }, 370);
+            }, 3000);
+        }
+
         async function handlePresentationSend() {
             const input = document.getElementById('pp-input');
             const val = input.value.trim();
@@ -1845,6 +1918,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
 
             ppGenerating = true;
             input.value = '';
+            ppShowGenOverlay();
 
             // Build prompt for slide generation
             const existingSlides = (activePresentationData?.slides || []).length;
@@ -1924,6 +1998,7 @@ Keep the same design style. Each slide is a complete self-contained HTML page (i
                 }
             } catch (_) {}
 
+            ppHideGenOverlay();
             ppGenerating = false;
         }
 
