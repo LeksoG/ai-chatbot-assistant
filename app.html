@@ -193,10 +193,12 @@
         #presentation-page .pp-slide-view { flex:1; display:flex; align-items:center; justify-content:center; padding:2rem; overflow:auto; }
         #presentation-page .pp-input-bar { padding:0.75rem 1.25rem; border-top:1px solid rgba(255,255,255,0.06); flex-shrink:0; background:#0d0d0d; }
         /* Slide card in left panel */
-        .pp-slide-card { width:100%; aspect-ratio:16/9; background:#111; border:2px solid rgba(255,255,255,0.06); border-radius:0.5rem; margin-bottom:0.5rem; cursor:pointer; transition:border-color 0.15s; overflow:hidden; padding:0.4rem; position:relative; }
+        .pp-slide-item { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem; }
+        .pp-slide-label { flex-shrink:0; width:1.2rem; text-align:right; font-size:0.65rem; color:#6b7280; font-weight:600; font-variant-numeric:tabular-nums; user-select:none; }
+        .pp-slide-item.active .pp-slide-label { color:#a78bfa; }
+        .pp-slide-card { flex:1; min-width:0; aspect-ratio:16/9; background:#111; border:2px solid rgba(255,255,255,0.06); border-radius:0.5rem; cursor:pointer; transition:border-color 0.15s; overflow:hidden; padding:0.4rem; position:relative; }
         .pp-slide-card:hover { border-color:rgba(255,255,255,0.15); }
         .pp-slide-card.active { border-color:#7c3aed; }
-        .pp-slide-card-num { position:absolute; top:0.25rem; left:0.4rem; font-size:0.55rem; color:#6b7280; font-weight:600; }
         /* Active slide view */
         .pp-active-slide { width:100%; max-width:1100px; aspect-ratio:16/9; background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:1rem; overflow:hidden; position:relative; }
         .pp-active-slide iframe { width:100%; height:100%; border:0; }
@@ -234,7 +236,7 @@
 
         /* ── Slide card stagger (ladder) animation ── */
         @keyframes pp-slide-ladder { from { opacity:0; transform:translateY(18px) scale(0.95); } to { opacity:1; transform:translateY(0) scale(1); } }
-        .pp-slide-card.ladder-in { animation:pp-slide-ladder 0.35s ease forwards; opacity:0; }
+        .pp-slide-item.ladder-in { animation:pp-slide-ladder 0.35s ease forwards; opacity:0; }
 
         /* ── Sidebar pres card hover actions ── */
         .pres-card { position:relative; }
@@ -735,7 +737,7 @@
         <div class="pp-content">
             <!-- Left: slide thumbnails -->
             <div class="pp-slides-panel" id="pp-slides-panel">
-                <div id="pp-slide-list" class="space-y-1">
+                <div id="pp-slide-list">
                     <!-- Slide cards rendered by JS -->
                 </div>
                 <button onclick="addNewSlide()" class="w-full mt-2 py-2 border-2 border-dashed border-white/10 hover:border-violet-500/30 rounded-lg text-xs text-gray-500 hover:text-violet-400 transition-all flex items-center justify-center gap-1.5">
@@ -770,7 +772,7 @@
                 <div class="pp-input-bar">
                     <div class="flex items-center gap-2 max-w-3xl mx-auto">
                         <div class="flex-1 relative">
-                            <input id="pp-input" type="text" placeholder="Describe your presentation or ask to modify a slide…"
+                            <input id="pp-input" type="text" placeholder="Describe a presentation, edit a slide, or update all slides…"
                                 autocomplete="off"
                                 class="w-full bg-[#111] border border-white/8 rounded-full px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-violet-500/40 transition-colors"
                                 onkeydown="if(event.key==='Enter') handlePresentationSend()">
@@ -1981,10 +1983,12 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             ppLastSlideCount = slides.length;
 
             list.innerHTML = slides.map((s, i) => `
-                <div class="pp-slide-card ${i === activeSlideIndex ? 'active' : ''}${shouldLadder ? ' ladder-in' : ''}" onclick="selectSlide(${i})" style="${shouldLadder ? 'animation-delay:' + (i * 0.08) + 's' : ''}">
-                    <span class="pp-slide-card-num">${i + 1}</span>
-                    <div style="transform:scale(0.18);transform-origin:top left;width:555%;height:555%;pointer-events:none;overflow:hidden;">
-                        <iframe srcdoc="${escapeHtml(s.html || '<div></div>')}" style="width:100%;height:100%;border:0;" sandbox="allow-scripts"></iframe>
+                <div class="pp-slide-item ${i === activeSlideIndex ? 'active' : ''}${shouldLadder ? ' ladder-in' : ''}" onclick="selectSlide(${i})" style="${shouldLadder ? 'animation-delay:' + (i * 0.08) + 's' : ''}">
+                    <span class="pp-slide-label">${i + 1}</span>
+                    <div class="pp-slide-card ${i === activeSlideIndex ? 'active' : ''}">
+                        <div style="transform:scale(0.18);transform-origin:top left;width:555%;height:555%;pointer-events:none;overflow:hidden;">
+                            <iframe srcdoc="${escapeHtml(s.html || '<div></div>')}" style="width:100%;height:100%;border:0;" sandbox="allow-scripts"></iframe>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -2107,6 +2111,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
         }
 
         function ppAnimateGenText(phases) {
+            if (ppGenAnimInterval) { clearInterval(ppGenAnimInterval); ppGenAnimInterval = null; }
             const container = document.getElementById('pp-gen-text');
             let phaseIdx = 0;
             function setPhase(idx) {
@@ -2139,7 +2144,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 activeSlideIndex = slideIndex;
                 renderPPSlides();
             }
-            const card = document.querySelectorAll('.pp-slide-card')[slideIndex];
+            const card = document.querySelectorAll('.pp-slide-item .pp-slide-card')[slideIndex];
             if (!card) return;
             // Also blackout the main slide iframe
             const mainOverlay = document.getElementById('pp-gen-overlay');
@@ -2209,6 +2214,15 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             const editKeywords = /\b(change|modify|update|edit|fix|make|adjust|tweak|improve|redo|rewrite|redesign|move|remove|replace|restyle)\b/;
             const isEdit = editKeywords.test(lower) && existingSlides > 0 && !isAddMore;
 
+            // ── Detect whole-presentation (edit-all) intent ──
+            // Explicit "all slides" / "every slide" / "whole presentation" references
+            const allSlidesRef = /\b(all\s*(the\s*)?slides|every\s*slide|whole\s*(presentation|deck|thing)|entire\s*(presentation|deck)|each\s*slide|across\s*(all\s*)?slides|throughout|presentation\s*(style|theme|colors?|backgrounds?|fonts?))\b/;
+            const hasAllRef = allSlidesRef.test(lower);
+
+            // Global style/theme language without a specific slide reference
+            const globalStyleKeywords = /\b(color\s*scheme|theme|palette|branding|style|backgrounds?\s*(color|gradient)?|font(s|\s*family)?|typography)\b/;
+            const hasGlobalStyle = globalStyleKeywords.test(lower);
+
             // Parse which slide is being referenced
             const ordinals = { first:1, second:2, third:3, fourth:4, fifth:5, sixth:6, seventh:7, eighth:8, ninth:9, tenth:10 };
             let targetSlideIndex = null;
@@ -2218,9 +2232,15 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             // "the third slide", "first slide"
             const ordinalMatch = lower.match(/\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s*slide/);
             // "this slide", "current slide"
-            const currentMatch = lower.match(/\b(this|current|the)\s*slide\b/);
+            const currentMatch = lower.match(/\b(this|current)\s*slide\b/);
             // "last slide"
             const lastMatch = lower.match(/\blast\s*slide\b/);
+            // Specific slide reference exists
+            const hasSlideRef = slideNumMatch || ordinalMatch || currentMatch || lastMatch;
+
+            // Determine if this is an edit-all (whole presentation) request
+            // Conditions: has explicit "all slides" language, OR has global style language without a specific slide reference
+            const isEditAll = existingSlides > 1 && !isAddMore && !hasSlideRef && (hasAllRef || (isEdit && hasGlobalStyle));
 
             if (slideNumMatch) {
                 targetSlideIndex = parseInt(slideNumMatch[1], 10) - 1;
@@ -2228,7 +2248,8 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 targetSlideIndex = (ordinals[ordinalMatch[1]] || 1) - 1;
             } else if (lastMatch && existingSlides > 0) {
                 targetSlideIndex = existingSlides - 1;
-            } else if (currentMatch || (isEdit && !isAddMore)) {
+            } else if (!isEditAll && (currentMatch || (isEdit && !isAddMore))) {
+                // Only default to current slide if NOT an edit-all request
                 targetSlideIndex = activeSlideIndex;
             }
 
@@ -2238,10 +2259,9 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             }
 
             // If user references a specific slide with edit keywords, it's an edit even without explicit "edit" word
-            const hasSlideRef = slideNumMatch || ordinalMatch || currentMatch || lastMatch;
-            const finalIsEdit = (isEdit || (hasSlideRef && existingSlides > 0)) && !isAddMore;
+            const finalIsEdit = !isEditAll && (isEdit || (hasSlideRef && existingSlides > 0)) && !isAddMore;
 
-            return { requestedCount, isEdit: finalIsEdit, isAddMore, targetSlideIndex };
+            return { requestedCount, isEdit: finalIsEdit, isEditAll, isAddMore, targetSlideIndex };
         }
 
         async function handlePresentationSend() {
@@ -2255,13 +2275,18 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             const existingSlides = (activePresentationData?.slides || []).length;
             const intent = ppParseIntent(val, existingSlides);
 
-            // Decide mode: new presentation, edit specific slide, or add slides
+            // Decide mode: new presentation, edit specific slide, edit all slides, or add slides
             const isNewPresentation = existingSlides === 0;
-            const isEditingSingle = !isNewPresentation && intent.isEdit && intent.targetSlideIndex !== null && !intent.isAddMore;
+            const isEditingSingle = !isNewPresentation && intent.isEdit && intent.targetSlideIndex !== null && !intent.isAddMore && !intent.isEditAll;
+            const isEditingAll = !isNewPresentation && intent.isEditAll;
 
             if (isEditingSingle) {
                 // Per-slide blackout animation
                 ppShowSlideOverlay(intent.targetSlideIndex, 'Editing...');
+            } else if (isEditingAll) {
+                // Full overlay for editing all slides
+                ppShowGenOverlay();
+                ppAnimateGenText(['Updating all slides...', 'Applying changes...', 'Redesigning presentation...']);
             } else {
                 // Full orb overlay for new/add
                 ppShowGenOverlay();
@@ -2311,6 +2336,22 @@ User request: "${val}"
 Edit this single slide based on the user's request. Keep the same overall design style and color scheme. Use rich gradient backgrounds, polished typography, and visual hierarchy. The slide is a complete self-contained HTML page (inline CSS, 960x540 viewport). Never use plain white backgrounds.
 
 Return ONLY a JSON object with one field: {"slides":[{"html":"...updated slide html..."}]}`;
+            } else if (isEditingAll) {
+                // Edit ALL slides — whole-presentation update
+                const allSlidesHtml = activePresentationData.slides.map((s, i) =>
+                    `Slide ${i + 1}:\n\`\`\`\n${s.html}\n\`\`\``
+                ).join('\n\n');
+                prompt = `I have a slide presentation titled "${activePresentationData.title || 'Untitled'}" with ${existingSlides} slides. The user wants to update the ENTIRE presentation.
+
+Here are ALL ${existingSlides} slides:
+
+${allSlidesHtml}
+
+User request: "${val}"
+
+Apply the user's request across ALL ${existingSlides} slides. Return ALL slides with the changes applied consistently. Keep the same slide structure and content but apply the requested changes to every slide. Each slide is a complete self-contained HTML page (inline CSS, 960x540 viewport). Never use plain white backgrounds.
+
+Return ONLY a JSON object: {"slides":[{"html":"...slide 1..."},{"html":"...slide 2..."},...]} with exactly ${existingSlides} slides.`;
             } else {
                 // Adding more slides or general follow-up
                 const allSlidesOverview = activePresentationData.slides.map((s, i) => `Slide ${i+1}: exists`).join('\n');
@@ -2383,6 +2424,13 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                             activePresentationData.slides[intent.targetSlideIndex] = slides[0];
                             await ppHideSlideOverlay();
                             renderPPSlides();
+                        } else if (isEditingAll) {
+                            // Replace all slides with the updated versions
+                            activePresentationData.slides = slides;
+                            // Clamp activeSlideIndex in case slide count changed
+                            if (activeSlideIndex >= slides.length) activeSlideIndex = 0;
+                            await ppHideGenOverlay();
+                            renderPPSlides(true);
                         } else {
                             activePresentationData.slides.push(...slides);
                             activeSlideIndex = activePresentationData.slides.length - slides.length;
