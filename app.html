@@ -2206,50 +2206,44 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             const countMatch = lower.match(/(\d+)\s*slides?/);
             const requestedCount = countMatch ? parseInt(countMatch[1], 10) : null;
 
-            // Check for add intent first (takes priority)
+            // ── 1. Check for ADD intent (takes priority) ──
             const addKeywords = /\b(add|append|insert|create|new)\b.*\bslide/;
             const isAddMore = addKeywords.test(lower) && existingSlides > 0;
 
-            // Check for edit intent (targeting current/specific slide)
-            const editKeywords = /\b(change|modify|update|edit|fix|make|adjust|tweak|improve|redo|rewrite|redesign|move|remove|replace|restyle)\b/;
+            // ── 2. Check for edit intent ──
+            // Broad detection: action verbs, adjectives implying change, and style directives
+            const editKeywords = /\b(change|modify|update|edit|fix|make|adjust|tweak|improve|redo|rewrite|redesign|move|remove|replace|restyle|better|nicer|cleaner|darker|lighter|brighter|bigger|smaller|more\s+\w+|less\s+\w+|use\s|switch|convert|transform|simplify|shorten|lengthen|expand|reduce|minimize|maximize|increase|decrease)\b/;
             const isEdit = editKeywords.test(lower) && existingSlides > 0 && !isAddMore;
 
-            // ── Detect whole-presentation (edit-all) intent ──
-            // Explicit "all slides" / "every slide" / "whole presentation" references
-            const allSlidesRef = /\b(all\s*(the\s*)?slides|every\s*slide|whole\s*(presentation|deck|thing)|entire\s*(presentation|deck)|each\s*slide|across\s*(all\s*)?slides|throughout|presentation\s*(style|theme|colors?|backgrounds?|fonts?))\b/;
-            const hasAllRef = allSlidesRef.test(lower);
-
-            // Global style/theme language without a specific slide reference
-            const globalStyleKeywords = /\b(color\s*scheme|theme|palette|branding|style|backgrounds?\s*(color|gradient)?|font(s|\s*family)?|typography)\b/;
-            const hasGlobalStyle = globalStyleKeywords.test(lower);
-
-            // Parse which slide is being referenced
+            // ── 3. Parse EXPLICIT slide references ──
+            // Only these count as "user specifically named a slide"
             const ordinals = { first:1, second:2, third:3, fourth:4, fifth:5, sixth:6, seventh:7, eighth:8, ninth:9, tenth:10 };
             let targetSlideIndex = null;
 
-            // "slide 3", "slide #3"
-            const slideNumMatch = lower.match(/\bslide\s*#?\s*(\d+)/);
+            // "slide 3", "slide #3", "slide number 3"
+            const slideNumMatch = lower.match(/\bslide\s*(?:#|number|no\.?)?\s*(\d+)/);
             // "the third slide", "first slide"
             const ordinalMatch = lower.match(/\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s*slide/);
+            // "3rd slide", "1st slide", "2nd slide"
+            const numOrdinalMatch = lower.match(/\b(\d+)(?:st|nd|rd|th)\s*slide/);
             // "this slide", "current slide"
             const currentMatch = lower.match(/\b(this|current)\s*slide\b/);
             // "last slide"
             const lastMatch = lower.match(/\blast\s*slide\b/);
-            // Specific slide reference exists
-            const hasSlideRef = slideNumMatch || ordinalMatch || currentMatch || lastMatch;
 
-            // Determine if this is an edit-all (whole presentation) request
-            // Conditions: has explicit "all slides" language, OR has global style language without a specific slide reference
-            const isEditAll = existingSlides > 1 && !isAddMore && !hasSlideRef && (hasAllRef || (isEdit && hasGlobalStyle));
+            // Does the user EXPLICITLY name a specific slide?
+            const hasExplicitSlideRef = slideNumMatch || ordinalMatch || numOrdinalMatch || currentMatch || lastMatch;
 
+            // Resolve target slide index from explicit references
             if (slideNumMatch) {
                 targetSlideIndex = parseInt(slideNumMatch[1], 10) - 1;
             } else if (ordinalMatch) {
                 targetSlideIndex = (ordinals[ordinalMatch[1]] || 1) - 1;
+            } else if (numOrdinalMatch) {
+                targetSlideIndex = parseInt(numOrdinalMatch[1], 10) - 1;
             } else if (lastMatch && existingSlides > 0) {
                 targetSlideIndex = existingSlides - 1;
-            } else if (!isEditAll && (currentMatch || (isEdit && !isAddMore))) {
-                // Only default to current slide if NOT an edit-all request
+            } else if (currentMatch) {
                 targetSlideIndex = activeSlideIndex;
             }
 
@@ -2258,10 +2252,17 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 targetSlideIndex = Math.max(0, Math.min(targetSlideIndex, existingSlides - 1));
             }
 
-            // If user references a specific slide with edit keywords, it's an edit even without explicit "edit" word
-            const finalIsEdit = !isEditAll && (isEdit || (hasSlideRef && existingSlides > 0)) && !isAddMore;
+            // ── 4. Determine final mode ──
+            // SINGLE edit: ONLY when user explicitly names a specific slide
+            const isEditSingle = !isAddMore && isEdit && hasExplicitSlideRef && targetSlideIndex !== null;
 
-            return { requestedCount, isEdit: finalIsEdit, isEditAll, isAddMore, targetSlideIndex };
+            // EDIT ALL: any edit request WITHOUT an explicit slide reference
+            // This covers: "make the slides better", "change the colors", "improve the presentation",
+            // "make it darker", "change the background", etc.
+            // When there's only 1 slide, a generic edit still targets that slide (via editAll path)
+            const isEditAll = !isAddMore && !isEditSingle && isEdit && existingSlides > 0;
+
+            return { requestedCount, isEdit: isEditSingle, isEditAll, isAddMore, targetSlideIndex };
         }
 
         async function handlePresentationSend() {
@@ -2277,7 +2278,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
 
             // Decide mode: new presentation, edit specific slide, edit all slides, or add slides
             const isNewPresentation = existingSlides === 0;
-            const isEditingSingle = !isNewPresentation && intent.isEdit && intent.targetSlideIndex !== null && !intent.isAddMore && !intent.isEditAll;
+            const isEditingSingle = !isNewPresentation && intent.isEdit;
             const isEditingAll = !isNewPresentation && intent.isEditAll;
 
             if (isEditingSingle) {
