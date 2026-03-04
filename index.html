@@ -41,27 +41,73 @@
 
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+
+        /* ── Code logo (same as app.html) ── */
+        .cl-seg { stroke:none; transform-origin:center; fill:url(#codeRainbow); }
+        .cl-seg-top { animation:clMorphTop 5s infinite cubic-bezier(0.6,0.05,0.01,1); }
+        .cl-seg-mid { animation:clMorphMid 5s infinite cubic-bezier(0.6,0.05,0.01,1); }
+        .cl-seg-bot { animation:clMorphBot 5s infinite cubic-bezier(0.6,0.05,0.01,1); }
+        @keyframes clMorphTop {
+            0%,15%,85%,100% { fill-opacity:.15; d:path("M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"); }
+            40%,65%         { fill-opacity:1;   d:path("M15.3,30 C20,10 80,10 84.7,30 C84.7,30 71.7,37.5 71.7,37.5 C60,25 40,25 28.3,37.5 C28.3,37.5 15.3,30 15.3,30 Z"); }
+        }
+        @keyframes clMorphMid {
+            0%,15%,85%,100% { fill-opacity:.15; d:path("M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"); }
+            40%,65%         { fill-opacity:1;   d:path("M84.7,30 C100,60 75,95 50,90 C50,90 50,75 50,75 C65,75 80,55 71.7,37.5 C71.7,37.5 84.7,30 84.7,30 Z"); }
+        }
+        @keyframes clMorphBot {
+            0%,15%,85%,100% { fill-opacity:.15; d:path("M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"); }
+            40%,65%         { fill-opacity:1;   d:path("M50,90 C25,95 0,60 15.3,30 C15.3,30 28.3,37.5 28.3,37.5 C20,55 35,75 50,75 C50,75 50,90 50,90 Z"); }
+        }
+        @keyframes clRainbow { 0%{stop-color:#00f2ff} 25%{stop-color:#7000ff} 50%{stop-color:#ff0077} 75%{stop-color:#ffcc00} 100%{stop-color:#00f2ff} }
+        .cr-s1 { animation:clRainbow 3s infinite linear; }
+        .cr-s2 { animation:clRainbow 3s infinite linear -.75s; }
+        .cr-s3 { animation:clRainbow 3s infinite linear -1.5s; }
+        .cr-s4 { animation:clRainbow 3s infinite linear -2.25s; }
+
+        /* ── Hero logo morph animation ── */
+        .hero-logo-wrap { display:inline-flex; align-items:center; gap:0.75rem; }
+        .hero-logo-text {
+            font-size:3.5rem; font-weight:800; letter-spacing:-0.03em;
+            background:linear-gradient(135deg, #7c3aed 0%, #818cf8 50%, #c4b5fd 100%);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+        }
+        @media (min-width:640px) { .hero-logo-text { font-size:4.5rem; } }
     </style>
 </head>
 <body class="text-white overflow-x-hidden">
 
+    <!-- SVG gradient defs for code logo -->
+    <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+        <defs>
+            <linearGradient id="codeRainbow" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%"   class="cr-s1"/>
+                <stop offset="33%"  class="cr-s2"/>
+                <stop offset="66%"  class="cr-s3"/>
+                <stop offset="100%" class="cr-s4"/>
+            </linearGradient>
+        </defs>
+    </svg>
+
     <!-- Navbar -->
     <nav class="fixed top-0 left-0 right-0 z-50 px-6 py-4">
         <div class="max-w-6xl mx-auto flex items-center justify-between">
-            <!-- Logo -->
-            <a href="/" class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-lg">
-                    <i data-lucide="gem" class="text-white w-4"></i>
-                </div>
+            <!-- Logo — clicking logs in if token exists -->
+            <a id="nav-logo" href="/" class="flex items-center gap-2.5">
+                <svg class="w-8 h-8" viewBox="-15 -15 130 130">
+                    <path class="cl-seg cl-seg-top"/>
+                    <path class="cl-seg cl-seg-mid"/>
+                    <path class="cl-seg cl-seg-bot"/>
+                </svg>
                 <span class="font-bold text-white text-base tracking-tight">Clarity AI</span>
             </a>
 
             <!-- Nav actions -->
             <div class="flex items-center gap-3">
-                <a href="/auth.html" class="px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors font-medium">
+                <a href="/auth.html" id="nav-login" class="px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors font-medium">
                     Log In
                 </a>
-                <a href="/auth.html?mode=signup"
+                <a href="/auth.html?mode=signup" id="nav-cta"
                    class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-violet-900/30">
                     Get Started
                 </a>
@@ -79,8 +125,18 @@
             Now powered by Clarity 3.5
         </div>
 
+        <!-- Logo + Brand morphing header -->
+        <div class="hero-logo-wrap mb-6">
+            <svg class="w-16 h-16 sm:w-20 sm:h-20" viewBox="-15 -15 130 130">
+                <path class="cl-seg cl-seg-top"/>
+                <path class="cl-seg cl-seg-mid"/>
+                <path class="cl-seg cl-seg-bot"/>
+            </svg>
+            <span class="hero-logo-text">ClarityAI</span>
+        </div>
+
         <!-- Heading -->
-        <h1 class="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-none mb-6 max-w-4xl">
+        <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-none mb-6 max-w-4xl">
             Think Smarter,<br>
             <span class="gradient-text">Ask Clarity.</span>
         </h1>
@@ -93,11 +149,10 @@
 
         <!-- CTAs -->
         <div class="flex flex-col sm:flex-row items-center gap-3">
-            <a href="/auth.html?mode=signup"
-               class="px-7 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-2xl transition-all shadow-xl shadow-violet-900/30 text-sm hover:scale-105 active:scale-100">
+            <a href="/auth.html?mode=signup" class="cta-signup px-7 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-2xl transition-all shadow-xl shadow-violet-900/30 text-sm hover:scale-105 active:scale-100">
                 Start for free
             </a>
-            <a href="/auth.html"
+            <a href="/auth.html" id="hero-login"
                class="px-7 py-3.5 bg-white/5 hover:bg-white/10 border border-white/8 text-gray-300 hover:text-white font-medium rounded-2xl transition-all text-sm flex items-center gap-2">
                 Log in
                 <i data-lucide="arrow-right" class="w-4"></i>
@@ -180,13 +235,15 @@
     <!-- CTA section -->
     <section class="py-28 px-6 text-center">
         <div class="max-w-lg mx-auto">
-            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-2xl shadow-violet-900/40 mx-auto mb-6">
-                <i data-lucide="gem" class="text-white w-7"></i>
-            </div>
+            <svg class="w-14 h-14 mx-auto mb-6" viewBox="-15 -15 130 130">
+                <path class="cl-seg cl-seg-top"/>
+                <path class="cl-seg cl-seg-mid"/>
+                <path class="cl-seg cl-seg-bot"/>
+            </svg>
             <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Ready to get started?</h2>
             <p class="text-gray-500 mb-8">Create a free account and start chatting in seconds.</p>
             <a href="/auth.html?mode=signup"
-               class="inline-block px-8 py-4 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-2xl transition-all shadow-xl shadow-violet-900/30 hover:scale-105 active:scale-100">
+               class="cta-signup inline-block px-8 py-4 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-2xl transition-all shadow-xl shadow-violet-900/30 hover:scale-105 active:scale-100">
                 Create free account
             </a>
         </div>
@@ -196,25 +253,40 @@
     <footer class="border-t border-white/5 py-8 px-6">
         <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-md bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center">
-                    <i data-lucide="gem" class="text-white w-3"></i>
-                </div>
+                <svg class="w-6 h-6" viewBox="-15 -15 130 130">
+                    <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
+                    <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
+                    <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
+                </svg>
                 <span class="text-gray-600 text-sm font-medium">Clarity AI</span>
             </div>
-            <p class="text-gray-700 text-xs">© 2025 Clarity AI. All rights reserved.</p>
+            <p class="text-gray-700 text-xs">&copy; 2025 Clarity AI. All rights reserved.</p>
         </div>
     </footer>
 
     <script>
         lucide.createIcons();
-        // If already logged in, show "Go to App" instead of sign up
-        if (localStorage.getItem('clarity_token')) {
-            document.querySelectorAll('a[href="/auth.html?mode=signup"]').forEach(el => {
+
+        const isLoggedIn = !!localStorage.getItem('clarity_token');
+
+        if (isLoggedIn) {
+            // Logo click → go straight to app (auto-login)
+            document.getElementById('nav-logo').href = '/app.html';
+
+            // Change nav buttons for logged-in users
+            document.getElementById('nav-login').textContent = 'Open App';
+            document.getElementById('nav-login').href = '/app.html';
+            document.getElementById('nav-cta').textContent = 'Go to App';
+            document.getElementById('nav-cta').href = '/app.html';
+
+            // Change hero buttons
+            document.querySelectorAll('.cta-signup').forEach(el => {
                 el.textContent = 'Go to App';
                 el.href = '/app.html';
             });
+            const heroLogin = document.getElementById('hero-login');
+            if (heroLogin) heroLogin.style.display = 'none';
         }
     </script>
 </body>
 </html>
-

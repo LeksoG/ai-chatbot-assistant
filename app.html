@@ -967,7 +967,7 @@
 
         // ── Auth guard ────────────────────────────────────────────
         const authToken = localStorage.getItem('clarity_token');
-        if (!authToken) window.location.href = '/auth.html';
+        if (!authToken) window.location.href = '/';
 
         // Decode JWT payload without verification (used as name fallback)
         function parseJWT(token) {
@@ -2899,7 +2899,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             localStorage.removeItem('clarity_token');
             localStorage.removeItem('clarity_user');
             sessionStorage.removeItem('clarity_2fa_ok');
-            window.location.href = '/auth.html';
+            window.location.href = '/';
         }
 
         // ── DOM helpers ───────────────────────────────────────────
