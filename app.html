@@ -266,6 +266,29 @@
         .splash-feature { display:flex; align-items:flex-start; gap:0.75rem; padding:0.6rem 0; }
         .splash-feature-icon { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
+        /* ── Canvas editing/edited status banner ── */
+        #canvas-status-banner { position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:18; display:none; flex-direction:column; align-items:center; min-width:200px; max-width:88%; background:#161616; border:1px solid rgba(255,255,255,0.1); border-radius:14px; box-shadow:0 6px 28px rgba(0,0,0,0.7); overflow:hidden; pointer-events:auto; }
+        #canvas-status-banner.active { display:flex; }
+        #csb-header-content { display:flex; align-items:center; justify-content:center; gap:0.4rem; padding:0.55rem 1.4rem; width:100%; position:relative; }
+        #csb-close-btn { position:absolute; right:0.5rem; top:50%; transform:translateY(-50%); font-size:0.65rem; color:#4b5563; cursor:pointer; padding:0.2rem 0.4rem; border-radius:0.35rem; transition:color 0.15s; display:none; }
+        #csb-close-btn.visible { display:block; }
+        #csb-close-btn:hover { color:#9ca3af; }
+        .csb-edited-label { font-size:0.78rem; font-weight:700; color:#4ade80; letter-spacing:0.02em; }
+        #canvas-diff-lines { display:none; flex-direction:column; width:100%; max-height:190px; overflow-y:auto; border-top:1px solid rgba(255,255,255,0.07); }
+        #canvas-diff-lines.active { display:flex; }
+        .diff-line-added { background:rgba(74,222,128,0.07); color:#4ade80; font-family:'Courier New',monospace; font-size:0.67rem; padding:0.12rem 0.9rem 0.12rem 0.5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; gap:0.4rem; align-items:baseline; line-height:1.55; }
+        .diff-line-added-prefix { color:#4ade80; flex-shrink:0; font-weight:700; }
+        .diff-line-removed { background:rgba(239,68,68,0.07); color:#f87171; font-family:'Courier New',monospace; font-size:0.67rem; padding:0.12rem 0.9rem 0.12rem 0.5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; gap:0.4rem; align-items:baseline; line-height:1.55; }
+        .diff-line-removed-prefix { color:#f87171; flex-shrink:0; font-weight:700; }
+        .diff-line-num { color:#4b5563; font-size:0.62rem; flex-shrink:0; min-width:1.8rem; text-align:right; }
+        .diff-line-content { overflow:hidden; text-overflow:ellipsis; }
+        .diff-more-badge { font-size:0.63rem; color:#6b7280; padding:0.25rem 0.9rem; border-top:1px solid rgba(255,255,255,0.04); }
+
+        /* ── Mobile: sidebar open — raise input bar and add bottom cover ── */
+        body.sidebar-open .chat-input-wrapper { z-index:60 !important; }
+        #input-bottom-cover { display:none; position:fixed; bottom:0; left:0; right:0; height:3.8rem; background:var(--bg); z-index:59; pointer-events:none; }
+        body.sidebar-open #input-bottom-cover { display:block; }
+
         /* ── Code logo ── */
         .cl-seg { stroke:none; transform-origin:center; fill:url(#codeRainbow); }
         .cl-seg-top { animation:clMorphTop 5s infinite cubic-bezier(0.6,0.05,0.01,1); }
@@ -556,6 +579,9 @@
     <!-- Bottom fade mask — ChatGPT-style dissolve before input bar -->
     <div id="bottom-fade"></div>
 
+    <!-- Cover below input bar on mobile when sidebar is open -->
+    <div id="input-bottom-cover"></div>
+
     <!-- Scroll to bottom button -->
     <button id="scroll-to-bottom" onclick="scrollToBottom(); hideScrollToBottom();"
         class="flex items-center gap-1.5 px-3.5 py-2 bg-[#1a1a1a] border border-white/10 rounded-full text-xs text-gray-400 hover:text-white hover:bg-[#222] hover:border-white/20 shadow-xl transition-all">
@@ -610,6 +636,12 @@
             <div id="canvas-page-loader">
                 <div class="cpl-spinner"></div>
                 <span class="text-xs text-gray-500 font-medium">Retrieving page…</span>
+            </div>
+            <!-- Canvas editing/edited status banner -->
+            <div id="canvas-status-banner">
+                <div id="csb-header-content"></div>
+                <div id="canvas-diff-lines"></div>
+                <button id="csb-close-btn" onclick="hideCanvasStatusBanner()">✕</button>
             </div>
         </div>
         <!-- Live preview iframe -->
@@ -1149,6 +1181,7 @@
         function toggleSidebar(open) {
             const sb = document.getElementById('sidebar');
             const ov = document.getElementById('sidebar-overlay');
+            document.body.classList.toggle('sidebar-open', open);
             if (open) {
                 sb.classList.remove('-translate-x-full');
                 ov.classList.remove('opacity-0','pointer-events-none');
@@ -1294,12 +1327,22 @@
             const oldLines = oldCode.split('\n');
             const newLines = newCode.split('\n');
 
-            // Find changed line indices (1-based for Monaco)
+            // Find changed line indices (1-based for Monaco) and track added/removed content
             const changedLines = [];
+            const addedEntries = [];
+            const removedEntries = [];
             const maxLen = Math.max(oldLines.length, newLines.length);
             for (let i = 0; i < maxLen; i++) {
-                if (i >= oldLines.length || i >= newLines.length || oldLines[i] !== newLines[i]) {
+                if (i >= oldLines.length) {
                     changedLines.push(i + 1);
+                    addedEntries.push({ num: i + 1, content: newLines[i] });
+                } else if (i >= newLines.length) {
+                    changedLines.push(i + 1);
+                    removedEntries.push({ num: i + 1, content: oldLines[i] });
+                } else if (oldLines[i] !== newLines[i]) {
+                    changedLines.push(i + 1);
+                    removedEntries.push({ num: i + 1, content: oldLines[i] });
+                    addedEntries.push({ num: i + 1, content: newLines[i] });
                 }
             }
 
@@ -1310,6 +1353,9 @@
                 updateCanvasPreview();
                 return;
             }
+
+            // Show "Editing" wave banner
+            showCanvasEditingBanner();
 
             // Phase 1: Quick scan animation from top to bottom
             let scanDecos = [];
@@ -1337,12 +1383,99 @@
                 await sleep(50);
             }
 
-            // Keep highlights visible briefly
-            await sleep(2000);
-
-            // Fade out highlights
+            // Brief pause then transition banner to "Edited" summary
+            await sleep(400);
             monacoEditor.deltaDecorations(highlightDecos, []);
             updateCanvasPreview();
+
+            // Show "Edited:" diff summary
+            showCanvasEditedBanner(addedEntries, removedEntries);
+
+            // Auto-hide banner after 6 seconds
+            setTimeout(() => hideCanvasStatusBanner(), 6000);
+        }
+
+        // ── Canvas editing/edited status banner helpers ──
+        function showCanvasEditingBanner() {
+            const banner = document.getElementById('canvas-status-banner');
+            const header = document.getElementById('csb-header-content');
+            const diffLines = document.getElementById('canvas-diff-lines');
+            const closeBtn = document.getElementById('csb-close-btn');
+            diffLines.classList.remove('active');
+            diffLines.innerHTML = '';
+            closeBtn.classList.remove('visible');
+            // Build wave-animated "Editing" text
+            header.innerHTML = '';
+            const text = 'Editing';
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'display:flex;gap:1px;';
+            [...text].forEach((ch, i) => {
+                const span = document.createElement('span');
+                span.className = 'pp-gen-char';
+                span.textContent = ch === ' ' ? '\u00A0' : ch;
+                span.style.animation = `pp-wave-char 1.2s ease-in-out ${i * 0.06}s infinite`;
+                span.style.color = '#ffffff';
+                span.style.fontSize = '0.82rem';
+                span.style.fontWeight = '600';
+                span.style.letterSpacing = '0.02em';
+                wrap.appendChild(span);
+            });
+            header.appendChild(wrap);
+            banner.style.opacity = '1';
+            banner.classList.add('active');
+        }
+
+        function showCanvasEditedBanner(addedEntries, removedEntries) {
+            const banner = document.getElementById('canvas-status-banner');
+            const header = document.getElementById('csb-header-content');
+            const diffLines = document.getElementById('canvas-diff-lines');
+            const closeBtn = document.getElementById('csb-close-btn');
+
+            // Swap header to "Edited"
+            header.innerHTML = '<span class="csb-edited-label">Edited</span>';
+            closeBtn.classList.add('visible');
+
+            // Build diff line list (interleaved removed/added per line number)
+            const removedMap = new Map(removedEntries.map(r => [r.num, r.content]));
+            const addedMap   = new Map(addedEntries.map(a => [a.num, a.content]));
+            const lineNums   = [...new Set([...removedEntries.map(r => r.num), ...addedEntries.map(a => a.num)])].sort((a, b) => a - b);
+            const maxDisplay = 14;
+
+            diffLines.innerHTML = '';
+            lineNums.slice(0, maxDisplay).forEach(num => {
+                if (removedMap.has(num)) {
+                    const div = document.createElement('div');
+                    div.className = 'diff-line-removed';
+                    div.innerHTML = `<span class="diff-line-removed-prefix">−</span><span class="diff-line-num">${num}</span><span class="diff-line-content">${escapeHtml(removedMap.get(num).trim().slice(0, 80))}</span>`;
+                    diffLines.appendChild(div);
+                }
+                if (addedMap.has(num)) {
+                    const div = document.createElement('div');
+                    div.className = 'diff-line-added';
+                    div.innerHTML = `<span class="diff-line-added-prefix">+</span><span class="diff-line-num">${num}</span><span class="diff-line-content">${escapeHtml(addedMap.get(num).trim().slice(0, 80))}</span>`;
+                    diffLines.appendChild(div);
+                }
+            });
+            if (lineNums.length > maxDisplay) {
+                const more = document.createElement('div');
+                more.className = 'diff-more-badge';
+                more.textContent = `+${lineNums.length - maxDisplay} more changes`;
+                diffLines.appendChild(more);
+            }
+            if (diffLines.children.length > 0) diffLines.classList.add('active');
+        }
+
+        function hideCanvasStatusBanner() {
+            const banner = document.getElementById('canvas-status-banner');
+            banner.style.transition = 'opacity 0.4s ease';
+            banner.style.opacity = '0';
+            setTimeout(() => {
+                banner.classList.remove('active');
+                banner.style.transition = '';
+                banner.style.opacity = '';
+                document.getElementById('canvas-diff-lines').classList.remove('active');
+                document.getElementById('csb-close-btn').classList.remove('visible');
+            }, 420);
         }
 
         function closeCanvas() {
