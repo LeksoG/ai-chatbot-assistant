@@ -3,218 +3,606 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clarity AI — Think Smarter</title>
+    <title>Clarity.Ai - Automate, Engage, and Grow</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
     <style>
-        body { background: #0a0a0a; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+        :root {
+            --bg-dark: #070708;
+            --brand-blue: #3b82f6;
+        }
 
-        .gradient-text {
-            background: linear-gradient(135deg, #7c3aed 0%, #818cf8 50%, #c4b5fd 100%);
+        body {
+            background-color: var(--bg-dark);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .serif-font { font-family: 'Playfair Display', serif; }
+
+        /* Background Gradient Orbs */
+        .gradient-orb {
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(10, 10, 12, 0) 70%);
+            border-radius: 50%;
+            z-index: -1;
+            filter: blur(120px);
+        }
+
+        /* Hero Text Container */
+        .cycle-container {
+            min-height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+
+        #logo-container {
+            transition: all 0.8s cubic-bezier(0.7, 0, 0.3, 1);
+            position: absolute;
+            z-index: 20;
+        }
+
+        .logo-unfold {
+            transform: scale(8) rotate(90deg);
+            opacity: 0;
+            filter: blur(40px);
+        }
+
+        .phrase {
+            position: absolute;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.2, 1, 0.3, 1);
+            white-space: nowrap;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            color: #000;
+            -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.4);
+        }
+
+        .phrase::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 0%; 
+            height: 100%;
+            background: linear-gradient(
+                to right, 
+                #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8
+            );
+            background-size: 100% 100%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
+            -webkit-text-stroke: 0px transparent;
+            overflow: hidden;
+            transition: width 0.6s cubic-bezier(0.6, 0, 0.4, 1);
         }
 
-        .hero-glow {
+        .phrase.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .phrase.active::after {
+            width: 100%; 
+        }
+
+        /* UI Elements */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Drippy Header Effect */
+        .drippy-header {
             position: absolute;
-            width: 700px; height: 700px;
-            background: radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%);
-            top: -200px; left: 50%; transform: translateX(-50%);
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12) 0%, transparent 100%);
             pointer-events: none;
+            z-index: 20;
+        }
+        
+        .drippy-header::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 5%;
+            width: 90%;
+            height: 40px;
+            background: white;
+            opacity: 0.15;
+            filter: blur(25px);
+            border-radius: 50%;
         }
 
-        .feature-card {
-            background: #111;
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: border-color 0.3s, transform 0.3s;
+        .btn-outline {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.2s;
         }
-        .feature-card:hover {
-            border-color: rgba(124,58,237,0.3);
-            transform: translateY(-3px);
-        }
-
-        .nav-pill {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.07);
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.5);
         }
 
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+        .nav-link { font-size: 13px; color: #94a3b8; transition: color 0.2s; }
+        .nav-link:hover { color: white; }
+
+        /* Carousel Styles */
+        .showcase-slide {
+            display: none;
+            animation: fadeIn 0.5s ease forwards;
+        }
+        .showcase-slide.active {
+            display: grid;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .timer-bar {
+            height: 2px;
+            background: white;
+            width: 0%;
+            transition: width 8s linear;
+        }
+
+        /* Custom Data Visualization Animation */
+        .chart-path {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: draw 3s ease-in-out infinite alternate;
+        }
+        @keyframes draw {
+            to { stroke-dashoffset: 0; }
+        }
     </style>
 </head>
-<body class="text-white overflow-x-hidden">
+<body class="antialiased">
 
-    <!-- Navbar -->
-    <nav class="fixed top-0 left-0 right-0 z-50 px-6 py-4">
-        <div class="max-w-6xl mx-auto flex items-center justify-between">
-            <!-- Logo -->
-            <a href="/" class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-lg">
-                    <i data-lucide="gem" class="text-white w-4"></i>
+    <nav class="fixed top-0 w-full z-50 bg-black/40 backdrop-blur-xl border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-12">
+                <div class="text-2xl font-black tracking-tighter flex items-center gap-2">
+                    <svg class="w-6 h-6" viewBox="0 0 100 100" fill="none"><path d="M50 0 L52 48 L100 50 L52 52 L50 100 L48 52 L0 50 L48 48 Z" fill="white" /></svg>
+                    Clarity.Ai
                 </div>
-                <span class="font-bold text-white text-base tracking-tight">Clarity AI</span>
-            </a>
-
-            <!-- Nav actions -->
-            <div class="flex items-center gap-3">
-                <a href="/auth.html" class="px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors font-medium">
-                    Log In
-                </a>
-                <a href="/auth.html?mode=signup"
-                   class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-violet-900/30">
-                    Get Started
-                </a>
+                <div class="hidden lg:flex items-center gap-8">
+                    <a href="#" class="nav-link">Home</a>
+                    <a href="#" class="nav-link">Features</a>
+                    <a href="#" class="nav-link">Integrations</a>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button class="btn-outline text-white px-6 py-2.5 rounded-full text-sm font-semibold">Log in</button>
+                <button class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-all shadow-lg shadow-blue-500/20">Sign up</button>
             </div>
         </div>
     </nav>
 
-    <!-- Hero -->
-    <section class="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-20">
-        <div class="hero-glow"></div>
-
-        <!-- Tag -->
-        <div class="nav-pill inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs text-violet-300 font-medium mb-8">
-            <div class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse"></div>
-            Now powered by Clarity 3.5
+    <main class="relative pt-40">
+        <div class="gradient-orb top-[-100px] left-[-200px]"></div>
+        
+        <!-- Hero Section -->
+        <div class="max-w-4xl mx-auto px-6 text-center mb-12">
+            <h1 class="text-5xl md:text-7xl serif-font mb-6 leading-[1.1] tracking-tight">
+                Automate, Engage, and <br>
+                <span class="italic font-normal text-blue-400">Grow with Clarity</span>
+            </h1>
+            <p class="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+                The first comprehensive AI ecosystem built for the modern enterprise. 
+                One brain for your entire business stack.
+            </p>
         </div>
 
-        <!-- Heading -->
-        <h1 class="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-none mb-6 max-w-4xl">
-            Think Smarter,<br>
-            <span class="gradient-text">Ask Clarity.</span>
-        </h1>
-
-        <!-- Subtitle -->
-        <p class="text-gray-400 text-lg sm:text-xl max-w-xl mb-10 leading-relaxed font-light">
-            Your intelligent AI assistant — answers anything, explains everything,
-            and gets smarter with every conversation.
-        </p>
-
-        <!-- CTAs -->
-        <div class="flex flex-col sm:flex-row items-center gap-3">
-            <a href="/auth.html?mode=signup"
-               class="px-7 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-2xl transition-all shadow-xl shadow-violet-900/30 text-sm hover:scale-105 active:scale-100">
-                Start for free
-            </a>
-            <a href="/auth.html"
-               class="px-7 py-3.5 bg-white/5 hover:bg-white/10 border border-white/8 text-gray-300 hover:text-white font-medium rounded-2xl transition-all text-sm flex items-center gap-2">
-                Log in
-                <i data-lucide="arrow-right" class="w-4"></i>
-            </a>
+        <div class="max-w-full px-6 mb-16">
+            <div class="cycle-container">
+                <div id="logo-container">
+                    <svg class="w-24 h-24" viewBox="0 0 100 100" fill="none">
+                        <path d="M50 0 L52 48 L100 50 L52 52 L50 100 L48 52 L0 50 L48 48 Z" fill="white" />
+                    </svg>
+                </div>
+                <div id="main-brand" data-text="Clarity.Ai" class="phrase text-7xl md:text-[120px]">Clarity.Ai</div>
+            </div>
         </div>
 
-        <!-- Scroll indicator -->
-        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-700 text-xs">
-            <span>Scroll to explore</span>
-            <i data-lucide="chevron-down" class="w-4 animate-bounce"></i>
+        <div class="flex justify-center gap-6 mb-40">
+            <button class="bg-white text-black px-10 py-4 rounded-full font-bold text-base hover:bg-gray-200 transition-all">Get Started Free</button>
+            <button class="flex items-center gap-3 px-10 py-4 rounded-full border border-white/10 font-bold text-base hover:bg-white/5 transition-all">
+                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                Watch Demo
+            </button>
         </div>
-    </section>
 
-    <!-- Feature cards -->
-    <section class="py-24 px-6">
-        <div class="max-w-5xl mx-auto">
-            <p class="text-center text-xs text-gray-600 uppercase tracking-widest mb-3">Why Clarity</p>
-            <h2 class="text-3xl sm:text-4xl font-bold text-center mb-14 tracking-tight">
-                Everything you need from an AI
-            </h2>
+        <!-- Build Showcase -->
+        <div class="max-w-7xl mx-auto px-6 mb-40">
+            <div class="flex items-end justify-between mb-12">
+                <div>
+                    <h5 class="text-blue-500 font-bold mb-4 uppercase tracking-[0.2em] text-[11px]">Live Examples</h5>
+                    <h3 class="text-4xl serif-font italic">Real World Websites</h3>
+                </div>
+                <div class="flex gap-4">
+                    <button onclick="manualPrev()" class="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <button onclick="manualNext()" class="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Card 1 -->
-                <div class="feature-card rounded-2xl p-6">
-                    <div class="w-10 h-10 rounded-xl bg-blue-900/40 border border-blue-800/30 flex items-center justify-center mb-4">
-                        <i data-lucide="zap" class="text-blue-400 w-5"></i>
+            <!-- Slide 0: SaaS Dashboard -->
+            <div id="slide-0" class="showcase-slide active grid-cols-1 lg:grid-cols-2 gap-12 items-center glass-card p-12 relative">
+                <div class="drippy-header"></div>
+                <div class="absolute top-0 left-0 w-full"><div id="timer-0" class="timer-bar"></div></div>
+                <div class="space-y-6 relative z-10">
+                    <div class="inline-block px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-wider">Enterprise Analytics</div>
+                    <h4 class="text-3xl font-bold tracking-tight">Nexus Analytics Platform</h4>
+                    <p class="text-gray-400 leading-relaxed">Built from a single prompt to manage massive data sets. Nexus tracks global latency across 40 edge locations with live visual telemetry.</p>
+                    <div class="grid grid-cols-2 gap-4 border-t border-white/5 pt-6">
+                        <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+                            <div class="text-[10px] text-gray-500 mb-1 uppercase font-bold tracking-tighter">Daily Users</div>
+                            <div class="text-xl font-bold text-blue-400">142,800</div>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+                            <div class="text-[10px] text-gray-500 mb-1 uppercase font-bold tracking-tighter">Efficiency</div>
+                            <div class="text-xl font-bold text-emerald-400">+88%</div>
+                        </div>
                     </div>
-                    <h3 class="font-semibold text-white mb-2">Lightning Fast</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Real-time streaming responses. No waiting around.</p>
+                </div>
+                <div class="bg-[#0c0c0e] rounded-xl overflow-hidden shadow-2xl border border-white/10 relative z-10 scale-105 transform">
+                    <!-- Browser Header -->
+                    <div class="h-10 bg-black/60 flex items-center px-4 justify-between border-b border-white/5">
+                        <div class="flex gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-red-500/20"></div><div class="w-2.5 h-2.5 rounded-full bg-yellow-500/20"></div><div class="w-2.5 h-2.5 rounded-full bg-green-500/20"></div></div>
+                        <div class="flex-1 max-w-[200px] h-5 bg-white/5 rounded mx-4 flex items-center px-2 text-[8px] text-gray-500">nexus.app/v2/performance</div>
+                        <div class="w-4 h-4 rounded bg-white/10"></div>
+                    </div>
+                    <!-- Layout -->
+                    <div class="flex h-[320px]">
+                        <div class="w-16 border-r border-white/5 p-4 space-y-4">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&h=100&auto=format&fit=crop" class="w-8 h-8 rounded-lg object-cover border border-white/10" alt="User">
+                            <div class="w-8 h-2 bg-white/10 rounded-full"></div>
+                            <div class="w-8 h-2 bg-white/5 rounded-full"></div>
+                        </div>
+                        <div class="flex-1 p-6 space-y-6 overflow-hidden">
+                            <div class="flex justify-between items-center">
+                                <div class="h-4 w-32 bg-white/10 rounded"></div>
+                                <div class="h-6 w-20 bg-blue-600 rounded"></div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="h-24 bg-white/5 border border-white/10 rounded-xl p-3">
+                                    <div class="w-4 h-4 bg-blue-500/30 rounded mb-4"></div>
+                                    <div class="h-2 w-1/2 bg-white/10 rounded mb-2"></div>
+                                    <div class="h-4 w-2/3 bg-white/20 rounded"></div>
+                                </div>
+                                <div class="h-24 bg-white/5 border border-white/10 rounded-xl p-3">
+                                    <div class="w-4 h-4 bg-emerald-500/30 rounded mb-4"></div>
+                                    <div class="h-2 w-1/2 bg-white/10 rounded mb-2"></div>
+                                    <div class="h-4 w-2/3 bg-white/20 rounded"></div>
+                                </div>
+                                <div class="h-24 bg-white/5 border border-white/10 rounded-xl p-3">
+                                    <div class="w-4 h-4 bg-purple-500/30 rounded mb-4"></div>
+                                    <div class="h-2 w-1/2 bg-white/10 rounded mb-2"></div>
+                                    <div class="h-4 w-2/3 bg-white/20 rounded"></div>
+                                </div>
+                            </div>
+                            <!-- CUSTOM DATA VISUALIZATION (REPLACED IMAGE) -->
+                            <div class="h-32 bg-white/5 border border-white/5 rounded-xl overflow-hidden relative">
+                                <svg class="w-full h-full" viewBox="0 0 400 120" preserveAspectRatio="none">
+                                    <defs>
+                                        <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.3" />
+                                            <stop offset="100%" stop-color="#3b82f6" stop-opacity="0" />
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="M0 120 V80 Q50 60 100 90 T200 40 T300 70 T400 20 V120 Z" fill="url(#chartGradient)" />
+                                    <path class="chart-path" d="M0 80 Q50 60 100 90 T200 40 T300 70 T400 20" stroke="#3b82f6" stroke-width="2" fill="none" />
+                                    <!-- Dynamic points -->
+                                    <circle cx="100" cy="90" r="3" fill="#3b82f6" />
+                                    <circle cx="200" cy="40" r="3" fill="#3b82f6" />
+                                    <circle cx="300" cy="70" r="3" fill="#3b82f6" />
+                                </svg>
+                                <div class="absolute top-2 left-4 text-[8px] text-blue-400 font-bold uppercase tracking-widest opacity-60">Real-time Telemetry</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 1: Creative Portfolio -->
+            <div id="slide-1" class="showcase-slide grid-cols-1 lg:grid-cols-2 gap-12 items-center glass-card p-12 relative">
+                <div class="drippy-header"></div>
+                <div class="absolute top-0 left-0 w-full"><div id="timer-1" class="timer-bar"></div></div>
+                <div class="space-y-6 relative z-10">
+                    <div class="inline-block px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-bold uppercase tracking-wider">Luxury Lifestyle</div>
+                    <h4 class="text-3xl font-bold tracking-tight">Aura Photography Studio</h4>
+                    <p class="text-gray-400 leading-relaxed">A high-fashion portfolio with AI-curated aesthetic weighting. Every image is automatically color-graded and tagged by the Clarity Vision module.</p>
+                    <div class="flex gap-4">
+                        <div class="px-4 py-2 bg-white/5 rounded-full border border-white/10 text-[10px] font-bold">MINIMALIST</div>
+                        <div class="px-4 py-2 bg-white/5 rounded-full border border-white/10 text-[10px] font-bold">EDITORIAL</div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl overflow-hidden shadow-2xl border border-white/10 relative z-10 transform translate-x-4">
+                    <div class="h-10 bg-gray-50 flex items-center px-6 border-b border-gray-100 justify-between">
+                        <div class="text-[10px] font-bold text-black tracking-widest">AURA.</div>
+                        <div class="flex gap-4">
+                            <div class="w-10 h-1 bg-gray-200 rounded"></div>
+                            <div class="w-10 h-1 bg-gray-200 rounded"></div>
+                        </div>
+                    </div>
+                    <div class="p-8 grid grid-cols-3 gap-4">
+                        <div class="col-span-2 aspect-[16/10] bg-gray-100 relative group overflow-hidden rounded-sm">
+                            <img src="https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=800&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover" alt="Fashion 1">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                            <div class="absolute bottom-4 left-4 text-white text-[9px] font-bold tracking-tighter uppercase">Paris, Season 24</div>
+                        </div>
+                        <div class="aspect-[1/1.5] bg-gray-200 rounded-sm overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=400&auto=format&fit=crop" class="w-full h-full object-cover" alt="Fashion 2">
+                        </div>
+                        <div class="aspect-[1/1] bg-gray-100 rounded-sm overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=400&auto=format&fit=crop" class="w-full h-full object-cover" alt="Fashion 3">
+                        </div>
+                        <!-- REPLACED BROKEN FASHION 4 IMAGE -->
+                        <div class="aspect-[1/1] bg-gray-300 rounded-sm overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=400&auto=format&fit=crop" class="w-full h-full object-cover" alt="Fashion 4">
+                        </div>
+                        <div class="aspect-[1/1] bg-gray-50 rounded-sm overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?q=80&w=400&auto=format&fit=crop" class="w-full h-full object-cover" alt="Fashion 5">
+                        </div>
+                    </div>
+                    <div class="p-8 pt-0 flex justify-between items-center">
+                        <div class="serif-font text-lg text-black">New Season Editorial</div>
+                        <div class="w-8 h-8 rounded-full border border-black/10 flex items-center justify-center">
+                            <svg class="w-3 h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 2: E-Commerce -->
+            <div id="slide-2" class="showcase-slide grid-cols-1 lg:grid-cols-2 gap-12 items-center glass-card p-12 relative">
+                <div class="drippy-header"></div>
+                <div class="absolute top-0 left-0 w-full"><div id="timer-2" class="timer-bar"></div></div>
+                <div class="space-y-6 relative z-10">
+                    <div class="inline-block px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">Premium Retail</div>
+                    <h4 class="text-3xl font-bold tracking-tight">Everest Outdoor Gear</h4>
+                    <p class="text-gray-400 leading-relaxed">Clarity manages the entire supply chain and customer experience. From inventory forecasting to AI-personalized shopping carts.</p>
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-3 text-xs text-gray-400">
+                            <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Automated Inventory Management
+                        </li>
+                        <li class="flex items-center gap-3 text-xs text-gray-400">
+                            <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Dynamic Pricing Engine
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-xl overflow-hidden shadow-2xl border border-white/10 relative z-10 scale-105">
+                    <div class="h-12 bg-gray-50 flex items-center px-6 border-b border-gray-100 justify-between">
+                        <div class="flex items-center gap-6">
+                            <div class="font-black text-black tracking-tighter">EVEREST</div>
+                            <div class="hidden md:flex gap-4 text-[9px] text-gray-500 font-bold uppercase"><span>Shop</span><span>Explore</span><span>Sale</span></div>
+                        </div>
+                        <div class="flex gap-3">
+                            <div class="w-4 h-4 bg-gray-200 rounded-full"></div>
+                            <div class="w-4 h-4 bg-black rounded-full relative">
+                                <div class="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full border border-white"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <div class="flex justify-between items-end mb-8">
+                            <h5 class="serif-font text-2xl text-black">Technical Packs</h5>
+                            <div class="text-[10px] font-bold text-gray-400">12 ITEMS FOUND</div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <div class="w-full aspect-square bg-gray-100 rounded-xl flex items-center justify-center overflow-hidden group relative">
+                                    <img src="https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?q=80&w=400&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Backpack">
+                                    <div class="absolute top-3 left-3 px-2 py-0.5 bg-black text-white text-[8px] rounded font-bold">BEST SELLER</div>
+                                </div>
+                                <div>
+                                    <div class="text-[11px] font-bold text-black">Summiteer Pro 45L</div>
+                                    <div class="flex items-center gap-1 my-1">
+                                        <div class="flex text-yellow-500"><svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg></div>
+                                        <div class="text-[9px] text-gray-500">(124)</div>
+                                    </div>
+                                    <div class="text-[11px] font-black text-emerald-600">$299.00</div>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="w-full aspect-square bg-gray-100 rounded-xl flex items-center justify-center overflow-hidden group">
+                                    <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=400&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Shoes">
+                                </div>
+                                <div>
+                                    <div class="text-[11px] font-bold text-black">Trail Runner X-Grip</div>
+                                    <div class="flex items-center gap-1 my-1">
+                                        <div class="flex text-yellow-500"><svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg></div>
+                                        <div class="text-[9px] text-gray-500">(89)</div>
+                                    </div>
+                                    <div class="text-[11px] font-black text-emerald-600">$149.00</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dots -->
+            <div class="flex justify-center gap-2 mt-12">
+                <div onclick="goToSlide(0)" class="dot w-1.5 h-1.5 rounded-full bg-white cursor-pointer transition-all"></div>
+                <div onclick="goToSlide(1)" class="dot w-1.5 h-1.5 rounded-full bg-white/20 cursor-pointer transition-all"></div>
+                <div onclick="goToSlide(2)" class="dot w-1.5 h-1.5 rounded-full bg-white/20 cursor-pointer transition-all"></div>
+            </div>
+        </div>
+
+        <!-- Capability Grid: One Intelligence -->
+        <div class="max-w-7xl mx-auto px-6 mb-40">
+            <div class="text-center mb-24">
+                <h5 class="text-blue-500 font-bold mb-4 uppercase tracking-[0.2em] text-[11px]">The Ecosystem</h5>
+                <h3 class="text-4xl md:text-5xl font-black mb-6 tracking-tighter">One Intelligence. Total Control.</h3>
+                <p class="text-gray-400 text-base max-w-2xl mx-auto">Clarity isn't just a chatbot. It's an autonomous layer that connects your data, your tools, and your team.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Card 1: Presentations -->
+                <div class="glass-card p-10 relative group">
+                    <div class="drippy-header"></div>
+                    <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mb-8 border border-white/10 group-hover:border-blue-500/50 transition-colors">
+                        <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <h4 class="text-xl font-bold mb-4">Autonomous Deck Building</h4>
+                    <p class="text-gray-500 text-sm leading-relaxed mb-6">Convert data into high-fidelity presentations. Clarity handles the layout, color theory, and copywriting—leaving you only with the final review.</p>
+                    <div class="flex gap-2 p-2 bg-black/40 rounded-lg border border-white/5">
+                        <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden"><div class="w-full h-full bg-blue-500/50"></div></div>
+                    </div>
                 </div>
 
-                <!-- Card 2 -->
-                <div class="feature-card rounded-2xl p-6">
-                    <div class="w-10 h-10 rounded-xl bg-violet-900/40 border border-violet-800/30 flex items-center justify-center mb-4">
-                        <i data-lucide="brain" class="text-violet-400 w-5"></i>
+                <!-- Card 2: Site Building -->
+                <div class="glass-card p-10 relative group">
+                    <div class="drippy-header"></div>
+                    <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mb-8 border border-white/10 group-hover:border-purple-500/50 transition-colors">
+                        <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
                     </div>
-                    <h3 class="font-semibold text-white mb-2">Deeply Intelligent</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Powered by Mistral's most advanced models for nuanced, accurate answers.</p>
+                    <h4 class="text-xl font-bold mb-4">Prompt-to-Product</h4>
+                    <p class="text-gray-500 text-sm leading-relaxed mb-6">Deploy full-stack web applications from conversational prompts. Optimized for performance, SEO-ready, and natively integrated with your database.</p>
+                    <div class="text-[10px] font-mono text-gray-400 bg-black/60 p-3 rounded-lg border border-white/5">
+                        <span class="text-purple-400">$</span> clarity deploy --env=prod
+                    </div>
                 </div>
 
-                <!-- Card 3 -->
-                <div class="feature-card rounded-2xl p-6">
-                    <div class="w-10 h-10 rounded-xl bg-green-900/40 border border-green-800/30 flex items-center justify-center mb-4">
-                        <i data-lucide="shield-check" class="text-green-400 w-5"></i>
+                <!-- Card 3: Integrations -->
+                <div class="glass-card p-10 relative group">
+                    <div class="drippy-header"></div>
+                    <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mb-8 border border-white/10 group-hover:border-emerald-500/50 transition-colors">
+                        <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                     </div>
-                    <h3 class="font-semibold text-white mb-2">Secure by Default</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Your conversations are encrypted and only visible to you.</p>
-                </div>
-
-                <!-- Card 4 -->
-                <div class="feature-card rounded-2xl p-6">
-                    <div class="w-10 h-10 rounded-xl bg-orange-900/40 border border-orange-800/30 flex items-center justify-center mb-4">
-                        <i data-lucide="layers" class="text-orange-400 w-5"></i>
+                    <h4 class="text-xl font-bold mb-4">Deep Tech Sync</h4>
+                    <p class="text-gray-500 text-sm leading-relaxed mb-6">Native connectors for Gmail, Calendar, and Slack. Let Clarity manage your scheduling, inbox triage, and team updates while you focus on the work.</p>
+                    <div class="flex gap-4 items-center grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
+                        <div class="w-6 h-6 bg-red-500/10 rounded border border-red-500/20"></div>
+                        <div class="w-6 h-6 bg-blue-500/10 rounded border border-blue-500/20"></div>
+                        <div class="w-6 h-6 bg-yellow-500/10 rounded border border-yellow-500/20"></div>
+                        <div class="w-6 h-6 bg-indigo-500/10 rounded border border-indigo-500/20"></div>
                     </div>
-                    <h3 class="font-semibold text-white mb-2">Two Models</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Switch between Clarity 3.0 for speed and 3.5 for deep analysis.</p>
                 </div>
             </div>
         </div>
-    </section>
+    </main>
 
-    <!-- Stats bar -->
-    <section class="py-16 px-6 border-t border-b border-white/5">
-        <div class="max-w-4xl mx-auto grid grid-cols-3 gap-8 text-center">
+    <footer class="border-t border-white/5 py-24 bg-black/20">
+        <div class="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-4 gap-12">
+            <div class="col-span-1 md:col-span-1">
+                <div class="text-2xl font-black tracking-tighter mb-6">Clarity.Ai</div>
+                <p class="text-gray-500 text-xs leading-relaxed max-w-xs">
+                    Building the future of artificial intelligence for humans, by humans.
+                </p>
+            </div>
             <div>
-                <p class="text-3xl font-bold text-white mb-1">10k+</p>
-                <p class="text-gray-600 text-sm">Conversations daily</p>
+                <h6 class="text-xs font-bold uppercase tracking-widest mb-6">Product</h6>
+                <ul class="space-y-4 text-xs text-gray-500">
+                    <li><a href="#" class="hover:text-white">API Docs</a></li>
+                    <li><a href="#" class="hover:text-white">Pricing</a></li>
+                </ul>
             </div>
             <div>
-                <p class="text-3xl font-bold text-white mb-1">2</p>
-                <p class="text-gray-600 text-sm">Powerful models</p>
+                <h6 class="text-xs font-bold uppercase tracking-widest mb-6">Company</h6>
+                <ul class="space-y-4 text-xs text-gray-500">
+                    <li><a href="#" class="hover:text-white">Security</a></li>
+                    <li><a href="#" class="hover:text-white">Blog</a></li>
+                </ul>
             </div>
             <div>
-                <p class="text-3xl font-bold text-white mb-1">99.9%</p>
-                <p class="text-gray-600 text-sm">Uptime</p>
+                <h6 class="text-xs font-bold uppercase tracking-widest mb-6">Connect</h6>
+                <ul class="space-y-4 text-xs text-gray-500">
+                    <li><a href="#" class="hover:text-white">X / Twitter</a></li>
+                    <li><a href="#" class="hover:text-white">LinkedIn</a></li>
+                </ul>
             </div>
-        </div>
-    </section>
-
-    <!-- CTA section -->
-    <section class="py-28 px-6 text-center">
-        <div class="max-w-lg mx-auto">
-            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-2xl shadow-violet-900/40 mx-auto mb-6">
-                <i data-lucide="gem" class="text-white w-7"></i>
-            </div>
-            <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Ready to get started?</h2>
-            <p class="text-gray-500 mb-8">Create a free account and start chatting in seconds.</p>
-            <a href="/auth.html?mode=signup"
-               class="inline-block px-8 py-4 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-2xl transition-all shadow-xl shadow-violet-900/30 hover:scale-105 active:scale-100">
-                Create free account
-            </a>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="border-t border-white/5 py-8 px-6">
-        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-md bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center">
-                    <i data-lucide="gem" class="text-white w-3"></i>
-                </div>
-                <span class="text-gray-600 text-sm font-medium">Clarity AI</span>
-            </div>
-            <p class="text-gray-700 text-xs">© 2025 Clarity AI. All rights reserved.</p>
         </div>
     </footer>
 
     <script>
-        lucide.createIcons();
-        // If already logged in, show "Go to App" instead of sign up
-        if (localStorage.getItem('clarity_token')) {
-            document.querySelectorAll('a[href="/auth.html?mode=signup"]').forEach(el => {
-                el.textContent = 'Go to App';
-                el.href = '/app.html';
+        const logo = document.getElementById('logo-container');
+        const brand = document.getElementById('main-brand');
+        
+        window.onload = function() {
+            setTimeout(() => {
+                logo.classList.add('logo-unfold');
+                setTimeout(() => {
+                    brand.classList.add('active');
+                }, 300);
+            }, 1000);
+            
+            startTimer();
+        };
+
+        let currentSlide = 0;
+        const totalSlides = 3;
+        let slideInterval;
+        const slides = [document.getElementById('slide-0'), document.getElementById('slide-1'), document.getElementById('slide-2')];
+        const dots = document.querySelectorAll('.dot');
+        const timerBars = [document.getElementById('timer-0'), document.getElementById('timer-1'), document.getElementById('timer-2')];
+
+        function resetTimers() {
+            timerBars.forEach(bar => {
+                bar.style.transition = 'none';
+                bar.style.width = '0%';
             });
+            void timerBars[0].offsetWidth; 
         }
+
+        function startTimer() {
+            resetTimers();
+            const activeBar = timerBars[currentSlide];
+            activeBar.style.transition = 'width 8s linear';
+            activeBar.style.width = '100%';
+
+            clearInterval(slideInterval);
+            slideInterval = setInterval(() => {
+                nextSlide();
+            }, 8000);
+        }
+
+        function updateShowcase() {
+            slides.forEach((s, i) => {
+                s.classList.toggle('active', i === currentSlide);
+                dots[i].classList.toggle('bg-white', i === currentSlide);
+                dots[i].classList.toggle('bg-white/20', i !== currentSlide);
+                dots[i].style.width = i === currentSlide ? '24px' : '6px';
+            });
+            startTimer();
+        }
+
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % totalSlides;
+            updateShowcase();
+        }
+
+        function prevSlide() {
+            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+            updateShowcase();
+        }
+
+        function manualNext() { nextSlide(); }
+        function manualPrev() { prevSlide(); }
+        function goToSlide(index) { currentSlide = index; updateShowcase(); }
     </script>
 </body>
 </html>
-
