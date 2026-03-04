@@ -228,6 +228,13 @@
         .pp-gen-orb-rainbow { position:absolute; inset:-14px; border-radius:inherit; background:conic-gradient(from 0deg,#ff0040,#ff8000,#ffe000,#00ff80,#00c8ff,#8000ff,#ff0080,#ff0040); animation:pp-orb-spin 3s linear infinite; filter:blur(35px); opacity:0.28; }
         @keyframes pp-orb-inner-rainbow { 0% { background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); } 25% { background:radial-gradient(circle at 40% 35%, #1a1040 0%, #0d0d10 70%); } 50% { background:radial-gradient(circle at 40% 35%, #15102a 0%, #0d0d0d 70%); } 75% { background:radial-gradient(circle at 40% 35%, #181540 0%, #0d0d10 70%); } 100% { background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); } }
         .pp-gen-orb-inner-bg { position:absolute; inset:0; border-radius:inherit; background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); animation:pp-orb-inner-rainbow 5s ease-in-out infinite; }
+        /* ── User prompt bubble shown below orb during generation ── */
+        .pp-prompt-bubble { position:absolute; bottom:12%; left:50%; transform:translateX(-50%); z-index:15; max-width:80%; opacity:0; transition:opacity 0.5s ease, transform 0.5s ease; transform:translateX(-50%) translateY(12px); pointer-events:none; }
+        .pp-prompt-bubble.visible { opacity:1; transform:translateX(-50%) translateY(0); }
+        .pp-prompt-bubble-inner { position:relative; padding:0.7rem 1.25rem; border-radius:1rem; background:#111; color:#e2e8f0; font-size:0.82rem; line-height:1.4; text-align:center; overflow:hidden; }
+        .pp-prompt-bubble-glow { position:absolute; inset:-2px; border-radius:inherit; overflow:hidden; z-index:-1; }
+        .pp-prompt-bubble-glow::before { content:''; position:absolute; inset:-120%; border-radius:50%; background:conic-gradient(from 0deg,#ff00c8,#7000ff,#00c2ff,#00ff85,#ffea00,#ff00c8); animation:pp-prompt-glow-spin 2.5s linear infinite; }
+        @keyframes pp-prompt-glow-spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
         /* ── Per-slide blackout overlay for editing ── */
         .pp-slide-card-overlay { position:absolute; inset:0; z-index:5; border-radius:0.5rem; background:#0a0a0a; display:flex; align-items:center; justify-content:center; }
         .pp-slide-card-overlay .pp-gen-text { font-size:0.5rem; }
@@ -728,6 +735,9 @@
             </button>
             <div class="flex items-center gap-2">
                 <span id="pp-slide-count" class="text-[10px] text-gray-500 font-medium">0 slides</span>
+                <button onclick="downloadPresentation()" class="p-1.5 hover:bg-violet-900/30 rounded-lg transition-colors" title="Download presentation">
+                    <i data-lucide="download" class="w-3.5 text-gray-500 hover:text-violet-400"></i>
+                </button>
                 <button onclick="deletePresentationConfirm()" class="p-1.5 hover:bg-red-900/30 rounded-lg transition-colors" title="Delete presentation">
                     <i data-lucide="trash-2" class="w-3.5 text-gray-500 hover:text-red-400"></i>
                 </button>
@@ -764,6 +774,11 @@
                                 <div class="pp-gen-orb-rainbow"></div>
                                 <div class="pp-gen-orb-inner-bg"></div>
                                 <div id="pp-gen-text" class="pp-gen-text"></div>
+                            </div>
+                            <!-- User prompt bubble -->
+                            <div id="pp-prompt-bubble" class="pp-prompt-bubble">
+                                <div class="pp-prompt-bubble-glow"></div>
+                                <div class="pp-prompt-bubble-inner" id="pp-prompt-bubble-text"></div>
                             </div>
                         </div>
                     </div>
@@ -2072,10 +2087,45 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             closePresentationPage();
         }
 
+        function downloadPresentation() {
+            if (!activePresentationData || !activePresentationData.slides?.length) return;
+            const title = activePresentationData.title || 'Presentation';
+            const slides = activePresentationData.slides;
+            // Build a single HTML file with all slides
+            const slidePages = slides.map((s, i) => `
+                <div class="slide-page" style="page-break-after:always;width:960px;height:540px;margin:0 auto 40px;box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;overflow:hidden;position:relative;">
+                    <div style="position:absolute;top:8px;left:12px;font-size:11px;color:#888;font-family:sans-serif;z-index:10;">Slide ${i+1}</div>
+                    <iframe srcdoc="${s.html.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}" style="width:960px;height:540px;border:0;" sandbox="allow-scripts"></iframe>
+                </div>
+            `).join('\n');
+            // Actually, use srcdoc properly — build as standalone pages
+            let htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>
+                body{background:#1a1a1a;margin:0;padding:40px 0;font-family:sans-serif;}
+                .slide-wrap{width:960px;margin:0 auto 40px;position:relative;}
+                .slide-num{color:#666;font-size:12px;margin-bottom:8px;padding-left:4px;}
+                .slide-frame{width:960px;height:540px;border:0;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.5);display:block;}
+                h1{text-align:center;color:#fff;font-size:24px;margin:0 0 40px;font-weight:300;}
+                @media print{body{background:#fff;padding:0;}.slide-wrap{margin:0 auto;page-break-after:always;}.slide-frame{box-shadow:none;border-radius:0;}}
+            </style></head><body><h1>${title}</h1>`;
+            slides.forEach((s, i) => {
+                htmlContent += `<div class="slide-wrap"><div class="slide-num">Slide ${i+1} of ${slides.length}</div><iframe class="slide-frame" srcdoc="${s.html.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}"></iframe></div>`;
+            });
+            htmlContent += '</body></html>';
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${title.replace(/[^a-zA-Z0-9 ]/g, '').trim() || 'presentation'}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
         // ── Presentation AI generation ───────────────────────────
         let ppGenAnimInterval = null;
 
-        function ppShowGenOverlay() {
+        function ppShowGenOverlay(userPrompt) {
             const overlay = document.getElementById('pp-gen-overlay');
             const orb = document.getElementById('pp-gen-orb');
             const emptyState = document.getElementById('pp-empty-state');
@@ -2083,6 +2133,13 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             orb.classList.remove('expanding');
             overlay.classList.add('active');
             ppAnimateGenText(['Generating...', 'Creating slides...', 'Assembling presentation...']);
+            // Show user prompt bubble below the orb
+            const bubble = document.getElementById('pp-prompt-bubble');
+            const bubbleText = document.getElementById('pp-prompt-bubble-text');
+            if (bubble && userPrompt) {
+                bubbleText.textContent = userPrompt.length > 120 ? userPrompt.slice(0, 117) + '...' : userPrompt;
+                setTimeout(() => bubble.classList.add('visible'), 400);
+            }
         }
 
         function ppHideGenOverlay() {
@@ -2091,6 +2148,9 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 const orb = document.getElementById('pp-gen-orb');
                 const overlay = document.getElementById('pp-gen-overlay');
                 const textEl = document.getElementById('pp-gen-text');
+                const bubble = document.getElementById('pp-prompt-bubble');
+                // Fade out prompt bubble first
+                if (bubble) bubble.classList.remove('visible');
                 textEl.style.transition = 'opacity 0.3s';
                 textEl.style.opacity = '0';
                 orb.classList.add('expanding');
@@ -2138,7 +2198,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
         }
 
         // Show a blackout + wave text overlay on a specific slide card in the sidebar
-        function ppShowSlideOverlay(slideIndex, text) {
+        function ppShowSlideOverlay(slideIndex, text, userPrompt) {
             // Navigate to the targeted slide first so user sees it
             if (slideIndex !== activeSlideIndex) {
                 activeSlideIndex = slideIndex;
@@ -2152,6 +2212,13 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             orb.classList.remove('expanding');
             mainOverlay.classList.add('active');
             ppAnimateGenText([text || 'Editing...', 'Updating slide...']);
+            // Show user prompt bubble
+            const bubble = document.getElementById('pp-prompt-bubble');
+            const bubbleText = document.getElementById('pp-prompt-bubble-text');
+            if (bubble && userPrompt) {
+                bubbleText.textContent = userPrompt.length > 120 ? userPrompt.slice(0, 117) + '...' : userPrompt;
+                setTimeout(() => bubble.classList.add('visible'), 400);
+            }
             // Blackout the card thumbnail
             const overlay = document.createElement('div');
             overlay.className = 'pp-slide-card-overlay';
@@ -2175,6 +2242,9 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 // Remove card overlay
                 const cardOverlay = document.getElementById('pp-slide-edit-overlay');
                 if (cardOverlay) cardOverlay.remove();
+                // Hide prompt bubble
+                const bubble = document.getElementById('pp-prompt-bubble');
+                if (bubble) bubble.classList.remove('visible');
                 // Hide main overlay
                 if (ppGenAnimInterval) { clearInterval(ppGenAnimInterval); ppGenAnimInterval = null; }
                 const overlay = document.getElementById('pp-gen-overlay');
@@ -2215,54 +2285,80 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             const editKeywords = /\b(change|modify|update|edit|fix|make|adjust|tweak|improve|redo|rewrite|redesign|move|remove|replace|restyle|better|nicer|cleaner|darker|lighter|brighter|bigger|smaller|more\s+\w+|less\s+\w+|use\s|switch|convert|transform|simplify|shorten|lengthen|expand|reduce|minimize|maximize|increase|decrease)\b/;
             const isEdit = editKeywords.test(lower) && existingSlides > 0 && !isAddMore;
 
-            // ── 3. Parse EXPLICIT slide references ──
-            // Only these count as "user specifically named a slide"
+            // ── 3. Parse slide references (supports multiple) ──
             const ordinals = { first:1, second:2, third:3, fourth:4, fifth:5, sixth:6, seventh:7, eighth:8, ninth:9, tenth:10 };
-            let targetSlideIndex = null;
+            const ordinalWords = Object.keys(ordinals).join('|');
+            let targetSlideIndices = [];
 
-            // "slide 3", "slide #3", "slide number 3"
-            const slideNumMatch = lower.match(/\bslide\s*(?:#|number|no\.?)?\s*(\d+)/);
-            // "the third slide", "first slide"
-            const ordinalMatch = lower.match(/\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s*slide/);
-            // "3rd slide", "1st slide", "2nd slide"
-            const numOrdinalMatch = lower.match(/\b(\d+)(?:st|nd|rd|th)\s*slide/);
+            // Collect ALL numeric slide refs: "slide 3", "slide #3", "slide number 3", "slides 2 and 5", "slides 1, 3, 5"
+            const slideNumMatches = [...lower.matchAll(/\bslides?\s*(?:#|number|no\.?)?\s*(\d+)/g)];
+            slideNumMatches.forEach(m => targetSlideIndices.push(parseInt(m[1], 10) - 1));
+
+            // Also catch bare numbers near "and"/"," in slide context: "slides 2 and 5", "slides 1, 3 and 7"
+            const multiNumMatch = lower.match(/\bslides?\s*(?:#|number|no\.?)?\s*([\d,\s]+(?:and\s*\d+)?)/);
+            if (multiNumMatch) {
+                const nums = multiNumMatch[1].replace(/and/g, ',').split(/[,\s]+/).filter(Boolean);
+                nums.forEach(n => { const idx = parseInt(n, 10) - 1; if (!isNaN(idx) && !targetSlideIndices.includes(idx)) targetSlideIndices.push(idx); });
+            }
+
+            // Ordinal words: "the third slide", "first slide", "second and fourth slides"
+            const ordinalRegex = new RegExp(`\\b(${ordinalWords})\\b`, 'g');
+            let ordMatch;
+            while ((ordMatch = ordinalRegex.exec(lower)) !== null) {
+                // Only count if near "slide" context (within ~30 chars)
+                const nearSlide = lower.indexOf('slide', Math.max(0, ordMatch.index - 10)) !== -1 && lower.indexOf('slide', Math.max(0, ordMatch.index - 10)) < ordMatch.index + 40;
+                if (nearSlide) {
+                    const idx = ordinals[ordMatch[1]] - 1;
+                    if (!targetSlideIndices.includes(idx)) targetSlideIndices.push(idx);
+                }
+            }
+
+            // Numeric ordinals: "3rd slide", "1st and 5th slides"
+            const numOrdMatches = [...lower.matchAll(/\b(\d+)(?:st|nd|rd|th)\s*(?:slide|one)/g)];
+            numOrdMatches.forEach(m => { const idx = parseInt(m[1], 10) - 1; if (!targetSlideIndices.includes(idx)) targetSlideIndices.push(idx); });
+
             // "this slide", "current slide"
             const currentMatch = lower.match(/\b(this|current)\s*slide\b/);
+            if (currentMatch && !targetSlideIndices.includes(activeSlideIndex)) targetSlideIndices.push(activeSlideIndex);
+
             // "last slide"
             const lastMatch = lower.match(/\blast\s*slide\b/);
+            if (lastMatch && existingSlides > 0) { const idx = existingSlides - 1; if (!targetSlideIndices.includes(idx)) targetSlideIndices.push(idx); }
 
-            // Does the user EXPLICITLY name a specific slide?
-            const hasExplicitSlideRef = slideNumMatch || ordinalMatch || numOrdinalMatch || currentMatch || lastMatch;
-
-            // Resolve target slide index from explicit references
-            if (slideNumMatch) {
-                targetSlideIndex = parseInt(slideNumMatch[1], 10) - 1;
-            } else if (ordinalMatch) {
-                targetSlideIndex = (ordinals[ordinalMatch[1]] || 1) - 1;
-            } else if (numOrdinalMatch) {
-                targetSlideIndex = parseInt(numOrdinalMatch[1], 10) - 1;
-            } else if (lastMatch && existingSlides > 0) {
-                targetSlideIndex = existingSlides - 1;
-            } else if (currentMatch) {
-                targetSlideIndex = activeSlideIndex;
+            // Fuzzy: "intro slide" → slide 1, "title slide" → slide 1, "closing slide"/"final slide"/"outro" → last slide, "conclusion"/"summary"/"takeaway" → second to last
+            if (/\b(intro|title|opening)\s*(slide|page)?\b/.test(lower) && existingSlides > 0) {
+                if (!targetSlideIndices.includes(0)) targetSlideIndices.push(0);
+            }
+            if (/\b(closing|final|outro|end)\s*(slide|page)?\b/.test(lower) && existingSlides > 0) {
+                const idx = existingSlides - 1;
+                if (!targetSlideIndices.includes(idx)) targetSlideIndices.push(idx);
+            }
+            if (/\b(conclusion|summary|takeaway|recap)\s*(slide|page)?\b/.test(lower) && existingSlides > 1) {
+                const idx = existingSlides - 2;
+                if (!targetSlideIndices.includes(idx)) targetSlideIndices.push(idx);
+            }
+            if (/\b(agenda|overview|outline)\s*(slide|page)?\b/.test(lower) && existingSlides > 1) {
+                if (!targetSlideIndices.includes(1)) targetSlideIndices.push(1);
             }
 
-            // Clamp to valid range
-            if (targetSlideIndex !== null && existingSlides > 0) {
-                targetSlideIndex = Math.max(0, Math.min(targetSlideIndex, existingSlides - 1));
-            }
+            // Clamp all indices to valid range and dedupe
+            targetSlideIndices = [...new Set(targetSlideIndices.map(i => Math.max(0, Math.min(i, existingSlides - 1))))].filter(i => existingSlides > 0);
+
+            const hasExplicitSlideRef = targetSlideIndices.length > 0;
 
             // ── 4. Determine final mode ──
-            // SINGLE edit: ONLY when user explicitly names a specific slide
-            const isEditSingle = !isAddMore && isEdit && hasExplicitSlideRef && targetSlideIndex !== null;
+            // MULTI-SLIDE edit: user named 2+ specific slides
+            const isEditMulti = !isAddMore && isEdit && targetSlideIndices.length > 1;
+
+            // SINGLE edit: user named exactly 1 specific slide
+            const isEditSingle = !isAddMore && isEdit && targetSlideIndices.length === 1;
 
             // EDIT ALL: any edit request WITHOUT an explicit slide reference
-            // This covers: "make the slides better", "change the colors", "improve the presentation",
-            // "make it darker", "change the background", etc.
-            // When there's only 1 slide, a generic edit still targets that slide (via editAll path)
-            const isEditAll = !isAddMore && !isEditSingle && isEdit && existingSlides > 0;
+            const isEditAll = !isAddMore && !isEditSingle && !isEditMulti && isEdit && existingSlides > 0;
 
-            return { requestedCount, isEdit: isEditSingle, isEditAll, isAddMore, targetSlideIndex };
+            const targetSlideIndex = targetSlideIndices.length === 1 ? targetSlideIndices[0] : null;
+
+            return { requestedCount, isEdit: isEditSingle, isEditMulti, isEditAll, isAddMore, targetSlideIndex, targetSlideIndices };
         }
 
         async function handlePresentationSend() {
@@ -2276,21 +2372,27 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             const existingSlides = (activePresentationData?.slides || []).length;
             const intent = ppParseIntent(val, existingSlides);
 
-            // Decide mode: new presentation, edit specific slide, edit all slides, or add slides
+            // Decide mode: new presentation, edit specific slide(s), edit all slides, or add slides
             const isNewPresentation = existingSlides === 0;
             const isEditingSingle = !isNewPresentation && intent.isEdit;
+            const isEditingMulti = !isNewPresentation && intent.isEditMulti;
             const isEditingAll = !isNewPresentation && intent.isEditAll;
 
             if (isEditingSingle) {
                 // Per-slide blackout animation
-                ppShowSlideOverlay(intent.targetSlideIndex, 'Editing...');
+                ppShowSlideOverlay(intent.targetSlideIndex, 'Editing...', val);
+            } else if (isEditingMulti) {
+                // Full overlay for multi-slide edit
+                ppShowGenOverlay(val);
+                const slideNums = intent.targetSlideIndices.map(i => i + 1).join(', ');
+                ppAnimateGenText([`Updating slides ${slideNums}...`, 'Applying changes...']);
             } else if (isEditingAll) {
                 // Full overlay for editing all slides
-                ppShowGenOverlay();
+                ppShowGenOverlay(val);
                 ppAnimateGenText(['Updating all slides...', 'Applying changes...', 'Redesigning presentation...']);
             } else {
                 // Full orb overlay for new/add
-                ppShowGenOverlay();
+                ppShowGenOverlay(val);
             }
 
             const slideCount = intent.requestedCount || (isNewPresentation ? 7 : null);
@@ -2310,7 +2412,7 @@ Design requirements for EVERY slide:
 - Layout: use CSS flexbox/grid for clean alignment. Add generous padding (60-80px). Use visual hierarchy with spacing
 - Visual polish: subtle box-shadows, rounded corners on content blocks, semi-transparent overlay cards (rgba backgrounds with backdrop-filter:blur)
 - Icons: use Unicode symbols (▸ ◆ ★ ● ○ ◉ ✦ ⚡ 🎯 📊 💡 🚀) for bullet points and decoration
-- IMAGES: Include relevant images on 2-3 slides using https://picsum.photos with specific seeds for consistency, e.g. <img src="https://picsum.photos/seed/topic/400/250" style="border-radius:12px;object-fit:cover;"> — use different seeds per image. Place images alongside text in two-column layouts or as background accents
+- IMAGES: Include RELEVANT images on 2-3 slides using Unsplash source URLs. The images MUST be directly related to the presentation topic. Use the format: <img src="https://images.unsplash.com/photo-PHOTO_ID?w=400&h=250&fit=crop" style="border-radius:12px;object-fit:cover;width:400px;height:250px;"> OR use https://source.unsplash.com/400x250/?KEYWORD where KEYWORD is a specific search term related to the slide content (e.g. for volcanoes use "volcano,eruption", for AI use "artificial-intelligence,robot", for business use "business,office"). Choose highly specific keywords matching the exact topic — NOT generic photos. Place images alongside text in two-column layouts or as background accents
 - DETAIL: Include 2-4 sentences of real explanation or context per content slide, not just bullet headers. Add specific data points, percentages, or examples where relevant
 - Each slide is a complete HTML page with <html><head><style>...</style></head><body>...</body></html>, viewport 960x540
 
@@ -2337,6 +2439,25 @@ User request: "${val}"
 Edit this single slide based on the user's request. Keep the same overall design style and color scheme. Use rich gradient backgrounds, polished typography, and visual hierarchy. The slide is a complete self-contained HTML page (inline CSS, 960x540 viewport). Never use plain white backgrounds.
 
 Return ONLY a JSON object with one field: {"slides":[{"html":"...updated slide html..."}]}`;
+            } else if (isEditingMulti) {
+                // Edit MULTIPLE specific slides
+                const indices = intent.targetSlideIndices;
+                const slidesHtml = indices.map(i => {
+                    const s = activePresentationData.slides[i];
+                    return `Slide ${i + 1}:\n\`\`\`\n${s?.html || ''}\n\`\`\``;
+                }).join('\n\n');
+                const slideNums = indices.map(i => i + 1).join(', ');
+                prompt = `I have a slide presentation with ${existingSlides} slides. I need you to edit ONLY slides ${slideNums}.
+
+Here are those slides:
+
+${slidesHtml}
+
+User request: "${val}"
+
+Edit ONLY those ${indices.length} slides based on the user's request. Keep the same overall design style. Each slide is a complete self-contained HTML page (inline CSS, 960x540 viewport). Never use plain white backgrounds.
+
+Return ONLY a JSON object: {"slides":[{"index":${indices[0]+1},"html":"..."},{"index":${indices[1]+1},"html":"..."},...]} — each object must have the slide number in "index" and the full updated HTML in "html". Return exactly ${indices.length} slide objects.`;
             } else if (isEditingAll) {
                 // Edit ALL slides — whole-presentation update
                 const allSlidesHtml = activePresentationData.slides.map((s, i) =>
@@ -2424,6 +2545,16 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                         } else if (isEditingSingle) {
                             activePresentationData.slides[intent.targetSlideIndex] = slides[0];
                             await ppHideSlideOverlay();
+                            renderPPSlides();
+                        } else if (isEditingMulti) {
+                            // Each slide object may have an "index" field or fall back to order matching
+                            slides.forEach((s, i) => {
+                                const slideIdx = (s.index ? s.index - 1 : intent.targetSlideIndices[i]);
+                                if (slideIdx !== undefined && slideIdx >= 0 && slideIdx < activePresentationData.slides.length) {
+                                    activePresentationData.slides[slideIdx] = { html: s.html || s };
+                                }
+                            });
+                            await ppHideGenOverlay();
                             renderPPSlides();
                         } else if (isEditingAll) {
                             // Replace all slides with the updated versions
