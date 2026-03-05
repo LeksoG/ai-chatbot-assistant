@@ -266,23 +266,33 @@
         .splash-feature { display:flex; align-items:flex-start; gap:0.75rem; padding:0.6rem 0; }
         .splash-feature-icon { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
-        /* ── Canvas editing/edited status banner ── */
-        #canvas-status-banner { position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:18; display:none; flex-direction:column; align-items:center; min-width:200px; max-width:88%; background:#161616; border:1px solid rgba(255,255,255,0.1); border-radius:14px; box-shadow:0 6px 28px rgba(0,0,0,0.7); overflow:hidden; pointer-events:auto; }
+        /* ── Canvas editing/edited status pill (compact, outside code area) ── */
+        #canvas-status-banner { position:absolute; top:122px; left:50%; transform:translateX(-50%); z-index:30; display:none; flex-direction:column; align-items:center; pointer-events:auto; }
         #canvas-status-banner.active { display:flex; }
-        #csb-header-content { display:flex; align-items:center; justify-content:center; gap:0.4rem; padding:0.55rem 1.4rem; width:100%; position:relative; }
-        #csb-close-btn { position:absolute; right:0.5rem; top:50%; transform:translateY(-50%); font-size:0.65rem; color:#4b5563; cursor:pointer; padding:0.2rem 0.4rem; border-radius:0.35rem; transition:color 0.15s; display:none; }
-        #csb-close-btn.visible { display:block; }
-        #csb-close-btn:hover { color:#9ca3af; }
-        .csb-edited-label { font-size:0.78rem; font-weight:700; color:#4ade80; letter-spacing:0.02em; }
-        #canvas-diff-lines { display:none; flex-direction:column; width:100%; max-height:190px; overflow-y:auto; border-top:1px solid rgba(255,255,255,0.07); }
-        #canvas-diff-lines.active { display:flex; }
-        .diff-line-added { background:rgba(74,222,128,0.07); color:#4ade80; font-family:'Courier New',monospace; font-size:0.67rem; padding:0.12rem 0.9rem 0.12rem 0.5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; gap:0.4rem; align-items:baseline; line-height:1.55; }
+        .csb-pill { display:flex; align-items:center; gap:0.32rem; padding:0.2rem 0.6rem; background:#1c1c1c; border:1px solid rgba(255,255,255,0.13); border-radius:999px; box-shadow:0 2px 10px rgba(0,0,0,0.8); white-space:nowrap; user-select:none; }
+        .csb-edited-label { font-size:0.67rem; font-weight:700; color:#4ade80; }
+        .csb-stat-add { font-size:0.62rem; font-weight:600; color:#4ade80; }
+        .csb-stat-remove { font-size:0.62rem; font-weight:600; color:#f87171; }
+        .csb-sep { font-size:0.58rem; color:#374151; margin:0 0.05rem; }
+        .csb-expand-toggle { font-size:0.58rem; color:#4b5563; cursor:pointer; padding:0 0.12rem; transition:color 0.15s; }
+        .csb-expand-toggle:hover { color:#9ca3af; }
+        .csb-dismiss { font-size:0.56rem; color:#374151; cursor:pointer; transition:color 0.15s; display:none; padding:0 0.08rem; margin-left:0.1rem; }
+        .csb-dismiss.visible { display:inline; }
+        .csb-dismiss:hover { color:#9ca3af; }
+        #canvas-diff-drop { display:none; margin-top:3px; background:#1c1c1c; border:1px solid rgba(255,255,255,0.1); border-radius:9px; box-shadow:0 4px 18px rgba(0,0,0,0.8); overflow:hidden; max-height:148px; overflow-y:auto; min-width:220px; max-width:min(380px,78vw); }
+        #canvas-diff-drop.open { display:block; }
+        .diff-line-added { background:rgba(74,222,128,0.07); color:#4ade80; font-family:'Courier New',monospace; font-size:0.63rem; padding:0.1rem 0.7rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; gap:0.35rem; align-items:baseline; }
         .diff-line-added-prefix { color:#4ade80; flex-shrink:0; font-weight:700; }
-        .diff-line-removed { background:rgba(239,68,68,0.07); color:#f87171; font-family:'Courier New',monospace; font-size:0.67rem; padding:0.12rem 0.9rem 0.12rem 0.5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; gap:0.4rem; align-items:baseline; line-height:1.55; }
+        .diff-line-removed { background:rgba(239,68,68,0.07); color:#f87171; font-family:'Courier New',monospace; font-size:0.63rem; padding:0.1rem 0.7rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; gap:0.35rem; align-items:baseline; }
         .diff-line-removed-prefix { color:#f87171; flex-shrink:0; font-weight:700; }
-        .diff-line-num { color:#4b5563; font-size:0.62rem; flex-shrink:0; min-width:1.8rem; text-align:right; }
-        .diff-line-content { overflow:hidden; text-overflow:ellipsis; }
-        .diff-more-badge { font-size:0.63rem; color:#6b7280; padding:0.25rem 0.9rem; border-top:1px solid rgba(255,255,255,0.04); }
+        .diff-line-num { color:#374151; font-size:0.58rem; flex-shrink:0; min-width:1.4rem; text-align:right; }
+        .diff-line-content { overflow:hidden; text-overflow:ellipsis; min-width:0; }
+        .diff-more-badge { font-size:0.6rem; color:#6b7280; padding:0.18rem 0.7rem; }
+
+        /* ── Presentation input rainbow + wave while generating ── */
+        @keyframes pp-input-rainbow { 0%,100%{background:rgba(124,58,237,0.07)} 33%{background:rgba(59,130,246,0.07)} 66%{background:rgba(16,185,129,0.06)} }
+        @keyframes pp-border-rainbow { 0%,100%{border-color:rgba(124,58,237,0.4)} 33%{border-color:rgba(59,130,246,0.35)} 66%{border-color:rgba(16,185,129,0.3)} }
+        .pp-input-generating { animation:pp-input-rainbow 2.8s ease-in-out infinite, pp-border-rainbow 2.8s ease-in-out infinite !important; }
 
         /* ── Mobile: sidebar open — raise input bar and add bottom cover ── */
         body.sidebar-open .chat-input-wrapper { z-index:60 !important; }
@@ -628,6 +638,11 @@
             <button id="cs-tab-code"    onclick="switchCanvasTab('code')"    class="cs-tab active">Code</button>
             <button id="cs-tab-preview" onclick="switchCanvasTab('preview')" class="cs-tab">Preview</button>
         </div>
+        <!-- Canvas status pill (floats above code area, outside Monaco) -->
+        <div id="canvas-status-banner">
+            <div class="csb-pill" id="csb-pill"><!-- injected by JS --></div>
+            <div id="canvas-diff-drop"></div>
+        </div>
         <!-- Monaco editor -->
         <div id="canvas-code-tab" class="flex-1 min-h-0 relative">
             <div id="monaco-container" class="absolute inset-0"></div>
@@ -636,12 +651,6 @@
             <div id="canvas-page-loader">
                 <div class="cpl-spinner"></div>
                 <span class="text-xs text-gray-500 font-medium">Retrieving page…</span>
-            </div>
-            <!-- Canvas editing/edited status banner -->
-            <div id="canvas-status-banner">
-                <div id="csb-header-content"></div>
-                <div id="canvas-diff-lines"></div>
-                <button id="csb-close-btn" onclick="hideCanvasStatusBanner()">✕</button>
             </div>
         </div>
         <!-- Live preview iframe -->
@@ -818,8 +827,8 @@
                 <!-- Input bar -->
                 <div class="pp-input-bar">
                     <div class="flex items-center gap-2 max-w-3xl mx-auto">
-                        <div class="flex-1 relative">
-                            <input id="pp-input" type="text" placeholder="Describe a presentation, edit a slide, or update all slides…"
+                        <div class="flex-1 relative" id="pp-input-wrap">
+                            <input id="pp-input" type="text" placeholder="Describe a presentation, or ask to edit slides…"
                                 autocomplete="off"
                                 class="w-full bg-[#111] border border-white/8 rounded-full px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-violet-500/40 transition-colors"
                                 onkeydown="if(event.key==='Enter') handlePresentationSend()">
@@ -1395,87 +1404,123 @@
             setTimeout(() => hideCanvasStatusBanner(), 6000);
         }
 
-        // ── Canvas editing/edited status banner helpers ──
+        // ── Canvas editing/edited status pill helpers ──
+        let _csbDiffOpen = false;
+        let _csbAutoDismiss = null;
+
         function showCanvasEditingBanner() {
+            if (_csbAutoDismiss) { clearTimeout(_csbAutoDismiss); _csbAutoDismiss = null; }
+            _csbDiffOpen = false;
             const banner = document.getElementById('canvas-status-banner');
-            const header = document.getElementById('csb-header-content');
-            const diffLines = document.getElementById('canvas-diff-lines');
-            const closeBtn = document.getElementById('csb-close-btn');
-            diffLines.classList.remove('active');
-            diffLines.innerHTML = '';
-            closeBtn.classList.remove('visible');
-            // Build wave-animated "Editing" text
-            header.innerHTML = '';
-            const text = 'Editing';
+            const pill   = document.getElementById('csb-pill');
+            const drop   = document.getElementById('canvas-diff-drop');
+            drop.classList.remove('open');
+            drop.innerHTML = '';
+            pill.innerHTML = '';
+            // Wave-animated "Editing" chars
             const wrap = document.createElement('div');
-            wrap.style.cssText = 'display:flex;gap:1px;';
-            [...text].forEach((ch, i) => {
-                const span = document.createElement('span');
-                span.className = 'pp-gen-char';
-                span.textContent = ch === ' ' ? '\u00A0' : ch;
-                span.style.animation = `pp-wave-char 1.2s ease-in-out ${i * 0.06}s infinite`;
-                span.style.color = '#ffffff';
-                span.style.fontSize = '0.82rem';
-                span.style.fontWeight = '600';
-                span.style.letterSpacing = '0.02em';
-                wrap.appendChild(span);
+            wrap.style.cssText = 'display:flex;gap:0px;';
+            [...'Editing'].forEach((ch, i) => {
+                const s = document.createElement('span');
+                s.className = 'pp-gen-char';
+                s.textContent = ch;
+                s.style.animation = `pp-wave-char 1.1s ease-in-out ${i * 0.055}s infinite`;
+                s.style.cssText += ';color:#fff;font-size:0.67rem;font-weight:600;letter-spacing:0.01em;';
+                wrap.appendChild(s);
             });
-            header.appendChild(wrap);
+            pill.appendChild(wrap);
             banner.style.opacity = '1';
             banner.classList.add('active');
         }
 
         function showCanvasEditedBanner(addedEntries, removedEntries) {
             const banner = document.getElementById('canvas-status-banner');
-            const header = document.getElementById('csb-header-content');
-            const diffLines = document.getElementById('canvas-diff-lines');
-            const closeBtn = document.getElementById('csb-close-btn');
+            const pill   = document.getElementById('csb-pill');
+            const drop   = document.getElementById('canvas-diff-drop');
+            const addCount = addedEntries.length;
+            const remCount = removedEntries.length;
 
-            // Swap header to "Edited"
-            header.innerHTML = '<span class="csb-edited-label">Edited</span>';
-            closeBtn.classList.add('visible');
-
-            // Build diff line list (interleaved removed/added per line number)
-            const removedMap = new Map(removedEntries.map(r => [r.num, r.content]));
-            const addedMap   = new Map(addedEntries.map(a => [a.num, a.content]));
-            const lineNums   = [...new Set([...removedEntries.map(r => r.num), ...addedEntries.map(a => a.num)])].sort((a, b) => a - b);
-            const maxDisplay = 14;
-
-            diffLines.innerHTML = '';
-            lineNums.slice(0, maxDisplay).forEach(num => {
-                if (removedMap.has(num)) {
-                    const div = document.createElement('div');
-                    div.className = 'diff-line-removed';
-                    div.innerHTML = `<span class="diff-line-removed-prefix">−</span><span class="diff-line-num">${num}</span><span class="diff-line-content">${escapeHtml(removedMap.get(num).trim().slice(0, 80))}</span>`;
-                    diffLines.appendChild(div);
-                }
-                if (addedMap.has(num)) {
-                    const div = document.createElement('div');
-                    div.className = 'diff-line-added';
-                    div.innerHTML = `<span class="diff-line-added-prefix">+</span><span class="diff-line-num">${num}</span><span class="diff-line-content">${escapeHtml(addedMap.get(num).trim().slice(0, 80))}</span>`;
-                    diffLines.appendChild(div);
-                }
-            });
-            if (lineNums.length > maxDisplay) {
-                const more = document.createElement('div');
-                more.className = 'diff-more-badge';
-                more.textContent = `+${lineNums.length - maxDisplay} more changes`;
-                diffLines.appendChild(more);
+            // Build compact pill: "Edited  +N −N  ⌄  ×"
+            pill.innerHTML = '';
+            const lbl = document.createElement('span');
+            lbl.className = 'csb-edited-label';
+            lbl.textContent = 'Edited';
+            pill.appendChild(lbl);
+            if (addCount > 0) {
+                const sep = document.createElement('span'); sep.className = 'csb-sep'; sep.textContent = '·'; pill.appendChild(sep);
+                const a = document.createElement('span'); a.className = 'csb-stat-add'; a.textContent = `+${addCount}`; pill.appendChild(a);
             }
-            if (diffLines.children.length > 0) diffLines.classList.add('active');
+            if (remCount > 0) {
+                const sep = document.createElement('span'); sep.className = 'csb-sep'; sep.textContent = '·'; pill.appendChild(sep);
+                const r = document.createElement('span'); r.className = 'csb-stat-remove'; r.textContent = `−${remCount}`; pill.appendChild(r);
+            }
+            // Expand toggle (only if there are details to show)
+            if (addCount + remCount > 0) {
+                const exp = document.createElement('span');
+                exp.className = 'csb-expand-toggle';
+                exp.textContent = '⌄';
+                exp.title = 'Show changes';
+                exp.onclick = () => toggleDiffDrop(addedEntries, removedEntries);
+                pill.appendChild(exp);
+            }
+            const x = document.createElement('span');
+            x.className = 'csb-dismiss visible';
+            x.textContent = '×';
+            x.title = 'Dismiss';
+            x.onclick = hideCanvasStatusBanner;
+            pill.appendChild(x);
+
+            banner.style.opacity = '1';
+            // Auto-dismiss after 7 s
+            _csbAutoDismiss = setTimeout(hideCanvasStatusBanner, 7000);
+        }
+
+        function toggleDiffDrop(addedEntries, removedEntries) {
+            const drop = document.getElementById('canvas-diff-drop');
+            const exp  = document.querySelector('.csb-expand-toggle');
+            _csbDiffOpen = !_csbDiffOpen;
+            if (_csbDiffOpen) {
+                if (exp) exp.textContent = '⌃';
+                // Build diff lines
+                drop.innerHTML = '';
+                const removedMap = new Map(removedEntries.map(r => [r.num, r.content]));
+                const addedMap   = new Map(addedEntries.map(a => [a.num, a.content]));
+                const lineNums   = [...new Set([...removedEntries.map(r=>r.num),...addedEntries.map(a=>a.num)])].sort((a,b)=>a-b);
+                lineNums.slice(0, 16).forEach(num => {
+                    if (removedMap.has(num)) {
+                        const d = document.createElement('div'); d.className = 'diff-line-removed';
+                        d.innerHTML = `<span class="diff-line-removed-prefix">−</span><span class="diff-line-num">${num}</span><span class="diff-line-content">${escapeHtml(removedMap.get(num).trim().slice(0,76))}</span>`;
+                        drop.appendChild(d);
+                    }
+                    if (addedMap.has(num)) {
+                        const d = document.createElement('div'); d.className = 'diff-line-added';
+                        d.innerHTML = `<span class="diff-line-added-prefix">+</span><span class="diff-line-num">${num}</span><span class="diff-line-content">${escapeHtml(addedMap.get(num).trim().slice(0,76))}</span>`;
+                        drop.appendChild(d);
+                    }
+                });
+                if (lineNums.length > 16) {
+                    const m = document.createElement('div'); m.className = 'diff-more-badge';
+                    m.textContent = `+${lineNums.length - 16} more changes`; drop.appendChild(m);
+                }
+                drop.classList.add('open');
+            } else {
+                if (exp) exp.textContent = '⌄';
+                drop.classList.remove('open');
+            }
         }
 
         function hideCanvasStatusBanner() {
+            if (_csbAutoDismiss) { clearTimeout(_csbAutoDismiss); _csbAutoDismiss = null; }
             const banner = document.getElementById('canvas-status-banner');
-            banner.style.transition = 'opacity 0.4s ease';
+            banner.style.transition = 'opacity 0.35s ease';
             banner.style.opacity = '0';
             setTimeout(() => {
                 banner.classList.remove('active');
                 banner.style.transition = '';
                 banner.style.opacity = '';
-                document.getElementById('canvas-diff-lines').classList.remove('active');
-                document.getElementById('csb-close-btn').classList.remove('visible');
-            }, 420);
+                document.getElementById('canvas-diff-drop').classList.remove('open');
+                _csbDiffOpen = false;
+            }, 370);
         }
 
         function closeCanvas() {
@@ -2401,7 +2446,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             });
         }
 
-        // Parse user intent from prompt
+        // Parse user intent from prompt (simplified — AI handles which slides)
         function ppParseIntent(val, existingSlides) {
             const lower = val.toLowerCase();
 
@@ -2494,38 +2539,42 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             return { requestedCount, isEdit: isEditSingle, isEditMulti, isEditAll, isAddMore, targetSlideIndex, targetSlideIndices };
         }
 
+        // ── Presentation input rainbow helper ──
+        function ppSetGeneratingUI(on) {
+            const inp  = document.getElementById('pp-input');
+            const wrap = document.getElementById('pp-input-wrap');
+            if (on) {
+                inp.disabled = true;
+                inp.placeholder = 'Generating\u2026';
+                inp.classList.add('pp-input-generating');
+            } else {
+                inp.disabled = false;
+                inp.placeholder = 'Describe a presentation, or ask to edit slides\u2026';
+                inp.classList.remove('pp-input-generating');
+            }
+        }
+
         async function handlePresentationSend() {
-            const input = document.getElementById('pp-input');
-            const val = input.value.trim();
+            const inputEl = document.getElementById('pp-input');
+            const val = inputEl.value.trim();
             if (!val || ppGenerating) return;
 
             ppGenerating = true;
-            input.value = '';
+            inputEl.value = '';
+            ppSetGeneratingUI(true);
 
             const existingSlides = (activePresentationData?.slides || []).length;
             const intent = ppParseIntent(val, existingSlides);
-
-            // Decide mode: new presentation, edit specific slide(s), edit all slides, or add slides
             const isNewPresentation = existingSlides === 0;
-            const isEditingSingle = !isNewPresentation && intent.isEdit;
-            const isEditingMulti = !isNewPresentation && intent.isEditMulti;
-            const isEditingAll = !isNewPresentation && intent.isEditAll;
+            const isEdit = !isNewPresentation && (intent.isEdit || intent.isEditMulti || intent.isEditAll) && !intent.isAddMore;
+            const isAddMore = !isNewPresentation && intent.isAddMore;
 
-            if (isEditingSingle) {
-                // Per-slide blackout animation
-                ppShowSlideOverlay(intent.targetSlideIndex, 'Editing...', val);
-            } else if (isEditingMulti) {
-                // Full overlay for multi-slide edit
-                ppShowGenOverlay(val);
-                const slideNums = intent.targetSlideIndices.map(i => i + 1).join(', ');
-                ppAnimateGenText([`Updating slides ${slideNums}...`, 'Applying changes...']);
-            } else if (isEditingAll) {
-                // Full overlay for editing all slides
-                ppShowGenOverlay(val);
-                ppAnimateGenText(['Updating all slides...', 'Applying changes...', 'Redesigning presentation...']);
-            } else {
-                // Full orb overlay for new/add
-                ppShowGenOverlay(val);
+            // Show animation overlay
+            ppShowGenOverlay(val);
+            if (isEdit) {
+                ppAnimateGenText(['Analysing slides\u2026', 'Applying changes\u2026', 'Updating presentation\u2026']);
+            } else if (isAddMore) {
+                ppAnimateGenText(['Adding slides\u2026', 'Creating content\u2026']);
             }
 
             const slideCount = intent.requestedCount || (isNewPresentation ? 7 : null);
@@ -2557,46 +2606,12 @@ Slide structure:
 - Last slide: Professional closing slide with a call-to-action or thank you
 
 Return ONLY the JSON object: {"title":"Short Title","slides":[{"html":"..."},{"html":"..."}]}`;
-            } else if (isEditingSingle) {
-                const targetIdx = intent.targetSlideIndex;
-                const targetHtml = activePresentationData.slides[targetIdx]?.html || '';
-                prompt = `I have a slide presentation with ${existingSlides} slides. I need you to edit ONLY slide ${targetIdx + 1}.
-
-Current slide ${targetIdx + 1} HTML:
-\`\`\`
-${targetHtml}
-\`\`\`
-
-User request: "${val}"
-
-Edit this single slide based on the user's request. Keep the same overall design style and color scheme. Use rich gradient backgrounds, polished typography, and visual hierarchy. The slide is a complete self-contained HTML page (inline CSS, 960x540 viewport). Never use plain white backgrounds.
-
-Return ONLY a JSON object with one field: {"slides":[{"html":"...updated slide html..."}]}`;
-            } else if (isEditingMulti) {
-                // Edit MULTIPLE specific slides
-                const indices = intent.targetSlideIndices;
-                const slidesHtml = indices.map(i => {
-                    const s = activePresentationData.slides[i];
-                    return `Slide ${i + 1}:\n\`\`\`\n${s?.html || ''}\n\`\`\``;
-                }).join('\n\n');
-                const slideNums = indices.map(i => i + 1).join(', ');
-                prompt = `I have a slide presentation with ${existingSlides} slides. I need you to edit ONLY slides ${slideNums}.
-
-Here are those slides:
-
-${slidesHtml}
-
-User request: "${val}"
-
-Edit ONLY those ${indices.length} slides based on the user's request. Keep the same overall design style. Each slide is a complete self-contained HTML page (inline CSS, 960x540 viewport). Never use plain white backgrounds.
-
-Return ONLY a JSON object: {"slides":[{"index":${indices[0]+1},"html":"..."},{"index":${indices[1]+1},"html":"..."},...]} — each object must have the slide number in "index" and the full updated HTML in "html". Return exactly ${indices.length} slide objects.`;
-            } else if (isEditingAll) {
-                // Edit ALL slides — whole-presentation update
+            } else if (isEdit) {
+                // ── AI-determined edit: send ALL slides, AI decides which to change ──
                 const allSlidesHtml = activePresentationData.slides.map((s, i) =>
-                    `Slide ${i + 1}:\n\`\`\`\n${s.html}\n\`\`\``
+                    `Slide ${i + 1}:\n\`\`\`html\n${s.html}\n\`\`\``
                 ).join('\n\n');
-                prompt = `I have a slide presentation titled "${activePresentationData.title || 'Untitled'}" with ${existingSlides} slides. The user wants to update the ENTIRE presentation.
+                prompt = `I have a slide presentation titled "${activePresentationData.title || 'Untitled'}" with ${existingSlides} slides. The user is currently viewing slide ${activeSlideIndex + 1}.
 
 Here are ALL ${existingSlides} slides:
 
@@ -2604,27 +2619,25 @@ ${allSlidesHtml}
 
 User request: "${val}"
 
-Apply the user's request across ALL ${existingSlides} slides. Return ALL slides with the changes applied consistently. Keep the same slide structure and content but apply the requested changes to every slide. Each slide is a complete self-contained HTML page (inline CSS, 960x540 viewport). Never use plain white backgrounds.
+Based on the user's request, intelligently determine which slide(s) need to be changed and apply the edits. If the request targets a specific slide (e.g. "slide 3", "the first slide", "the title slide", "the last slide"), update only that one. If it targets multiple specific slides, update only those. If it is a global change (e.g. "change the font", "make all backgrounds darker", "update the color scheme"), update ALL slides consistently.
 
-Return ONLY a JSON object: {"slides":[{"html":"...slide 1..."},{"html":"...slide 2..."},...]} with exactly ${existingSlides} slides.`;
+Return ONLY a JSON object where each changed slide has its 1-based slide number in "index" and the complete updated HTML in "html". Only include slides that actually changed. Each slide is a complete self-contained HTML page (inline CSS, 960x540 viewport). Never use plain white backgrounds. Keep the same design style unless explicitly asked to change it.
+
+Return ONLY: {"slides":[{"index":1,"html":"..."},{"index":3,"html":"..."}]}`;
             } else {
-                // Adding more slides or general follow-up
-                const allSlidesOverview = activePresentationData.slides.map((s, i) => `Slide ${i+1}: exists`).join('\n');
+                // Adding more slides
                 const addCount = intent.requestedCount || 3;
-                prompt = `I have an existing slide presentation with ${existingSlides} slides. Currently viewing slide ${activeSlideIndex + 1}.
+                const styleRef = activePresentationData.slides[0]?.html?.substring(0, 600) || '';
+                prompt = `I have an existing slide presentation titled "${activePresentationData.title || 'Untitled'}" with ${existingSlides} slides.
 
-Existing slides overview:
-${allSlidesOverview}
-
-Design style from slide 1:
-\`\`\`
-${activePresentationData.slides[0]?.html?.substring(0, 500) || ''}
+Design style reference (slide 1):
+\`\`\`html
+${styleRef}
 \`\`\`
 
 User request: "${val}"
 
-Add ${addCount} new slides to this presentation based on the user's request.
-Keep the same design style and color scheme as existing slides. Use rich gradient backgrounds, polished typography, and visual hierarchy. Each slide is a complete self-contained HTML page (inline CSS, 960x540 viewport). Never use plain white backgrounds.
+Add ${addCount} new slides. Keep the same design style and color scheme as existing slides. Each slide is a complete self-contained HTML page (inline CSS, 960x540 viewport). Never use plain white backgrounds.
 
 Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
@@ -2646,17 +2659,11 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                         const cleaned = data.reply.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
                         parsed = JSON.parse(cleaned);
                     } catch (_) {
-                        // Try extracting JSON object
                         const objMatch = data.reply.match(/\{[\s\S]*\}/);
-                        if (objMatch) {
-                            try { parsed = JSON.parse(objMatch[0]); } catch (_2) {}
-                        }
+                        if (objMatch) { try { parsed = JSON.parse(objMatch[0]); } catch (_2) {} }
                         if (!parsed) {
-                            // Fallback: try extracting JSON array
                             const arrMatch = data.reply.match(/\[[\s\S]*\]/);
-                            if (arrMatch) {
-                                try { slides = JSON.parse(arrMatch[0]); } catch (_3) {}
-                            }
+                            if (arrMatch) { try { slides = JSON.parse(arrMatch[0]); } catch (_3) {} }
                         }
                     }
 
@@ -2668,54 +2675,51 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
                     if (Array.isArray(slides) && slides.length > 0) {
                         if (isNewPresentation) {
-                            activePresentationData.slides = slides;
+                            activePresentationData.slides = slides.map(s => ({ html: s.html || s }));
                             activeSlideIndex = 0;
                             const title = aiTitle || val.slice(0, 40);
                             activePresentationData.title = title;
                             document.getElementById('pp-title').value = title;
                             await ppHideGenOverlay();
                             renderPPSlides(true);
-                        } else if (isEditingSingle) {
-                            activePresentationData.slides[intent.targetSlideIndex] = slides[0];
-                            await ppHideSlideOverlay();
-                            renderPPSlides();
-                        } else if (isEditingMulti) {
-                            // Each slide object may have an "index" field or fall back to order matching
-                            slides.forEach((s, i) => {
-                                const slideIdx = (s.index ? s.index - 1 : intent.targetSlideIndices[i]);
-                                if (slideIdx !== undefined && slideIdx >= 0 && slideIdx < activePresentationData.slides.length) {
-                                    activePresentationData.slides[slideIdx] = { html: s.html || s };
-                                }
-                            });
+                        } else if (isEdit) {
+                            // Apply only the slides the AI changed (by "index" field)
+                            const hasIndex = slides.some(s => s.index != null);
+                            if (hasIndex) {
+                                slides.forEach(s => {
+                                    const idx = s.index != null ? s.index - 1 : -1;
+                                    if (idx >= 0 && idx < activePresentationData.slides.length) {
+                                        activePresentationData.slides[idx] = { html: s.html || '' };
+                                    }
+                                });
+                            } else if (slides.length === existingSlides) {
+                                // AI returned all slides (global edit, no index)
+                                activePresentationData.slides = slides.map(s => ({ html: s.html || s }));
+                                if (activeSlideIndex >= activePresentationData.slides.length) activeSlideIndex = 0;
+                            } else if (slides.length === 1) {
+                                // Single slide returned without index → apply to current
+                                activePresentationData.slides[activeSlideIndex] = { html: slides[0].html || slides[0] };
+                            }
                             await ppHideGenOverlay();
                             renderPPSlides();
-                        } else if (isEditingAll) {
-                            // Replace all slides with the updated versions
-                            activePresentationData.slides = slides;
-                            // Clamp activeSlideIndex in case slide count changed
-                            if (activeSlideIndex >= slides.length) activeSlideIndex = 0;
-                            await ppHideGenOverlay();
-                            renderPPSlides(true);
                         } else {
-                            activePresentationData.slides.push(...slides);
+                            activePresentationData.slides.push(...slides.map(s => ({ html: s.html || s })));
                             activeSlideIndex = activePresentationData.slides.length - slides.length;
                             await ppHideGenOverlay();
                             renderPPSlides(true);
                         }
                         savePresentationToDB();
                     } else {
-                        if (isEditingSingle) await ppHideSlideOverlay();
-                        else await ppHideGenOverlay();
+                        await ppHideGenOverlay();
                     }
                 } else {
-                    if (isEditingSingle) await ppHideSlideOverlay();
-                    else await ppHideGenOverlay();
+                    await ppHideGenOverlay();
                 }
             } catch (_) {
-                if (isEditingSingle) await ppHideSlideOverlay();
-                else await ppHideGenOverlay();
+                await ppHideGenOverlay();
             }
 
+            ppSetGeneratingUI(false);
             ppGenerating = false;
         }
 
@@ -3309,7 +3313,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 const currentCode = monacoEditor.getValue();
                 if (currentCode && currentCode !== '// Generating\u2026' && currentCode !== '// Fixing\u2026') {
                     previousCanvasCode = currentCode;
-                    messageToSend = `[Current canvas code]\n\`\`\`\n${currentCode}\n\`\`\`\n\n${val}`;
+                    messageToSend = `[Current canvas code — you MUST return the complete updated code in a fenced code block]\n\`\`\`\n${currentCode}\n\`\`\`\n\nUser request: ${val}\n\nIMPORTANT: Always return the full updated code even for small changes. Do not skip unchanged parts.`;
                 }
             }
 
@@ -3329,7 +3333,13 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     lucide.createIcons();
                 } else {
                     conversationHistory.push({ role: 'user', content: val }, { role: 'assistant', content: data.reply });
-                    const codeBlock = canvasEnabled ? extractCodeBlock(data.reply) : null;
+                    // When canvas is open with existing code, aggressively try to extract updated code
+                    let codeBlock = canvasEnabled ? extractCodeBlock(data.reply) : null;
+                    if (!codeBlock && hasCanvasCode && canvasEnabled) {
+                        // Try extracting any fenced block (even without language tag)
+                        const m = data.reply.match(/```[\w]*\n?([\s\S]*?)```/);
+                        if (m) codeBlock = m[1].trim();
+                    }
 
                     if (canvasEnabled && codeBlock) {
                         const sb = document.getElementById('canvas-sidebar');
