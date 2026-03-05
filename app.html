@@ -3235,7 +3235,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
         function appendUserMessage(text, rainbow = false) {
             const el = document.createElement('div');
-            el.className = 'flex justify-end msg-enter';
+            el.className = 'flex justify-end msg-enter pr-2';
             const glow = rainbow
                 ? `<div class="msg-glow-wrapper"><div class="msg-glow-content"></div></div>`
                 : '';
