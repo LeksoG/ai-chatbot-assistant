@@ -3365,6 +3365,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
             // ── Clarity 3.5: animated thinking phase text while awaiting response ──
             let _thinkInterval = null;
+            let _thinkStart = 0;
             if (selectedModel === '3.5') {
                 const isCodePrompt = /website|webpage|html|css|code|build|creat|mak|landing|page|app|component|fix|updat|slider|canvas|design|layout|button|navbar|feature/i.test(val);
                 const phases = isCodePrompt
@@ -3377,6 +3378,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     aiEl.innerHTML = `<span class="thinking-phase-text">${chars}</span>`;
                 };
                 renderPhase(phases[0]);
+                _thinkStart = Date.now();
                 if (phases.length > 1) {
                     let idx = 0;
                     _thinkInterval = setInterval(() => {
@@ -3388,6 +3390,8 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
 
             abortController = new AbortController();
+            // Let the browser paint the thinking text before starting the fetch
+            await new Promise(r => requestAnimationFrame(r));
             try {
                 const res = await fetch('/api/chat', {
                     method: 'POST',
@@ -3396,6 +3400,9 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     signal: abortController.signal
                 });
                 if (_thinkInterval) { clearInterval(_thinkInterval); _thinkInterval = null; }
+                // Ensure thinking text shows for at least 600ms so it's visible
+                const elapsed = Date.now() - _thinkStart;
+                if (_thinkStart && elapsed < 600) await new Promise(r => setTimeout(r, 600 - elapsed));
                 aiEl.innerHTML = '';
                 const data = await res.json();
 
