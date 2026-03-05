@@ -267,16 +267,16 @@
         .splash-feature-icon { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
         /* ── Canvas editing/edited status pill (compact, outside code area) ── */
-        #canvas-status-banner { position:absolute; top:122px; left:50%; transform:translateX(-50%); z-index:30; display:none; flex-direction:column; align-items:center; pointer-events:auto; }
+        #canvas-status-banner { position:absolute; top:96px; left:50%; transform:translateX(-50%); z-index:30; display:none; flex-direction:column; align-items:center; pointer-events:auto; }
         #canvas-status-banner.active { display:flex; }
-        .csb-pill { display:flex; align-items:center; gap:0.32rem; padding:0.2rem 0.6rem; background:#1c1c1c; border:1px solid rgba(255,255,255,0.13); border-radius:999px; box-shadow:0 2px 10px rgba(0,0,0,0.8); white-space:nowrap; user-select:none; }
-        .csb-edited-label { font-size:0.67rem; font-weight:700; color:#4ade80; }
-        .csb-stat-add { font-size:0.62rem; font-weight:600; color:#4ade80; }
-        .csb-stat-remove { font-size:0.62rem; font-weight:600; color:#f87171; }
-        .csb-sep { font-size:0.58rem; color:#374151; margin:0 0.05rem; }
-        .csb-expand-toggle { font-size:0.58rem; color:#4b5563; cursor:pointer; padding:0 0.12rem; transition:color 0.15s; }
+        .csb-pill { display:flex; align-items:center; gap:0.45rem; padding:0.32rem 0.9rem; background:#1c1c1c; border:1px solid rgba(255,255,255,0.13); border-radius:999px; box-shadow:0 2px 10px rgba(0,0,0,0.8); white-space:nowrap; user-select:none; }
+        .csb-edited-label { font-size:0.82rem; font-weight:700; color:#4ade80; }
+        .csb-stat-add { font-size:0.78rem; font-weight:600; color:#4ade80; }
+        .csb-stat-remove { font-size:0.78rem; font-weight:600; color:#f87171; }
+        .csb-sep { font-size:0.7rem; color:#374151; margin:0 0.05rem; }
+        .csb-expand-toggle { font-size:0.72rem; color:#4b5563; cursor:pointer; padding:0 0.12rem; transition:color 0.15s; }
         .csb-expand-toggle:hover { color:#9ca3af; }
-        .csb-dismiss { font-size:0.56rem; color:#374151; cursor:pointer; transition:color 0.15s; display:none; padding:0 0.08rem; margin-left:0.1rem; }
+        .csb-dismiss { font-size:0.72rem; color:#374151; cursor:pointer; transition:color 0.15s; display:none; padding:0 0.08rem; margin-left:0.1rem; }
         .csb-dismiss.visible { display:inline; }
         .csb-dismiss:hover { color:#9ca3af; }
         #canvas-diff-drop { display:none; margin-top:3px; background:#1c1c1c; border:1px solid rgba(255,255,255,0.1); border-radius:9px; box-shadow:0 4px 18px rgba(0,0,0,0.8); overflow:hidden; max-height:148px; overflow-y:auto; min-width:220px; max-width:min(380px,78vw); }
@@ -294,10 +294,10 @@
         @keyframes pp-border-rainbow { 0%,100%{border-color:rgba(124,58,237,0.4)} 33%{border-color:rgba(59,130,246,0.35)} 66%{border-color:rgba(16,185,129,0.3)} }
         .pp-input-generating { animation:pp-input-rainbow 2.8s ease-in-out infinite, pp-border-rainbow 2.8s ease-in-out infinite !important; }
 
-        /* ── Mobile: sidebar open — raise input bar and add bottom cover ── */
-        body.sidebar-open .chat-input-wrapper { z-index:60 !important; }
-        #input-bottom-cover { display:none; position:fixed; bottom:0; left:0; right:0; height:3.8rem; background:var(--bg); z-index:59; pointer-events:none; }
-        body.sidebar-open #input-bottom-cover { display:block; }
+        /* ── Mobile: sidebar open — hide input bar so it doesn't overlay ── */
+        body.sidebar-open .chat-input-wrapper { opacity:0 !important; pointer-events:none !important; transition:opacity 0.2s ease !important; }
+        #input-bottom-cover { display:none; }
+        body.sidebar-open #input-bottom-cover { display:none; }
 
         /* ── Code logo ── */
         .cl-seg { stroke:none; transform-origin:center; fill:url(#codeRainbow); }
@@ -1399,9 +1399,6 @@
 
             // Show "Edited:" diff summary
             showCanvasEditedBanner(addedEntries, removedEntries);
-
-            // Auto-hide banner after 6 seconds
-            setTimeout(() => hideCanvasStatusBanner(), 6000);
         }
 
         // ── Canvas editing/edited status pill helpers ──
@@ -1471,8 +1468,6 @@
             pill.appendChild(x);
 
             banner.style.opacity = '1';
-            // Auto-dismiss after 7 s
-            _csbAutoDismiss = setTimeout(hideCanvasStatusBanner, 7000);
         }
 
         function toggleDiffDrop(addedEntries, removedEntries) {
