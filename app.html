@@ -14,6 +14,11 @@
         /* ── Canvas name subtitle ── */
         #canvas-name { font-size:0.62rem; color:#6b7280; line-height:1; margin-top:1px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
+        /* ── Rainbow glow (main page oval input) ── */
+        .glow-wrapper { position:absolute; inset:-1.5px; border-radius:9999px; overflow:hidden; filter:blur(8px); opacity:0; transition:opacity 1s ease; }
+        .glow-content  { position:absolute; inset:-150%; border-radius:50%; background:conic-gradient(from 0deg,transparent 0deg,#ff00c8 40deg,#7000ff 100deg,#00c2ff 160deg,#00ff85 220deg,#ffea00 280deg,transparent 360deg); animation:rainbow-trace 2.5s ease-out forwards; }
+        @keyframes rainbow-trace { 0%{transform:rotate(0deg) scale(0.8)} 100%{transform:rotate(360deg) scale(1)} }
+
         /* ── Layout transitions ── */
         .chat-input-wrapper { transition:left 0.42s cubic-bezier(0.4,0,0.2,1), max-width 0.42s ease, width 0.42s ease, bottom 0.5s ease, position 0s; z-index:50; }
         .conversation-started .chat-input-wrapper { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%); width:100%; max-width:42rem; }
@@ -502,6 +507,7 @@
         <!-- Input -->
         <div class="chat-input-wrapper w-full max-w-2xl px-4 relative">
             <div class="relative group">
+                <div id="rainbow-glow" class="glow-wrapper"><div class="glow-content"></div></div>
                 <div class="relative flex items-center bg-[#111] rounded-full pl-3 pr-3 py-3 shadow-2xl border border-white/10 z-10 gap-2">
 
                     <!-- ── Version pill (left, inside oval) ── -->
@@ -1068,6 +1074,7 @@
         // ── Init ──────────────────────────────────────────────────
         window.addEventListener('load', async () => {
             lucide.createIcons();
+            setTimeout(() => { document.getElementById('rainbow-glow').style.opacity = '1'; }, 120);
             document.getElementById('pill-model-label').textContent = selectedModel;
             updateModelCards();
             if (canvasEnabled) document.getElementById('canvas-toggle-track').classList.add('on');
