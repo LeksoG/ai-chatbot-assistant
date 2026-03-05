@@ -233,8 +233,7 @@
         .pp-gen-overlay.active { display:flex; animation:pp-gen-fade 0.5s ease-out; }
         .pp-gen-orb { width:220px; height:220px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #1f1235, #0d0d0d 70%); border:1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; overflow:hidden; transition:all 0.8s cubic-bezier(0.4,0,0.2,1); }
         .pp-gen-orb.expanding { width:100%; height:100%; border-radius:1rem; }
-        .pp-gen-orb-rainbow { position:absolute; inset:-14px; border-radius:inherit; background:conic-gradient(from 0deg,#ff0040,#ff8000,#ffe000,#00ff80,#00c8ff,#8000ff,#ff0080,#ff0040); animation:pp-orb-spin 3s linear infinite; filter:blur(35px); opacity:0.28; }
-        @keyframes pp-orb-inner-rainbow { 0% { background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); } 25% { background:radial-gradient(circle at 40% 35%, #1a1040 0%, #0d0d10 70%); } 50% { background:radial-gradient(circle at 40% 35%, #15102a 0%, #0d0d0d 70%); } 75% { background:radial-gradient(circle at 40% 35%, #181540 0%, #0d0d10 70%); } 100% { background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); } }
+@keyframes pp-orb-inner-rainbow { 0% { background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); } 25% { background:radial-gradient(circle at 40% 35%, #1a1040 0%, #0d0d10 70%); } 50% { background:radial-gradient(circle at 40% 35%, #15102a 0%, #0d0d0d 70%); } 75% { background:radial-gradient(circle at 40% 35%, #181540 0%, #0d0d10 70%); } 100% { background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); } }
         .pp-gen-orb-inner-bg { position:absolute; inset:0; border-radius:inherit; background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); animation:pp-orb-inner-rainbow 5s ease-in-out infinite; }
         /* ── User prompt bubble shown below orb during generation ── */
         .pp-prompt-bubble { position:absolute; bottom:12%; left:50%; transform:translateX(-50%); z-index:15; max-width:80%; opacity:0; transition:opacity 0.5s ease, transform 0.5s ease; transform:translateX(-50%) translateY(12px); pointer-events:none; }
@@ -297,10 +296,10 @@
         .diff-line-content { overflow:hidden; text-overflow:ellipsis; min-width:0; }
         .diff-more-badge { font-size:0.6rem; color:#6b7280; padding:0.18rem 0.7rem; }
 
-        /* ── Presentation input rainbow + wave while generating ── */
-        @keyframes pp-input-rainbow { 0%,100%{background:rgba(124,58,237,0.07)} 33%{background:rgba(59,130,246,0.07)} 66%{background:rgba(16,185,129,0.06)} }
-        @keyframes pp-border-rainbow { 0%,100%{border-color:rgba(124,58,237,0.4)} 33%{border-color:rgba(59,130,246,0.35)} 66%{border-color:rgba(16,185,129,0.3)} }
-        .pp-input-generating { animation:pp-input-rainbow 2.8s ease-in-out infinite, pp-border-rainbow 2.8s ease-in-out infinite !important; }
+        /* ── Presentation input container glow while generating ── */
+        .pp-input-glow-wrapper { position:absolute; inset:-2px; border-radius:9999px; overflow:hidden; filter:blur(9px); pointer-events:none; opacity:0; transition:opacity 0.5s ease; }
+        .pp-input-glow-wrapper.active { opacity:1; }
+        .pp-input-glow-content { position:absolute; inset:-150%; border-radius:50%; background:conic-gradient(from 0deg,#ff0040,#ff8000,#ffe000,#00ff80,#00c8ff,#8000ff,#ff0080,#ff0040); animation:pp-orb-spin 3s linear infinite; }
 
         /* ── Mobile: sidebar open — hide input bar so it doesn't overlay ── */
         body.sidebar-open .chat-input-wrapper { opacity:0 !important; pointer-events:none !important; transition:opacity 0.2s ease !important; }
@@ -822,7 +821,6 @@
                         <!-- Generation overlay (orb that morphs to rectangle) -->
                         <div id="pp-gen-overlay" class="pp-gen-overlay">
                             <div class="pp-gen-orb" id="pp-gen-orb">
-                                <div class="pp-gen-orb-rainbow"></div>
                                 <div class="pp-gen-orb-inner-bg"></div>
                                 <div id="pp-gen-text" class="pp-gen-text"></div>
                             </div>
@@ -838,6 +836,7 @@
                 <div class="pp-input-bar">
                     <div class="flex items-center gap-2 max-w-3xl mx-auto">
                         <div class="flex-1 relative" id="pp-input-wrap">
+                            <div class="pp-input-glow-wrapper" id="pp-input-glow"><div class="pp-input-glow-content"></div></div>
                             <input id="pp-input" type="text" placeholder="Describe a presentation, or ask to edit slides…"
                                 autocomplete="off"
                                 class="w-full bg-[#111] border border-white/8 rounded-full px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-violet-500/40 transition-colors"
@@ -2553,15 +2552,15 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
         // ── Presentation input rainbow helper ──
         function ppSetGeneratingUI(on) {
             const inp  = document.getElementById('pp-input');
-            const wrap = document.getElementById('pp-input-wrap');
+            const glow = document.getElementById('pp-input-glow');
             if (on) {
                 inp.disabled = true;
                 inp.placeholder = 'Generating\u2026';
-                inp.classList.add('pp-input-generating');
+                if (glow) glow.classList.add('active');
             } else {
                 inp.disabled = false;
                 inp.placeholder = 'Describe a presentation, or ask to edit slides\u2026';
-                inp.classList.remove('pp-input-generating');
+                if (glow) glow.classList.remove('active');
             }
         }
 
