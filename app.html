@@ -216,6 +216,11 @@
         .pp-orb-fill { position:absolute; inset:6px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); animation:pp-orb-pulse 3s ease-in-out infinite; border:1px solid rgba(255,255,255,0.06); }
         .pp-orb-text { position:relative; z-index:2; color:#fff; font-size:0.82rem; font-weight:500; text-align:center; max-width:240px; line-height:1.5; opacity:0.85; }
 
+        /* ── Thinking phase text (wave glow, no bounce) ── */
+        @keyframes think-glow { 0%,100%{opacity:0.35;text-shadow:none} 50%{opacity:1;text-shadow:0 0 10px rgba(167,139,250,0.75),0 0 3px rgba(167,139,250,0.4)} }
+        .thinking-phase-text { font-size:0.85rem; color:#a78bfa; font-style:italic; letter-spacing:0.01em; }
+        .tpt-char { display:inline; animation:think-glow 1.6s ease-in-out infinite; }
+
         /* ── Generation orb overlay ── */
         @keyframes pp-wave-char { 0%,100% { opacity:0.4; transform:translateY(0); } 50% { opacity:1; transform:translateY(-3px); } }
         @keyframes pp-gen-fade { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
@@ -3358,6 +3363,30 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 }
             }
 
+            // ── Clarity 3.5: animated thinking phase text while awaiting response ──
+            let _thinkInterval = null;
+            if (selectedModel === '3.5') {
+                const isCodePrompt = /website|webpage|html|css|code|build|creat|mak|landing|page|app|component|fix|updat|slider|canvas|design|layout|button|navbar|feature/i.test(val);
+                const phases = isCodePrompt
+                    ? ['Thinking\u2026', 'Creating website\u2026', 'Gathering components\u2026', 'Finishing\u2026']
+                    : ['Thinking\u2026'];
+                const renderPhase = (text) => {
+                    const chars = [...text].map((c, i) =>
+                        `<span class="tpt-char" style="animation-delay:${(i * 0.065).toFixed(3)}s">${c === ' ' ? '&nbsp;' : escapeHtml(c)}</span>`
+                    ).join('');
+                    aiEl.innerHTML = `<span class="thinking-phase-text">${chars}</span>`;
+                };
+                renderPhase(phases[0]);
+                if (phases.length > 1) {
+                    let idx = 0;
+                    _thinkInterval = setInterval(() => {
+                        idx = Math.min(idx + 1, phases.length - 1);
+                        renderPhase(phases[idx]);
+                        if (idx >= phases.length - 1) { clearInterval(_thinkInterval); _thinkInterval = null; }
+                    }, 2000);
+                }
+            }
+
             abortController = new AbortController();
             try {
                 const res = await fetch('/api/chat', {
@@ -3366,6 +3395,8 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     body: JSON.stringify({ message: messageToSend, history: conversationHistory, modelVersion: selectedModel }),
                     signal: abortController.signal
                 });
+                if (_thinkInterval) { clearInterval(_thinkInterval); _thinkInterval = null; }
+                aiEl.innerHTML = '';
                 const data = await res.json();
 
                 if (!res.ok) {
@@ -3412,6 +3443,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     saveMessage('assistant', data.reply);
                 }
             } catch (err) {
+                if (_thinkInterval) { clearInterval(_thinkInterval); _thinkInterval = null; }
                 avatarEl.innerHTML = STATIC_LOGO_SVG;
                 if (err.name === 'AbortError') {
                     aiEl.innerHTML = `<div class="text-gray-500 text-sm italic">Generation stopped.</div>`;
