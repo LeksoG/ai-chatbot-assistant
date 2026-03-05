@@ -291,10 +291,6 @@
         .diff-line-content { overflow:hidden; text-overflow:ellipsis; min-width:0; }
         .diff-more-badge { font-size:0.6rem; color:#6b7280; padding:0.18rem 0.7rem; }
 
-        /* ── Presentation input container glow while generating ── */
-        .pp-input-glow-wrapper { position:absolute; inset:-2px; border-radius:9999px; overflow:hidden; filter:blur(9px); pointer-events:none; opacity:0; transition:opacity 0.5s ease; }
-        .pp-input-glow-wrapper.active { opacity:1; }
-        .pp-input-glow-content { position:absolute; inset:-150%; border-radius:50%; background:conic-gradient(from 0deg,#ff0040,#ff8000,#ffe000,#00ff80,#00c8ff,#8000ff,#ff0080,#ff0040); animation:pp-orb-spin 3s linear infinite; }
 
         /* ── Mobile: sidebar open — hide input bar so it doesn't overlay ── */
         body.sidebar-open .chat-input-wrapper { opacity:0 !important; pointer-events:none !important; transition:opacity 0.2s ease !important; }
@@ -831,7 +827,6 @@
                 <div class="pp-input-bar">
                     <div class="flex items-center gap-2 max-w-3xl mx-auto">
                         <div class="flex-1 relative" id="pp-input-wrap">
-                            <div class="pp-input-glow-wrapper" id="pp-input-glow"><div class="pp-input-glow-content"></div></div>
                             <input id="pp-input" type="text" placeholder="Describe a presentation, or ask to edit slides…"
                                 autocomplete="off"
                                 class="w-full bg-[#111] border border-white/8 rounded-full px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-violet-500/40 transition-colors"
@@ -2546,16 +2541,13 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
 
         // ── Presentation input rainbow helper ──
         function ppSetGeneratingUI(on) {
-            const inp  = document.getElementById('pp-input');
-            const glow = document.getElementById('pp-input-glow');
+            const inp = document.getElementById('pp-input');
             if (on) {
                 inp.disabled = true;
                 inp.placeholder = 'Generating\u2026';
-                if (glow) glow.classList.add('active');
             } else {
                 inp.disabled = false;
                 inp.placeholder = 'Describe a presentation, or ask to edit slides\u2026';
-                if (glow) glow.classList.remove('active');
             }
         }
 
