@@ -11,11 +11,6 @@
         :root { --bg: #0a0a0a; }
         body { background: var(--bg); color: white; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; overflow-x: hidden; }
 
-        /* ── Sent message rainbow glow ── */
-        @keyframes rainbow-trace { 0%{transform:rotate(0deg) scale(0.8)} 100%{transform:rotate(360deg) scale(1)} }
-        @keyframes msg-glow-fade { 0%{opacity:1} 65%{opacity:0.7} 100%{opacity:0} }
-        .msg-glow-wrapper { position:absolute; inset:-2px; border-radius:1.2rem; overflow:hidden; filter:blur(7px); pointer-events:none; animation:msg-glow-fade 2.8s ease-out forwards; }
-        .msg-glow-content { position:absolute; inset:-150%; border-radius:50%; background:conic-gradient(from 0deg,transparent 0deg,#ff00c8 40deg,#7000ff 100deg,#00c2ff 160deg,#00ff85 220deg,#ffea00 280deg,transparent 360deg); animation:rainbow-trace 2.5s ease-out forwards; }
         /* ── Canvas name subtitle ── */
         #canvas-name { font-size:0.62rem; color:#6b7280; line-height:1; margin-top:1px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
@@ -3232,17 +3227,11 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             return d.innerHTML;
         }
 
-        function appendUserMessage(text, rainbow = false) {
+        function appendUserMessage(text) {
             const el = document.createElement('div');
             el.className = 'flex justify-end msg-enter pr-2';
-            const glow = rainbow
-                ? `<div class="msg-glow-wrapper"><div class="msg-glow-content"></div></div>`
-                : '';
             el.innerHTML = `
-                <div class="relative">
-                    ${glow}
-                    <div class="bg-[#1a1a1a] border border-white/8 py-2 px-3.5 rounded-2xl rounded-tr-sm max-w-[72%] w-fit text-sm text-gray-200 leading-relaxed break-words whitespace-pre-wrap relative z-10">${escapeHtml(text)}</div>
-                </div>`;
+                <div class="bg-[#1a1a1a] border border-white/8 py-2 px-3.5 rounded-2xl rounded-tr-sm max-w-[72%] text-sm text-gray-200 leading-relaxed break-words whitespace-pre-wrap ml-auto">${escapeHtml(text)}</div>`;
             chatResults.appendChild(el);
         }
 
@@ -3358,7 +3347,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
 
             await ensureConversation(val);
-            appendUserMessage(val, true);
+            appendUserMessage(val);
             scrollToBottom();
             saveMessage('user', val);
 
