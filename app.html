@@ -11,10 +11,13 @@
         :root { --bg: #0a0a0a; }
         body { background: var(--bg); color: white; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; overflow-x: hidden; }
 
-        /* ── Rainbow glow ── */
-        .glow-wrapper { position:absolute; inset:-1.5px; border-radius:9999px; overflow:hidden; filter:blur(8px); opacity:0; transition:opacity 1s ease; }
-        .glow-content  { position:absolute; inset:-150%; border-radius:50%; background:conic-gradient(from 0deg,transparent 0deg,#ff00c8 40deg,#7000ff 100deg,#00c2ff 160deg,#00ff85 220deg,#ffea00 280deg,transparent 360deg); animation:rainbow-trace 2.5s ease-out forwards; }
+        /* ── Sent message rainbow glow ── */
         @keyframes rainbow-trace { 0%{transform:rotate(0deg) scale(0.8)} 100%{transform:rotate(360deg) scale(1)} }
+        @keyframes msg-glow-fade { 0%{opacity:1} 65%{opacity:0.7} 100%{opacity:0} }
+        .msg-glow-wrapper { position:absolute; inset:-2px; border-radius:1.2rem; overflow:hidden; filter:blur(7px); pointer-events:none; animation:msg-glow-fade 2.8s ease-out forwards; }
+        .msg-glow-content { position:absolute; inset:-150%; border-radius:50%; background:conic-gradient(from 0deg,transparent 0deg,#ff00c8 40deg,#7000ff 100deg,#00c2ff 160deg,#00ff85 220deg,#ffea00 280deg,transparent 360deg); animation:rainbow-trace 2.5s ease-out forwards; }
+        /* ── Canvas name subtitle ── */
+        #canvas-name { font-size:0.62rem; color:#6b7280; line-height:1; margin-top:1px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
         /* ── Layout transitions ── */
         .chat-input-wrapper { transition:left 0.42s cubic-bezier(0.4,0,0.2,1), max-width 0.42s ease, width 0.42s ease, bottom 0.5s ease, position 0s; z-index:50; }
@@ -244,7 +247,7 @@
         .pp-slide-card-overlay { position:absolute; inset:0; z-index:5; border-radius:0.5rem; background:#0a0a0a; display:flex; align-items:center; justify-content:center; }
         .pp-slide-card-overlay .pp-gen-text { font-size:0.5rem; }
         .pp-gen-text { position:relative; z-index:2; font-size:0.95rem; font-weight:600; color:#fff; letter-spacing:0.02em; display:flex; gap:1px; flex-wrap:wrap; justify-content:center; }
-        .pp-gen-char { display:inline-block; }
+        .pp-gen-char { display:inline; }
 
         /* ── Slide card stagger (ladder) animation ── */
         @keyframes pp-slide-ladder { from { opacity:0; transform:translateY(18px) scale(0.95); } to { opacity:1; transform:translateY(0) scale(1); } }
@@ -509,7 +512,6 @@
         <!-- Input -->
         <div class="chat-input-wrapper w-full max-w-2xl px-4 relative">
             <div class="relative group">
-                <div id="rainbow-glow" class="glow-wrapper"><div class="glow-content"></div></div>
                 <div class="relative flex items-center bg-[#111] rounded-full pl-3 pr-3 py-3 shadow-2xl border border-white/10 z-10 gap-2">
 
                     <!-- ── Version pill (left, inside oval) ── -->
@@ -616,7 +618,10 @@
                     <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
                     <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
                 </svg>
-                <span class="text-white font-semibold text-sm">Canvas</span>
+                <div>
+                    <div class="text-white font-semibold text-sm leading-tight">Canvas</div>
+                    <div id="canvas-name"></div>
+                </div>
             </div>
             <div class="flex items-center gap-1">
                 <button onclick="copyCanvasCode()" id="canvas-copy-btn"
@@ -1068,12 +1073,12 @@
         let canvasPages          = [];   // [{code, prompt, pageIndex}]
         let canvasPageIndex      = 0;    // current page (0-based)
         let canvasPagesSaving    = false;
+        let canvasTitle          = '';   // persists across canvas edits in same conversation
         let abortController      = null; // for pausing generation
 
         // ── Init ──────────────────────────────────────────────────
         window.addEventListener('load', async () => {
             lucide.createIcons();
-            setTimeout(() => { document.getElementById('rainbow-glow').style.opacity = '1'; }, 120);
             document.getElementById('pill-model-label').textContent = selectedModel;
             updateModelCards();
             if (canvasEnabled) document.getElementById('canvas-toggle-track').classList.add('on');
@@ -1305,6 +1310,8 @@
             switchCanvasTab('code');
             lucide.createIcons();
             await loadMonaco();
+            // Set title from first prompt only — never overwrite once set
+            if (!canvasTitle && prompt) setCanvasTitle(deriveCanvasTitle(prompt));
             if (code) {
                 // Add as a new page in the same canvas container
                 addCanvasPage(code, prompt);
@@ -1426,7 +1433,7 @@
                 const s = document.createElement('span');
                 s.className = 'pp-gen-char';
                 s.textContent = ch;
-                s.style.animation = `pp-wave-char 1.1s ease-in-out ${i * 0.055}s infinite`;
+                s.style.animation = `think-glow 1.6s ease-in-out ${(i * 0.065).toFixed(3)}s infinite`;
                 s.style.cssText += ';color:#fff;font-size:0.67rem;font-weight:600;letter-spacing:0.01em;';
                 wrap.appendChild(s);
             });
@@ -1700,16 +1707,19 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             input.focus();
         }
 
-        // ── Rainbow glow replay ───────────────────────────────────
-        function triggerRainbowGlow() {
-            const wrapper = document.getElementById('rainbow-glow');
-            if (!wrapper) return;
-            wrapper.style.opacity = '0';
-            setTimeout(() => {
-                const content = wrapper.querySelector('.glow-content');
-                if (content) { content.style.animation = 'none'; void content.offsetWidth; content.style.animation = ''; }
-                wrapper.style.opacity = '1';
-            }, 400);
+        // ── Canvas auto-title ─────────────────────────────────────
+        function deriveCanvasTitle(prompt) {
+            const clean = prompt
+                .replace(/^(please\s+|can you\s+|could you\s+|i want\s+|i need\s+|i'd like\s+)/i, '')
+                .replace(/^(create|make|build|design|generate|write|code)\s+(me\s+)?(a|an|the\s+)?/i, '')
+                .trim();
+            const t = clean.charAt(0).toUpperCase() + clean.slice(1);
+            return t.length > 38 ? t.slice(0, 36) + '\u2026' : t;
+        }
+        function setCanvasTitle(title) {
+            canvasTitle = title;
+            const el = document.getElementById('canvas-name');
+            if (el) el.textContent = title || '';
         }
         function switchCanvasTab(tab) {
             const codePan = document.getElementById('canvas-code-tab');
@@ -2359,7 +2369,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                     const span = document.createElement('span');
                     span.className = 'pp-gen-char';
                     span.textContent = ch === ' ' ? '\u00A0' : ch;
-                    span.style.animation = `pp-wave-char 1.2s ease-in-out ${i * 0.04}s infinite`;
+                    span.style.animation = `think-glow 1.6s ease-in-out ${(i * 0.065).toFixed(3)}s infinite`;
                     container.appendChild(span);
                 });
             }
@@ -2408,7 +2418,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 const span = document.createElement('span');
                 span.className = 'pp-gen-char';
                 span.textContent = ch === ' ' ? '\u00A0' : ch;
-                span.style.animation = `pp-wave-char 1.2s ease-in-out ${i * 0.04}s infinite`;
+                span.style.animation = `think-glow 1.6s ease-in-out ${(i * 0.065).toFixed(3)}s infinite`;
                 waveContainer.appendChild(span);
             });
             overlay.appendChild(waveContainer);
@@ -2591,7 +2601,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                                 const sp = document.createElement('span');
                                 sp.className = 'pp-gen-char';
                                 sp.textContent = ch;
-                                sp.style.animation = `pp-wave-char 1.1s ease-in-out ${ci * 0.05}s infinite`;
+                                sp.style.animation = `think-glow 1.6s ease-in-out ${(ci * 0.065).toFixed(3)}s infinite`;
                                 wt.appendChild(sp);
                             });
                             ov.appendChild(wt);
@@ -3001,8 +3011,8 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             input.value = '';
             updateButtonState(false);
             window.scrollTo({ top: 0, behavior: 'smooth' });
+            setCanvasTitle('');
             loadConversations();
-            triggerRainbowGlow();
             // Restart greeting cycle
             greetingActive = true;
             runGreeting();
@@ -3223,11 +3233,17 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             return d.innerHTML;
         }
 
-        function appendUserMessage(text) {
+        function appendUserMessage(text, rainbow = false) {
             const el = document.createElement('div');
             el.className = 'flex justify-end msg-enter';
+            const glow = rainbow
+                ? `<div class="msg-glow-wrapper"><div class="msg-glow-content"></div></div>`
+                : '';
             el.innerHTML = `
-                <div class="bg-[#1a1a1a] border border-white/8 py-2 px-3.5 rounded-2xl rounded-tr-sm max-w-[72%] w-fit text-sm text-gray-200 leading-relaxed break-words whitespace-pre-wrap">${escapeHtml(text)}</div>`;
+                <div class="relative">
+                    ${glow}
+                    <div class="bg-[#1a1a1a] border border-white/8 py-2 px-3.5 rounded-2xl rounded-tr-sm max-w-[72%] w-fit text-sm text-gray-200 leading-relaxed break-words whitespace-pre-wrap relative z-10">${escapeHtml(text)}</div>
+                </div>`;
             chatResults.appendChild(el);
         }
 
@@ -3343,7 +3359,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
 
             await ensureConversation(val);
-            appendUserMessage(val);
+            appendUserMessage(val, true);
             scrollToBottom();
             saveMessage('user', val);
 
