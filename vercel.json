@@ -1,5 +1,10 @@
 {
   "framework": null,
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 10
+    }
+  },
   "rewrites": [
     { "source": "/app",  "destination": "/app.html"  },
     { "source": "/auth", "destination": "/auth.html" },
