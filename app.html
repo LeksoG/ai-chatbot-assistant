@@ -3675,14 +3675,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         let artifactSuggestFocusIdx = -1;
         let currentViewerArtifact = null;
 
-        // ── Unique slug generator ─────────────────────────────
-        function generateArtifactSlug() {
-            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-            let r = '';
-            for (let i = 0; i < 12; i++) r += chars[Math.floor(Math.random() * chars.length)];
-            return r + Date.now().toString(36).slice(-4);
-        }
-
         // ── General toast ─────────────────────────────────────
         function showAppToast(msg, type = 'success') {
             const el = document.getElementById('app-toast');
@@ -3695,8 +3687,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         }
 
         // ── Publish modal ─────────────────────────────────────
-        let _pendingPublishSlug = '';
-
         function openPublishModal() {
             if (!monacoEditor) { showAppToast('Open the canvas first.', 'error'); return; }
             const code = monacoEditor.getValue();
@@ -3705,7 +3695,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
             document.getElementById('publish-title').value = canvasTitle || '';
             document.getElementById('publish-description').value = '';
-            _pendingPublishSlug = generateArtifactSlug();
             const modal = document.getElementById('publish-modal');
             modal.classList.add('pm-open');
             lucide.createIcons();
@@ -3725,7 +3714,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 return;
             }
             const description = document.getElementById('publish-description').value.trim();
-            const slug = _pendingPublishSlug;
             const code = monacoEditor ? monacoEditor.getValue() : '';
             const userName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.email || 'Anonymous';
 
@@ -3738,7 +3726,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 const res = await fetch('/api/artifacts', {
                     method: 'POST',
                     headers: authHeaders(),
-                    body: JSON.stringify({ userId: currentUser.id, userName, title, description, code, slug })
+                    body: JSON.stringify({ userId: currentUser.id, userName, title, description, code })
                 });
                 if (!res.ok) throw new Error('publish failed');
                 closePublishModal();
@@ -3966,7 +3954,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
         function copyArtifactViewerLink() {
             if (!currentViewerArtifact) return;
-            const link = window.location.origin + '/artifact/' + (currentViewerArtifact.slug || currentViewerArtifact.id);
+            const link = window.location.origin + '/artifact/' + currentViewerArtifact.id;
             navigator.clipboard.writeText(link).then(() => {
                 const btn = document.getElementById('artifact-viewer-share-btn');
                 btn.innerHTML = '<i data-lucide="check" class="w-3"></i> Copied!';
