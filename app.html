@@ -945,19 +945,6 @@
                 <textarea id="publish-description" rows="2" placeholder="Describe what this artifact does…"
                     class="w-full bg-[#1a1a1a] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-violet-600/60 transition-colors placeholder-gray-600 resize-none leading-relaxed"></textarea>
             </div>
-            <!-- Unique link (read-only) -->
-            <div class="mb-4">
-                <label class="text-xs text-gray-500 mb-1.5 block font-medium">Unique Share Link</label>
-                <div class="flex gap-2">
-                    <input id="publish-link" type="text" readonly
-                        class="flex-1 bg-[#141414] border border-white/5 rounded-xl px-3 py-2 text-gray-500 text-[11px] outline-none font-mono cursor-text select-all"
-                        onclick="this.select()">
-                    <button id="publish-link-copy-btn" onclick="copyPublishLink()"
-                        class="shrink-0 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/8 rounded-xl text-xs text-gray-400 hover:text-white transition-colors">
-                        Copy
-                    </button>
-                </div>
-            </div>
             <!-- Actions -->
             <div class="flex gap-2">
                 <button onclick="closePublishModal()" class="flex-1 py-2.5 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Cancel</button>
@@ -3708,22 +3695,17 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         }
 
         // ── Publish modal ─────────────────────────────────────
+        let _pendingPublishSlug = '';
+
         function openPublishModal() {
             if (!monacoEditor) { showAppToast('Open the canvas first.', 'error'); return; }
             const code = monacoEditor.getValue();
             if (!code || code.trim() === '// Generating\u2026') {
                 showAppToast('Nothing to publish yet.', 'error'); return;
             }
-            // Pre-fill name from canvas title
             document.getElementById('publish-title').value = canvasTitle || '';
             document.getElementById('publish-description').value = '';
-            // Generate unique slug + link
-            const slug = generateArtifactSlug();
-            const link = window.location.origin + '/artifact/' + slug;
-            const linkEl = document.getElementById('publish-link');
-            linkEl.value = link;
-            linkEl.dataset.slug = slug;
-            document.getElementById('publish-link-copy-btn').textContent = 'Copy';
+            _pendingPublishSlug = generateArtifactSlug();
             const modal = document.getElementById('publish-modal');
             modal.classList.add('pm-open');
             lucide.createIcons();
@@ -3732,15 +3714,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
         function closePublishModal() {
             document.getElementById('publish-modal').classList.remove('pm-open');
-        }
-
-        function copyPublishLink() {
-            const link = document.getElementById('publish-link').value;
-            navigator.clipboard.writeText(link).then(() => {
-                const btn = document.getElementById('publish-link-copy-btn');
-                btn.textContent = 'Copied!';
-                setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
-            });
         }
 
         async function publishArtifact() {
@@ -3752,7 +3725,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 return;
             }
             const description = document.getElementById('publish-description').value.trim();
-            const slug = document.getElementById('publish-link').dataset.slug;
+            const slug = _pendingPublishSlug;
             const code = monacoEditor ? monacoEditor.getValue() : '';
             const userName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.email || 'Anonymous';
 
