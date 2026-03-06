@@ -1005,7 +1005,7 @@
             </div>
         </div>
         <!-- Grid content -->
-        <div class="flex-1 overflow-y-auto p-5">
+        <div class="flex-1 overflow-y-auto px-6 py-6">
             <div id="artifacts-loading" class="hidden py-20 flex items-center justify-center">
                 <div class="w-8 h-8 border-2 border-violet-900/50 border-t-violet-500 rounded-full" style="animation:cpl-spin 0.8s linear infinite"></div>
             </div>
@@ -1016,7 +1016,7 @@
                 <p class="text-gray-400 text-sm font-medium mb-1">No artifacts yet</p>
                 <p class="text-gray-600 text-xs max-w-xs">Be the first to publish a creation from the Canvas using the Publish button</p>
             </div>
-            <div id="artifacts-grid" class="grid grid-cols-1 gap-4" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">
+            <div id="artifacts-grid" class="grid gap-4" style="grid-template-columns:repeat(4,minmax(0,1fr));max-width:1200px;margin:0 auto">
                 <!-- Artifact cards injected by JS -->
             </div>
         </div>
@@ -1395,6 +1395,8 @@
             runGreeting();
             // Show splash screen for new version
             checkSplash();
+            // Show artifacts splash once on page load
+            maybeShowArtifactsSplash();
         });
 
         // ── Auth headers helper ───────────────────────────────────
@@ -3937,7 +3939,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             page.classList.add('ap2-open');
             lucide.createIcons();
             document.getElementById('artifacts-search').value = '';
-            maybeShowArtifactsSplash();
             await loadArtifactsPageData();
         }
 
