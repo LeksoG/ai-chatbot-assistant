@@ -3723,7 +3723,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid rgba(167,139,250,0.3);border-top-color:#a78bfa;border-radius:50%;animation:cpl-spin 0.7s linear infinite"></div>';
 
             try {
-                const res = await fetch('/api/artifacts.js', {
+                const res = await fetch('/api/artifacts', {
                     method: 'POST',
                     headers: authHeaders(),
                     body: JSON.stringify({ userId: currentUser.id, userName, title, description, code })
