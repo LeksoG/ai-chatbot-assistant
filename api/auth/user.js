@@ -57,12 +57,13 @@ module.exports = async function handler(req, res) {
                 { headers: sbHeaders }
             );
             if (!r.ok) {
-                const errBody = await r.text().catch(() => '');
-                console.error('[user.js] GET profile failed:', r.status, errBody);
-                return res.status(500).json({ error: 'Failed to load user profile.' });
+                // users table may not exist yet — return partial profile from auth token
+                return res.json({ id: authUser.id, email: authUser.email || '' });
             }
             const data = await r.json();
-            return res.json(Array.isArray(data) ? data[0] || null : null);
+            const profile = Array.isArray(data) ? data[0] || null : null;
+            // merge auth fields in case profile row doesn't exist yet
+            return res.json(profile || { id: authUser.id, email: authUser.email || '' });
         }
 
         // PATCH — update profile / password / 2FA
