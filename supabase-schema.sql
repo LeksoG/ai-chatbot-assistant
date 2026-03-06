@@ -36,6 +36,20 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "service_all_conversations" ON conversations FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "service_all_messages"      ON messages      FOR ALL USING (true) WITH CHECK (true);
 
+-- User profiles table (stores display names and app settings)
+CREATE TABLE IF NOT EXISTS users (
+    id             TEXT        PRIMARY KEY,  -- matches auth.users id (UUID stored as text)
+    email          TEXT,
+    first_name     TEXT        DEFAULT '',
+    last_name      TEXT        DEFAULT '',
+    two_fa_enabled BOOLEAN     DEFAULT false,
+    created_at     TIMESTAMPTZ DEFAULT NOW(),
+    updated_at     TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "service_all_users" ON users FOR ALL USING (true) WITH CHECK (true);
+
 -- Artifacts table (public — all users can view each other's artifacts)
 CREATE TABLE artifacts (
     id          UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
