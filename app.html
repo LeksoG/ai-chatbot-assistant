@@ -3728,13 +3728,16 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     headers: authHeaders(),
                     body: JSON.stringify({ userId: currentUser.id, userName, title, description, code })
                 });
-                if (!res.ok) throw new Error('publish failed');
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.error || `HTTP ${res.status}`);
+                }
                 closePublishModal();
                 showAppToast('\u2713 Artifact published!', 'success');
                 // Refresh sidebar artifacts if the tab is active
                 if (activeSidebarTab === 'artifacts') loadArtifactsSidebar();
-            } catch (_) {
-                showAppToast('Failed to publish. Try again.', 'error');
+            } catch (err) {
+                showAppToast('Failed to publish: ' + err.message, 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = origHTML;
