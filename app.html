@@ -433,10 +433,11 @@
             </button>
         </div>
 
-        <!-- Sidebar tabs: Chat / Presentations -->
+        <!-- Sidebar tabs: Chat / Presentations / Artifacts -->
         <div class="sidebar-tabs px-3">
             <button id="sidebar-tab-chat" class="sidebar-tab active" onclick="switchSidebarTab('chat')">Chat</button>
             <button id="sidebar-tab-pres" class="sidebar-tab" onclick="switchSidebarTab('presentations')">Slides</button>
+            <button id="sidebar-tab-artifacts" class="sidebar-tab" onclick="switchSidebarTab('artifacts')">Artifacts</button>
         </div>
 
         <!-- Search -->
@@ -465,6 +466,16 @@
             </div>
             <div id="presentations-list">
                 <div class="p-3 text-gray-600 text-sm text-center">No presentations yet</div>
+            </div>
+        </div>
+
+        <!-- Artifacts list (Artifacts tab — hidden by default) -->
+        <div id="sidebar-artifacts-panel" class="px-3 flex-1 overflow-y-auto min-h-0 hidden">
+            <div class="flex items-center justify-between px-1 mb-2">
+                <p class="text-[10px] text-gray-600 uppercase tracking-widest">Artifacts</p>
+            </div>
+            <div id="sidebar-artifacts-list">
+                <div class="p-3 text-gray-600 text-sm text-center">No artifacts yet</div>
             </div>
         </div>
 
@@ -2127,25 +2138,30 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             renderConversationList(filtered);
         }
 
-        // ── Sidebar tabs (Chat / Presentations) ──────────────────
+        // ── Sidebar tabs (Chat / Presentations / Artifacts) ──────────────────
         let activeSidebarTab = 'chat';
         function switchSidebarTab(tab) {
             activeSidebarTab = tab;
             document.getElementById('sidebar-tab-chat').classList.toggle('active', tab === 'chat');
             document.getElementById('sidebar-tab-pres').classList.toggle('active', tab === 'presentations');
+            document.getElementById('sidebar-tab-artifacts').classList.toggle('active', tab === 'artifacts');
             document.getElementById('sidebar-chat-panel').classList.toggle('hidden', tab !== 'chat');
             document.getElementById('sidebar-pres-panel').classList.toggle('hidden', tab !== 'presentations');
+            document.getElementById('sidebar-artifacts-panel').classList.toggle('hidden', tab !== 'artifacts');
             const searchInput = document.getElementById('sidebar-search');
-            searchInput.placeholder = tab === 'chat' ? 'Search conversations\u2026' : 'Search presentations\u2026';
+            searchInput.placeholder = tab === 'chat' ? 'Search conversations\u2026' : tab === 'presentations' ? 'Search presentations\u2026' : 'Search artifacts\u2026';
             searchInput.value = '';
             if (tab === 'presentations') loadPresentations();
+            if (tab === 'artifacts') loadArtifactsSidebar();
         }
 
         function filterSidebarContent(query) {
             if (activeSidebarTab === 'chat') {
                 filterConversations(query);
-            } else {
+            } else if (activeSidebarTab === 'presentations') {
                 filterPresentations(query);
+            } else {
+                filterArtifactsSidebar(query);
             }
         }
 
