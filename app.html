@@ -302,6 +302,48 @@
         #input-bottom-cover { display:none; }
         body.sidebar-open #input-bottom-cover { display:none; }
 
+        /* ── User Artifacts ── */
+        #artifacts-page { position:fixed; inset:0; z-index:200; background:var(--bg); display:none; flex-direction:column; }
+        #artifacts-page.ap2-open { display:flex; animation:pp-page-fade 0.4s ease forwards; }
+        .artifact-card { background:#111; border:1px solid rgba(255,255,255,0.07); border-radius:1rem; overflow:hidden; cursor:pointer; transition:all 0.18s; }
+        .artifact-card:hover { border-color:rgba(124,58,237,0.35); background:#161616; transform:translateY(-2px); box-shadow:0 8px 32px rgba(0,0,0,0.4); }
+        .artifact-thumb { width:100%; aspect-ratio:16/9; background:#0a0a0a; border-bottom:1px solid rgba(255,255,255,0.05); overflow:hidden; position:relative; }
+        .artifact-thumb-iframe-wrap { position:absolute; inset:0; overflow:hidden; }
+        .artifact-thumb-iframe-wrap iframe { width:500%; height:500%; transform:scale(0.2); transform-origin:0 0; pointer-events:none; border:0; background:white; }
+        .artifact-info { padding:0.75rem; }
+        .artifact-title { font-size:0.8rem; font-weight:600; color:#f1f5f9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .artifact-desc { font-size:0.7rem; color:#6b7280; margin-top:0.25rem; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; min-height:2.1em; }
+        .artifact-meta { display:flex; align-items:center; justify-content:space-between; margin-top:0.5rem; }
+        .artifact-author { font-size:0.65rem; color:#4b5563; }
+        .artifact-date { font-size:0.62rem; color:#374151; }
+        /* Sidebar artifact card */
+        .artifact-sidebar-card { display:flex; align-items:center; gap:0.65rem; padding:0.55rem 0.7rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:0.75rem; cursor:pointer; transition:all 0.15s; margin-bottom:0.4rem; }
+        .artifact-sidebar-card:hover { background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.12); }
+        .art-sb-thumb { width:48px; height:32px; border-radius:4px; background:#0d0d0d; border:1px solid rgba(255,255,255,0.08); overflow:hidden; flex-shrink:0; position:relative; }
+        .art-sb-thumb iframe { width:500%; height:500%; transform:scale(0.2); transform-origin:0 0; pointer-events:none; border:0; background:white; }
+        /* Publish modal */
+        #publish-modal { position:fixed; inset:0; z-index:310; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); }
+        #publish-modal.pm-open { display:flex; }
+        /* Artifact viewer */
+        #artifact-viewer-modal { position:fixed; inset:0; z-index:310; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); }
+        #artifact-viewer-modal.avm-open { display:flex; animation:pp-gen-fade 0.3s ease; }
+        /* Artifacts search suggestions */
+        #artifacts-suggestions { transform-origin:top center; }
+        .art-suggestion-item { padding:0.5rem 0.85rem; cursor:pointer; font-size:0.78rem; color:#d1d5db; transition:background 0.1s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .art-suggestion-item:hover, .art-suggestion-item.focused { background:rgba(255,255,255,0.07); }
+        .art-suggestion-highlight { color:#a78bfa; font-weight:600; }
+        /* Publish button in canvas */
+        #canvas-publish-btn { display:flex; align-items:center; gap:0.25rem; padding:0.35rem 0.7rem; font-size:0.68rem; color:#c4b5fd; background:rgba(124,58,237,0.12); border:1px solid rgba(124,58,237,0.25); border-radius:0.5rem; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+        #canvas-publish-btn:hover { background:rgba(124,58,237,0.22); border-color:rgba(124,58,237,0.45); color:#ddd6fe; }
+        /* General toast */
+        #app-toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); z-index:400; padding:0.75rem 1.25rem; border-radius:0.875rem; font-size:0.82rem; font-weight:500; box-shadow:0 8px 32px rgba(0,0,0,0.6); pointer-events:none; opacity:0; transition:opacity 0.25s ease; white-space:nowrap; }
+        #app-toast.toast-visible { opacity:1; }
+        #app-toast.toast-success { background:#052e16; border:1px solid rgba(74,222,128,0.25); color:#4ade80; }
+        #app-toast.toast-error { background:#1a0a0a; border:1px solid rgba(239,68,68,0.25); color:#f87171; }
+        /* Artifacts empty/loading states */
+        #artifacts-empty { flex-direction:column; align-items:center; justify-content:center; }
+        #artifacts-loading { align-items:center; justify-content:center; }
+
         /* ── Code logo ── */
         .cl-seg { stroke:none; transform-origin:center; fill:url(#codeRainbow); }
         .cl-seg-top { animation:clMorphTop 5s infinite cubic-bezier(0.6,0.05,0.01,1); }
@@ -380,10 +422,11 @@
             </button>
         </div>
 
-        <!-- Sidebar tabs: Chat / Presentations -->
+        <!-- Sidebar tabs: Chat / Presentations / Artifacts -->
         <div class="sidebar-tabs px-3">
             <button id="sidebar-tab-chat" class="sidebar-tab active" onclick="switchSidebarTab('chat')">Chat</button>
-            <button id="sidebar-tab-pres" class="sidebar-tab" onclick="switchSidebarTab('presentations')">Presentations</button>
+            <button id="sidebar-tab-pres" class="sidebar-tab" onclick="switchSidebarTab('presentations')">Slides</button>
+            <button id="sidebar-tab-arts" class="sidebar-tab" onclick="switchSidebarTab('artifacts')">Artifacts</button>
         </div>
 
         <!-- Search -->
@@ -412,6 +455,17 @@
             </div>
             <div id="presentations-list">
                 <div class="p-3 text-gray-600 text-sm text-center">No presentations yet</div>
+            </div>
+        </div>
+
+        <!-- Artifacts list (Artifacts tab — hidden by default) -->
+        <div id="sidebar-arts-panel" class="px-3 flex-1 overflow-y-auto min-h-0 hidden">
+            <div class="flex items-center justify-between px-1 mb-2">
+                <p class="text-[10px] text-gray-600 uppercase tracking-widest">User Artifacts</p>
+                <button onclick="openArtifactsPage()" class="text-[10px] text-violet-400 hover:text-violet-300 transition-colors">View all</button>
+            </div>
+            <div id="sidebar-artifacts-list">
+                <div class="p-3 text-gray-600 text-sm text-center">No artifacts yet</div>
             </div>
         </div>
 
@@ -623,6 +677,9 @@
                 <button onclick="copyCanvasCode()" id="canvas-copy-btn"
                     class="flex items-center gap-1 px-2.5 py-1.5 text-[11px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
                     <i data-lucide="copy" class="w-3"></i> Copy
+                </button>
+                <button onclick="openPublishModal()" id="canvas-publish-btn" title="Publish this artifact publicly">
+                    <i data-lucide="upload" class="w-3"></i> Publish
                 </button>
                 <button onclick="closeCanvas()" class="p-1.5 hover:bg-white/10 rounded-lg transition-colors ml-1">
                     <i data-lucide="x" class="w-4 text-gray-400"></i>
@@ -847,6 +904,141 @@
             </div>
         </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PUBLISH ARTIFACT MODAL
+    ═══════════════════════════════════════════════════════ -->
+    <div id="publish-modal">
+        <div class="absolute inset-0" onclick="closePublishModal()"></div>
+        <div class="relative w-[440px] max-w-[95vw] bg-[#111] border border-white/10 rounded-2xl p-5 shadow-2xl mx-4" style="animation:splash-in 0.3s ease">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-violet-950/60 border border-violet-700/30 flex items-center justify-center">
+                        <i data-lucide="upload" class="w-3.5 text-violet-400"></i>
+                    </div>
+                    <h3 class="text-white font-semibold text-sm">Publish Artifact</h3>
+                </div>
+                <button onclick="closePublishModal()" class="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
+                    <i data-lucide="x" class="w-3.5 text-gray-400"></i>
+                </button>
+            </div>
+            <!-- Name -->
+            <div class="mb-3">
+                <label class="text-xs text-gray-500 mb-1.5 block font-medium">Artifact Name</label>
+                <input id="publish-title" type="text" placeholder="Give your artifact a name…"
+                    class="w-full bg-[#1a1a1a] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-violet-600/60 transition-colors placeholder-gray-600"
+                    onkeydown="if(event.key==='Enter') document.getElementById('publish-description').focus()">
+            </div>
+            <!-- Description -->
+            <div class="mb-3">
+                <label class="text-xs text-gray-500 mb-1.5 block font-medium">Description <span class="text-gray-700 font-normal">(optional)</span></label>
+                <textarea id="publish-description" rows="2" placeholder="Describe what this artifact does…"
+                    class="w-full bg-[#1a1a1a] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-violet-600/60 transition-colors placeholder-gray-600 resize-none leading-relaxed"></textarea>
+            </div>
+            <!-- Unique link (read-only) -->
+            <div class="mb-4">
+                <label class="text-xs text-gray-500 mb-1.5 block font-medium">Unique Share Link</label>
+                <div class="flex gap-2">
+                    <input id="publish-link" type="text" readonly
+                        class="flex-1 bg-[#141414] border border-white/5 rounded-xl px-3 py-2 text-gray-500 text-[11px] outline-none font-mono cursor-text select-all"
+                        onclick="this.select()">
+                    <button id="publish-link-copy-btn" onclick="copyPublishLink()"
+                        class="shrink-0 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/8 rounded-xl text-xs text-gray-400 hover:text-white transition-colors">
+                        Copy
+                    </button>
+                </div>
+            </div>
+            <!-- Actions -->
+            <div class="flex gap-2">
+                <button onclick="closePublishModal()" class="flex-1 py-2.5 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Cancel</button>
+                <button onclick="publishArtifact()" id="publish-submit-btn"
+                    class="flex-1 py-2.5 text-sm text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition-colors flex items-center justify-center gap-2 font-medium">
+                    <i data-lucide="upload" class="w-3.5"></i> Publish
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         USER ARTIFACTS FULL-PAGE
+    ═══════════════════════════════════════════════════════ -->
+    <div id="artifacts-page">
+        <!-- Top bar -->
+        <div class="flex items-center gap-3 px-5 py-4 border-b border-white/5 shrink-0 bg-[#0a0a0a]/95 backdrop-blur-md">
+            <button onclick="closeArtifactsPage()" class="w-8 h-8 flex items-center justify-center bg-white/6 hover:bg-white/12 border border-white/8 rounded-full transition-colors group">
+                <i data-lucide="arrow-left" class="w-3.5 text-gray-400 group-hover:text-white group-hover:-translate-x-0.5 transition-all"></i>
+            </button>
+            <div class="flex items-center gap-2">
+                <i data-lucide="box" class="w-4 text-violet-400"></i>
+                <span class="text-white font-semibold text-sm">User Artifacts</span>
+                <span id="artifacts-count-badge" class="text-[10px] text-gray-600 hidden"></span>
+            </div>
+            <!-- Search -->
+            <div class="flex-1 max-w-sm ml-auto relative">
+                <i data-lucide="search" class="w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"></i>
+                <input id="artifacts-search" type="text" placeholder="Search artifacts…"
+                    autocomplete="off" spellcheck="false"
+                    class="w-full bg-white/5 border border-white/8 rounded-xl pl-9 pr-3 py-2 text-sm text-gray-300 placeholder-gray-600 outline-none focus:border-violet-600/40 transition-all"
+                    oninput="filterArtifactsPage(this.value)"
+                    onkeydown="handleArtifactsSearchKeydown(event)"
+                    onfocus="showArtifactsSuggestions(this.value)"
+                    onblur="setTimeout(hideArtifactsSuggestions, 180)">
+                <!-- Live suggestions dropdown -->
+                <div id="artifacts-suggestions" class="absolute top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-2xl hidden z-20"></div>
+            </div>
+        </div>
+        <!-- Grid content -->
+        <div class="flex-1 overflow-y-auto p-5">
+            <div id="artifacts-loading" class="hidden py-20 flex items-center justify-center">
+                <div class="w-8 h-8 border-2 border-violet-900/50 border-t-violet-500 rounded-full" style="animation:cpl-spin 0.8s linear infinite"></div>
+            </div>
+            <div id="artifacts-empty" class="hidden py-20 flex flex-col items-center justify-center text-center">
+                <div class="w-16 h-16 rounded-2xl bg-violet-950/30 border border-violet-800/20 flex items-center justify-center mb-4">
+                    <i data-lucide="box" class="w-7 text-violet-400"></i>
+                </div>
+                <p class="text-gray-400 text-sm font-medium mb-1">No artifacts yet</p>
+                <p class="text-gray-600 text-xs max-w-xs">Be the first to publish a creation from the Canvas using the Publish button</p>
+            </div>
+            <div id="artifacts-grid" class="grid grid-cols-1 gap-4" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">
+                <!-- Artifact cards injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         ARTIFACT VIEWER MODAL
+    ═══════════════════════════════════════════════════════ -->
+    <div id="artifact-viewer-modal">
+        <div class="absolute inset-0" onclick="closeArtifactViewer()"></div>
+        <div class="relative flex flex-col bg-[#0d0d0d] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
+             style="width:min(92vw,1100px);height:min(88vh,720px)">
+            <!-- Viewer toolbar -->
+            <div class="flex items-center gap-3 px-4 py-3 border-b border-white/6 shrink-0 bg-[#0d0d0d]">
+                <button onclick="closeArtifactViewer()" class="w-7 h-7 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors">
+                    <i data-lucide="x" class="w-3.5 text-gray-400"></i>
+                </button>
+                <div class="flex-1 min-w-0">
+                    <p id="artifact-viewer-title" class="text-white font-semibold text-sm truncate"></p>
+                    <p id="artifact-viewer-desc" class="text-gray-500 text-xs truncate mt-0.5"></p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <span id="artifact-viewer-author" class="text-xs text-gray-600"></span>
+                    <button onclick="copyArtifactViewerLink()" id="artifact-viewer-share-btn"
+                        class="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 hover:bg-white/10 border border-white/8 rounded-lg text-xs text-gray-400 hover:text-white transition-colors">
+                        <i data-lucide="link" class="w-3"></i> Share
+                    </button>
+                </div>
+            </div>
+            <!-- Iframe -->
+            <div class="flex-1 relative bg-white">
+                <iframe id="artifact-viewer-iframe" class="w-full h-full border-0"
+                    sandbox="allow-scripts allow-same-origin allow-modals allow-forms allow-popups"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- General app toast -->
+    <div id="app-toast"></div>
 
     <!-- ═══════════════════════════════════════════════════════
          SPLASH SCREEN / WHAT'S NEW
@@ -1936,25 +2128,32 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             renderConversationList(filtered);
         }
 
-        // ── Sidebar tabs (Chat / Presentations) ──────────────────
+        // ── Sidebar tabs (Chat / Presentations / Artifacts) ──────
         let activeSidebarTab = 'chat';
         function switchSidebarTab(tab) {
             activeSidebarTab = tab;
             document.getElementById('sidebar-tab-chat').classList.toggle('active', tab === 'chat');
             document.getElementById('sidebar-tab-pres').classList.toggle('active', tab === 'presentations');
+            document.getElementById('sidebar-tab-arts').classList.toggle('active', tab === 'artifacts');
             document.getElementById('sidebar-chat-panel').classList.toggle('hidden', tab !== 'chat');
             document.getElementById('sidebar-pres-panel').classList.toggle('hidden', tab !== 'presentations');
+            document.getElementById('sidebar-arts-panel').classList.toggle('hidden', tab !== 'artifacts');
             const searchInput = document.getElementById('sidebar-search');
-            searchInput.placeholder = tab === 'chat' ? 'Search conversations\u2026' : 'Search presentations\u2026';
+            searchInput.placeholder = tab === 'chat' ? 'Search conversations\u2026'
+                : tab === 'presentations' ? 'Search presentations\u2026'
+                : 'Search artifacts\u2026';
             searchInput.value = '';
             if (tab === 'presentations') loadPresentations();
+            if (tab === 'artifacts') loadArtifactsSidebar();
         }
 
         function filterSidebarContent(query) {
             if (activeSidebarTab === 'chat') {
                 filterConversations(query);
-            } else {
+            } else if (activeSidebarTab === 'presentations') {
                 filterPresentations(query);
+            } else {
+                filterArtifactsSidebar(query);
             }
         }
 
@@ -3470,6 +3669,332 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             // Show scroll-to-bottom if user scrolled away during generation
             if (!userIsNearBottom) showScrollToBottom();
             input.focus();
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  USER ARTIFACTS
+        // ═══════════════════════════════════════════════════════
+
+        let allArtifactsSidebar = [];
+        let allArtifactsPage = [];
+        let artifactSuggestFocusIdx = -1;
+        let currentViewerArtifact = null;
+
+        // ── Unique slug generator ─────────────────────────────
+        function generateArtifactSlug() {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let r = '';
+            for (let i = 0; i < 12; i++) r += chars[Math.floor(Math.random() * chars.length)];
+            return r + Date.now().toString(36).slice(-4);
+        }
+
+        // ── General toast ─────────────────────────────────────
+        function showAppToast(msg, type = 'success') {
+            const el = document.getElementById('app-toast');
+            el.textContent = msg;
+            el.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-[400] px-4 py-3 rounded-xl text-sm font-medium shadow-xl pointer-events-none toast-visible toast-${type}`;
+            clearTimeout(el._toastTimer);
+            el._toastTimer = setTimeout(() => {
+                el.classList.remove('toast-visible');
+            }, 3000);
+        }
+
+        // ── Publish modal ─────────────────────────────────────
+        function openPublishModal() {
+            if (!monacoEditor) { showAppToast('Open the canvas first.', 'error'); return; }
+            const code = monacoEditor.getValue();
+            if (!code || code.trim() === '// Generating\u2026') {
+                showAppToast('Nothing to publish yet.', 'error'); return;
+            }
+            // Pre-fill name from canvas title
+            document.getElementById('publish-title').value = canvasTitle || '';
+            document.getElementById('publish-description').value = '';
+            // Generate unique slug + link
+            const slug = generateArtifactSlug();
+            const link = window.location.origin + '/artifact/' + slug;
+            const linkEl = document.getElementById('publish-link');
+            linkEl.value = link;
+            linkEl.dataset.slug = slug;
+            document.getElementById('publish-link-copy-btn').textContent = 'Copy';
+            const modal = document.getElementById('publish-modal');
+            modal.classList.add('pm-open');
+            lucide.createIcons();
+            setTimeout(() => document.getElementById('publish-title').focus(), 60);
+        }
+
+        function closePublishModal() {
+            document.getElementById('publish-modal').classList.remove('pm-open');
+        }
+
+        function copyPublishLink() {
+            const link = document.getElementById('publish-link').value;
+            navigator.clipboard.writeText(link).then(() => {
+                const btn = document.getElementById('publish-link-copy-btn');
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+            });
+        }
+
+        async function publishArtifact() {
+            const title = document.getElementById('publish-title').value.trim();
+            if (!title) {
+                document.getElementById('publish-title').focus();
+                document.getElementById('publish-title').style.borderColor = 'rgba(239,68,68,0.6)';
+                setTimeout(() => document.getElementById('publish-title').style.borderColor = '', 1500);
+                return;
+            }
+            const description = document.getElementById('publish-description').value.trim();
+            const slug = document.getElementById('publish-link').dataset.slug;
+            const code = monacoEditor ? monacoEditor.getValue() : '';
+            const userName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.email || 'Anonymous';
+
+            const btn = document.getElementById('publish-submit-btn');
+            const origHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid rgba(167,139,250,0.3);border-top-color:#a78bfa;border-radius:50%;animation:cpl-spin 0.7s linear infinite"></div>';
+
+            try {
+                const res = await fetch('/api/artifacts', {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ userId: currentUser.id, userName, title, description, code, slug })
+                });
+                if (!res.ok) throw new Error('publish failed');
+                closePublishModal();
+                showAppToast('\u2713 Artifact published!', 'success');
+                // Refresh sidebar artifacts if the tab is active
+                if (activeSidebarTab === 'artifacts') loadArtifactsSidebar();
+            } catch (_) {
+                showAppToast('Failed to publish. Try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHTML;
+                lucide.createIcons();
+            }
+        }
+
+        // ── Sidebar artifacts ─────────────────────────────────
+        async function loadArtifactsSidebar() {
+            try {
+                const res = await fetch('/api/artifacts');
+                if (!res.ok) return;
+                const data = await res.json();
+                allArtifactsSidebar = data || [];
+                renderSidebarArtifactsList(allArtifactsSidebar);
+            } catch (_) {}
+        }
+
+        function filterArtifactsSidebar(query) {
+            const q = query.trim().toLowerCase();
+            if (!q) { renderSidebarArtifactsList(allArtifactsSidebar); return; }
+            renderSidebarArtifactsList(
+                allArtifactsSidebar.filter(a =>
+                    a.title.toLowerCase().includes(q) || (a.description || '').toLowerCase().includes(q)
+                )
+            );
+        }
+
+        function renderSidebarArtifactsList(arts) {
+            const list = document.getElementById('sidebar-artifacts-list');
+            if (!arts || !arts.length) {
+                list.innerHTML = '<div class="p-3 text-gray-600 text-sm text-center">No artifacts yet</div>';
+                return;
+            }
+            list.innerHTML = arts.slice(0, 15).map(a => `
+                <div class="artifact-sidebar-card" onclick='openArtifactViewer(${JSON.stringify(a)})'>
+                    <div class="art-sb-thumb">
+                        <iframe srcdoc="${escapeHtml(a.code || '')}" sandbox="allow-scripts" title="${escapeHtml(a.title)}"></iframe>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs text-gray-300 font-medium truncate">${escapeHtml(a.title)}</p>
+                        <p class="text-[10px] text-gray-600 mt-0.5 truncate">${escapeHtml(a.user_name || 'Unknown')}</p>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-3 text-gray-600 shrink-0"></i>
+                </div>`).join('');
+            lucide.createIcons();
+        }
+
+        // ── Artifacts full-page ───────────────────────────────
+        async function openArtifactsPage() {
+            toggleSidebar(false);
+            const page = document.getElementById('artifacts-page');
+            page.style.animation = 'none'; page.offsetHeight; page.style.animation = '';
+            page.classList.add('ap2-open');
+            lucide.createIcons();
+            document.getElementById('artifacts-search').value = '';
+            await loadArtifactsPageData();
+        }
+
+        function closeArtifactsPage() {
+            document.getElementById('artifacts-page').classList.remove('ap2-open');
+        }
+
+        async function loadArtifactsPageData() {
+            const grid = document.getElementById('artifacts-grid');
+            const loadEl = document.getElementById('artifacts-loading');
+            const emptyEl = document.getElementById('artifacts-empty');
+            grid.innerHTML = '';
+            loadEl.classList.remove('hidden'); loadEl.classList.add('flex');
+            emptyEl.classList.add('hidden');
+            try {
+                const res = await fetch('/api/artifacts');
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                allArtifactsPage = data || [];
+                loadEl.classList.add('hidden'); loadEl.classList.remove('flex');
+                renderArtifactsGrid(allArtifactsPage);
+                const badge = document.getElementById('artifacts-count-badge');
+                badge.textContent = allArtifactsPage.length + ' artifact' + (allArtifactsPage.length !== 1 ? 's' : '');
+                badge.classList.remove('hidden');
+            } catch (_) {
+                loadEl.classList.add('hidden'); loadEl.classList.remove('flex');
+                renderArtifactsGrid([]);
+            }
+        }
+
+        function renderArtifactsGrid(arts) {
+            const grid = document.getElementById('artifacts-grid');
+            const emptyEl = document.getElementById('artifacts-empty');
+            if (!arts || !arts.length) {
+                grid.innerHTML = '';
+                emptyEl.classList.remove('hidden'); emptyEl.classList.add('flex');
+                return;
+            }
+            emptyEl.classList.add('hidden');
+            grid.innerHTML = arts.map(a => {
+                const dateStr = a.created_at ? new Date(a.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+                return `
+                <div class="artifact-card" onclick='openArtifactViewer(${JSON.stringify(a)})'>
+                    <div class="artifact-thumb">
+                        <div class="artifact-thumb-iframe-wrap">
+                            <iframe srcdoc="${escapeHtml(a.code || '')}" sandbox="allow-scripts" title="${escapeHtml(a.title)}" loading="lazy"></iframe>
+                        </div>
+                    </div>
+                    <div class="artifact-info">
+                        <p class="artifact-title">${escapeHtml(a.title)}</p>
+                        <p class="artifact-desc">${escapeHtml(a.description || '\u00a0')}</p>
+                        <div class="artifact-meta">
+                            <span class="artifact-author">${escapeHtml(a.user_name || 'Anonymous')}</span>
+                            <span class="artifact-date">${dateStr}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ── Artifacts page search + suggestions ───────────────
+        function filterArtifactsPage(query) {
+            const q = query.trim().toLowerCase();
+            artifactSuggestFocusIdx = -1;
+            if (!q) {
+                renderArtifactsGrid(allArtifactsPage);
+                showArtifactsSuggestions('');
+                return;
+            }
+            const filtered = allArtifactsPage.filter(a =>
+                a.title.toLowerCase().includes(q) || (a.description || '').toLowerCase().includes(q)
+            );
+            renderArtifactsGrid(filtered);
+            showArtifactsSuggestions(q);
+        }
+
+        function showArtifactsSuggestions(q) {
+            const drop = document.getElementById('artifacts-suggestions');
+            if (!q || !q.trim()) { drop.classList.add('hidden'); return; }
+            const qLow = q.toLowerCase();
+            const matches = allArtifactsPage
+                .filter(a => a.title.toLowerCase().includes(qLow))
+                .slice(0, 6);
+            if (!matches.length) { drop.classList.add('hidden'); return; }
+            drop.innerHTML = matches.map((a, i) => {
+                const idx = a.title.toLowerCase().indexOf(qLow);
+                const before = escapeHtml(a.title.slice(0, idx));
+                const match = escapeHtml(a.title.slice(idx, idx + q.length));
+                const after = escapeHtml(a.title.slice(idx + q.length));
+                return `<div class="art-suggestion-item" data-idx="${i}" onmousedown="selectArtifactSuggestion('${escapeHtml(a.title).replace(/'/g,"\\'")}')">
+                    ${before}<span class="art-suggestion-highlight">${match}</span>${after}
+                    <span style="font-size:0.62rem;color:#4b5563;margin-left:0.35rem">${escapeHtml(a.user_name || '')}</span>
+                </div>`;
+            }).join('');
+            drop.classList.remove('hidden');
+        }
+
+        function hideArtifactsSuggestions() {
+            document.getElementById('artifacts-suggestions').classList.add('hidden');
+            artifactSuggestFocusIdx = -1;
+        }
+
+        function selectArtifactSuggestion(title) {
+            const searchEl = document.getElementById('artifacts-search');
+            searchEl.value = title;
+            filterArtifactsPage(title);
+            hideArtifactsSuggestions();
+        }
+
+        function handleArtifactsSearchKeydown(e) {
+            const drop = document.getElementById('artifacts-suggestions');
+            const items = drop.querySelectorAll('.art-suggestion-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                artifactSuggestFocusIdx = Math.min(artifactSuggestFocusIdx + 1, items.length - 1);
+                items.forEach((el, i) => el.classList.toggle('focused', i === artifactSuggestFocusIdx));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                artifactSuggestFocusIdx = Math.max(artifactSuggestFocusIdx - 1, -1);
+                items.forEach((el, i) => el.classList.toggle('focused', i === artifactSuggestFocusIdx));
+            } else if (e.key === 'Enter' && artifactSuggestFocusIdx >= 0 && items[artifactSuggestFocusIdx]) {
+                e.preventDefault();
+                const title = items[artifactSuggestFocusIdx].dataset.title || items[artifactSuggestFocusIdx].textContent.trim().split('\u00a0')[0];
+                const searchEl = document.getElementById('artifacts-search');
+                searchEl.value = title;
+                filterArtifactsPage(title);
+                hideArtifactsSuggestions();
+            } else if (e.key === 'Escape') {
+                hideArtifactsSuggestions();
+            }
+        }
+
+        // ── Artifact viewer modal ─────────────────────────────
+        function openArtifactViewer(artifactData) {
+            // artifactData may be an object (from inline onclick) or we need to fetch full code
+            currentViewerArtifact = artifactData;
+            document.getElementById('artifact-viewer-title').textContent = artifactData.title || '';
+            document.getElementById('artifact-viewer-desc').textContent = artifactData.description || '';
+            document.getElementById('artifact-viewer-author').textContent = 'by ' + (artifactData.user_name || 'Anonymous');
+            const iframe = document.getElementById('artifact-viewer-iframe');
+            if (artifactData.code) {
+                iframe.srcdoc = artifactData.code;
+            } else {
+                // Fetch full code if not available (sidebar cards don't include code)
+                iframe.srcdoc = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a0a;color:#6b7280;font-family:sans-serif;font-size:0.9rem">Loading…</div>';
+                fetch('/api/artifacts?id=' + encodeURIComponent(artifactData.id))
+                    .then(r => r.json())
+                    .then(data => { if (data && data.code) { iframe.srcdoc = data.code; currentViewerArtifact = data; } })
+                    .catch(() => {});
+            }
+            const modal = document.getElementById('artifact-viewer-modal');
+            modal.classList.add('avm-open');
+            lucide.createIcons();
+        }
+
+        function closeArtifactViewer() {
+            document.getElementById('artifact-viewer-modal').classList.remove('avm-open');
+            document.getElementById('artifact-viewer-iframe').srcdoc = '';
+            currentViewerArtifact = null;
+        }
+
+        function copyArtifactViewerLink() {
+            if (!currentViewerArtifact) return;
+            const link = window.location.origin + '/artifact/' + (currentViewerArtifact.slug || currentViewerArtifact.id);
+            navigator.clipboard.writeText(link).then(() => {
+                const btn = document.getElementById('artifact-viewer-share-btn');
+                btn.innerHTML = '<i data-lucide="check" class="w-3"></i> Copied!';
+                lucide.createIcons();
+                setTimeout(() => {
+                    btn.innerHTML = '<i data-lucide="link" class="w-3"></i> Share';
+                    lucide.createIcons();
+                }, 2000);
+            });
         }
     </script>
 </body>
