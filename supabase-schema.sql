@@ -36,6 +36,25 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "service_all_conversations" ON conversations FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "service_all_messages"      ON messages      FOR ALL USING (true) WITH CHECK (true);
 
+-- Artifacts table (public — all users can view each other's artifacts)
+CREATE TABLE artifacts (
+    id          UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id     TEXT        NOT NULL,
+    user_name   TEXT        NOT NULL DEFAULT 'Anonymous',
+    title       TEXT        NOT NULL,
+    description TEXT        DEFAULT '',
+    code        TEXT        NOT NULL,
+    slug        TEXT        UNIQUE NOT NULL,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_artifacts_created_at ON artifacts(created_at DESC);
+CREATE INDEX idx_artifacts_user_id ON artifacts(user_id);
+CREATE INDEX idx_artifacts_slug ON artifacts(slug);
+
+ALTER TABLE artifacts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "service_all_artifacts" ON artifacts FOR ALL USING (true) WITH CHECK (true);
+
 -- ============================================================
 -- After running this SQL, add these to your Vercel env vars:
 --   SUPABASE_URL          → Project Settings → API → Project URL
