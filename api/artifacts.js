@@ -27,7 +27,7 @@ module.exports = async function handler(req, res) {
 
             if (id) {
                 const r = await fetch(
-                    `${SUPABASE_URL}/rest/v1/artifacts?id=eq.${encodeURIComponent(id)}&select=id,user_id,user_name,title,description,code,slug,created_at`,
+                    `${SUPABASE_URL}/rest/v1/artifacts?id=eq.${encodeURIComponent(id)}&select=id,user_id,user_name,title,description,code,created_at`,
                     { headers: sbHeaders }
                 );
                 const data = await r.json();
@@ -37,10 +37,9 @@ module.exports = async function handler(req, res) {
                 return res.json(data[0]);
             }
 
-            let url = `${SUPABASE_URL}/rest/v1/artifacts?select=id,user_id,user_name,title,description,slug,created_at&order=created_at.desc`;
+            let url = `${SUPABASE_URL}/rest/v1/artifacts?select=id,user_id,user_name,title,description,created_at&order=created_at.desc`;
 
             if (search) {
-                // Full-text search on title + description
                 const q = encodeURIComponent(`%${search}%`);
                 url += `&or=(title.ilike.${q},description.ilike.${q})`;
             }
@@ -52,9 +51,9 @@ module.exports = async function handler(req, res) {
 
         // POST /api/artifacts — publish a new artifact
         if (req.method === 'POST') {
-            const { userId, userName, title, description, code, slug } = req.body || {};
-            if (!userId || !title || !code || !slug) {
-                return res.status(400).json({ error: 'userId, title, code, and slug required' });
+            const { userId, userName, title, description, code } = req.body || {};
+            if (!userId || !title || !code) {
+                return res.status(400).json({ error: 'userId, title, and code required' });
             }
 
             const r = await fetch(`${SUPABASE_URL}/rest/v1/artifacts`, {
@@ -65,8 +64,7 @@ module.exports = async function handler(req, res) {
                     user_name: (userName || 'Anonymous').slice(0, 100),
                     title: title.slice(0, 200),
                     description: (description || '').slice(0, 500),
-                    code: code,
-                    slug: slug.slice(0, 80)
+                    code: code
                 })
             });
             const data = await r.json();
@@ -81,7 +79,6 @@ module.exports = async function handler(req, res) {
             const { id } = req.query;
             if (!id) return res.status(400).json({ error: 'id required' });
 
-            // Extract userId from Authorization header to verify ownership
             const authHeader = req.headers['authorization'] || '';
             const token = authHeader.replace('Bearer ', '');
             let userId = null;
@@ -95,7 +92,6 @@ module.exports = async function handler(req, res) {
                 } catch (_) {}
             }
 
-            // Fetch the artifact to verify ownership
             const checkR = await fetch(
                 `${SUPABASE_URL}/rest/v1/artifacts?id=eq.${encodeURIComponent(id)}&select=user_id`,
                 { headers: sbHeaders }
