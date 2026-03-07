@@ -3594,7 +3594,10 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 }
                 currentUser.two_fa_enabled = enabled;
                 localStorage.setItem('clarity_user', JSON.stringify(currentUser));
-                showAccountToast(enabled ? '2FA enabled. Emails will be sent on login.' : '2FA disabled.', 'success');
+                // If 2FA was just enabled, clear the session gate flag so it
+                // triggers on the next page load even in the same browser session.
+                if (enabled) sessionStorage.removeItem('clarity_2fa_ok');
+                showAccountToast(enabled ? '2FA enabled. You\'ll be asked to verify on next load.' : '2FA disabled.', 'success');
             } catch {
                 track.classList.toggle('on', !enabled);
                 label.textContent = !enabled ? 'Enabled' : 'Disabled';
