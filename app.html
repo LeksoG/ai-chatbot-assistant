@@ -1503,8 +1503,12 @@
                     if (profile) {
                         if (profile.first_name) currentUser.first_name = profile.first_name;
                         if (profile.last_name)  currentUser.last_name  = profile.last_name;
-                        // Always sync 2FA state from the database
-                        currentUser.two_fa_enabled = !!profile.two_fa_enabled;
+                        // Only sync 2FA from DB when the field is explicitly present.
+                        // If the users row is missing, the API returns {} (no two_fa_enabled),
+                        // and !!undefined = false would wrongly overwrite the cached true.
+                        if ('two_fa_enabled' in profile) {
+                            currentUser.two_fa_enabled = !!profile.two_fa_enabled;
+                        }
                         localStorage.setItem('clarity_user', JSON.stringify(currentUser));
                         updateUserUI();
                     }
