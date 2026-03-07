@@ -1,6 +1,6 @@
 module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
@@ -19,15 +19,16 @@ module.exports = async function handler(req, res) {
     };
 
     try {
-        // GET /api/artifacts — list all artifacts (public)
-        // GET /api/artifacts?id=xxx — get single artifact with code
-        // GET /api/artifacts?search=xxx — search artifacts by title/description
+        // GET /api/artifacts               — list all public artifacts
+        // GET /api/artifacts?id=xxx         — get single artifact with code
+        // GET /api/artifacts?search=xxx     — search public artifacts
+        // GET /api/artifacts?userId=xxx     — list all artifacts owned by userId (incl. private)
         if (req.method === 'GET') {
-            const { id, search } = req.query;
+            const { id, search, userId } = req.query;
 
             if (id) {
                 const r = await fetch(
-                    `${SUPABASE_URL}/rest/v1/artifacts?id=eq.${encodeURIComponent(id)}&select=id,user_id,user_name,title,description,code,created_at`,
+                    `${SUPABASE_URL}/rest/v1/artifacts?id=eq.${encodeURIComponent(id)}&select=id,user_id,user_name,title,description,code,created_at,likes,is_private`,
                     { headers: sbHeaders }
                 );
                 const data = await r.json();
@@ -37,7 +38,15 @@ module.exports = async function handler(req, res) {
                 return res.json(data[0]);
             }
 
-            let url = `${SUPABASE_URL}/rest/v1/artifacts?select=id,user_id,user_name,title,description,created_at&order=created_at.desc`;
+            let url = `${SUPABASE_URL}/rest/v1/artifacts?select=id,user_id,user_name,title,description,created_at,likes,is_private&order=created_at.desc`;
+
+            if (userId) {
+                // Owner fetching their own artifacts (all, including private)
+                url += `&user_id=eq.${encodeURIComponent(userId)}`;
+            } else {
+                // Public listing — only non-private artifacts
+                url += `&is_private=eq.false`;
+            }
 
             if (search) {
                 const q = encodeURIComponent(`%${search}%`);
@@ -51,7 +60,7 @@ module.exports = async function handler(req, res) {
 
         // POST /api/artifacts — publish a new artifact
         if (req.method === 'POST') {
-            const { userId, userName, title, description, code } = req.body || {};
+            const { userId, userName, title, description, code, is_private } = req.body || {};
             if (!userId || !title || !code) {
                 return res.status(400).json({ error: 'userId, title, and code required' });
             }
@@ -64,7 +73,8 @@ module.exports = async function handler(req, res) {
                     user_name: (userName || 'Anonymous').slice(0, 100),
                     title: title.slice(0, 200),
                     description: (description || '').slice(0, 500),
-                    code: code
+                    code: code,
+                    is_private: !!is_private
                 })
             });
             const data = await r.json();
@@ -120,10 +130,11 @@ module.exports = async function handler(req, res) {
                 if (checkData[0].user_id !== userId) return res.status(403).json({ error: 'Not authorized' });
             }
 
-            const { title, description } = req.body || {};
+            const { title, description, is_private } = req.body || {};
             const updateData = {};
             if (title) updateData.title = title.slice(0, 200);
             if (description !== undefined) updateData.description = description.slice(0, 500);
+            if (is_private !== undefined) updateData.is_private = !!is_private;
             if (Object.keys(updateData).length === 0) return res.status(400).json({ error: 'Nothing to update' });
 
             await fetch(`${SUPABASE_URL}/rest/v1/artifacts?id=eq.${encodeURIComponent(id)}`, {

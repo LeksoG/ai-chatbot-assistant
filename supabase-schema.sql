@@ -79,6 +79,9 @@ ALTER TABLE artifacts DROP COLUMN IF EXISTS slug;
 -- Add likes column for artifact reactions
 ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS likes INTEGER DEFAULT 0;
 
+-- Add is_private column for private artifacts
+ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS is_private BOOLEAN DEFAULT false;
+
 CREATE INDEX IF NOT EXISTS idx_artifacts_created_at ON artifacts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_artifacts_user_id    ON artifacts(user_id);
 
