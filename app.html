@@ -2201,6 +2201,8 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 prevPan.classList.remove('hidden'); codePan.classList.add('hidden');
                 tabP.classList.add('active');    tabC.classList.remove('active');
                 updateCanvasPreview();
+                // Capture when preview is visible so the iframe has real dimensions
+                captureCanvasPreview();
             }
         }
 
@@ -4383,15 +4385,9 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     img.alt = '';
                     thumb.appendChild(img);
                 } else {
-                    const wrap = document.createElement('div');
-                    wrap.className = 'artifact-thumb-iframe-wrap';
-                    const iframe = document.createElement('iframe');
-                    iframe.sandbox = 'allow-scripts';
-                    iframe.title = a.title || '';
-                    iframe.loading = 'lazy';
-                    iframe.srcdoc = a.code || '';
-                    wrap.appendChild(iframe);
-                    thumb.appendChild(wrap);
+                    // No snapshot yet — show a placeholder with the artifact title
+                    thumb.style.cssText = 'display:flex;align-items:center;justify-content:center;background:#0d0d0d;';
+                    thumb.innerHTML = `<span style="color:#374151;font-size:0.65rem;text-align:center;padding:0.5rem;line-height:1.4;max-width:90%">${escapeHtml(a.title || 'Preview unavailable')}</span>`;
                 }
             });
             lucide.createIcons();
