@@ -38,7 +38,7 @@ module.exports = async function handler(req, res) {
                 return res.json(data[0]);
             }
 
-            let url = `${SUPABASE_URL}/rest/v1/artifacts?select=id,user_id,user_name,title,description,created_at,likes,is_private&order=created_at.desc`;
+            let url = `${SUPABASE_URL}/rest/v1/artifacts?select=id,user_id,user_name,title,description,created_at,likes,is_private,snapshot_url&order=created_at.desc`;
 
             if (userId) {
                 // Owner fetching their own artifacts (all, including private)
@@ -60,22 +60,25 @@ module.exports = async function handler(req, res) {
 
         // POST /api/artifacts — publish a new artifact
         if (req.method === 'POST') {
-            const { userId, userName, title, description, code, is_private } = req.body || {};
+            const { userId, userName, title, description, code, is_private, snapshot_url } = req.body || {};
             if (!userId || !title || !code) {
                 return res.status(400).json({ error: 'userId, title, and code required' });
             }
 
+            const insertData = {
+                user_id: userId,
+                user_name: (userName || 'Anonymous').slice(0, 100),
+                title: title.slice(0, 200),
+                description: (description || '').slice(0, 500),
+                code: code,
+                is_private: !!is_private
+            };
+            if (snapshot_url) insertData.snapshot_url = snapshot_url;
+
             const r = await fetch(`${SUPABASE_URL}/rest/v1/artifacts`, {
                 method: 'POST',
                 headers: { ...sbHeaders, 'Prefer': 'return=representation' },
-                body: JSON.stringify({
-                    user_id: userId,
-                    user_name: (userName || 'Anonymous').slice(0, 100),
-                    title: title.slice(0, 200),
-                    description: (description || '').slice(0, 500),
-                    code: code,
-                    is_private: !!is_private
-                })
+                body: JSON.stringify(insertData)
             });
             const data = await r.json();
             if (!r.ok) {
