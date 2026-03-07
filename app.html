@@ -3654,6 +3654,16 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         }
 
         // ── 2FA session gate ─────────────────────────────────────
+        function checkEmailSendResult(data) {
+            if (data.emailOk === false) {
+                const status = data.emailStatus || 0;
+                showGateAlert(
+                    `Email failed to send (EmailJS status ${status}). ` +
+                    `Check that EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY, and EMAILJS_PRIVATE_KEY are set correctly. ` +
+                    `Server error: ${data.emailError || 'unknown'}`
+                );
+            }
+        }
         async function initTwofaGate() {
             const gate = document.getElementById('twofa-gate');
             document.getElementById('twofa-gate-email').textContent = currentUser.email || '';
@@ -3666,9 +3676,11 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: currentUser.email, access_token: authToken })
                 });
+                const data = await r.json().catch(() => ({}));
                 if (!r.ok) {
-                    const data = await r.json().catch(() => ({}));
                     showGateAlert(data.error || 'Failed to send verification code. Please reload and try again.');
+                } else {
+                    checkEmailSendResult(data);
                 }
             } catch (_) {
                 showGateAlert('Failed to send verification code. Check your connection.');
@@ -3718,13 +3730,21 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             btn.textContent = 'Sending…';
             document.getElementById('twofa-gate-alert').classList.add('hidden');
             try {
-                await fetch('/api/auth/send-2fa-code', {
+                const r = await fetch('/api/auth/send-2fa-code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: currentUser.email, access_token: authToken })
                 });
-                btn.textContent = 'Sent!';
-                setTimeout(() => { btn.textContent = 'Resend'; btn.disabled = false; }, 4000);
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok) {
+                    btn.textContent = 'Resend';
+                    btn.disabled = false;
+                    showGateAlert(data.error || 'Could not resend code.');
+                } else {
+                    checkEmailSendResult(data);
+                    btn.textContent = 'Sent!';
+                    setTimeout(() => { btn.textContent = 'Resend'; btn.disabled = false; }, 4000);
+                }
             } catch (_) {
                 btn.textContent = 'Resend';
                 btn.disabled = false;
