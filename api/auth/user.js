@@ -77,14 +77,24 @@ module.exports = async function handler(req, res) {
             if (two_fa_enabled !== undefined) profileUpdates.two_fa_enabled = two_fa_enabled;
 
             if (Object.keys(profileUpdates).length) {
-                const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${authUser.id}`, {
-                    method: 'PATCH',
-                    headers: sbHeaders,
-                    body: JSON.stringify(profileUpdates)
+                // Use upsert so the row is created if it doesn't exist yet,
+                // rather than silently updating 0 rows with a plain PATCH.
+                const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/users`, {
+                    method: 'POST',
+                    headers: {
+                        ...sbHeaders,
+                        'Prefer': 'resolution=merge-duplicates,return=minimal'
+                    },
+                    body: JSON.stringify({
+                        id: authUser.id,
+                        email: authUser.email || '',
+                        ...profileUpdates,
+                        updated_at: new Date().toISOString()
+                    })
                 });
                 if (!patchRes.ok) {
                     const errBody = await patchRes.text().catch(() => '');
-                    console.error('[user.js] PATCH failed:', patchRes.status, errBody);
+                    console.error('[user.js] upsert failed:', patchRes.status, errBody);
                     return res.status(500).json({ error: 'Failed to update profile.' });
                 }
             }
