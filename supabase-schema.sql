@@ -93,6 +93,27 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- Two-FA codes (temporary codes for 2FA login and session gate)
+CREATE TABLE IF NOT EXISTS two_fa_codes (
+    id           UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id      TEXT        NOT NULL,
+    email        TEXT        NOT NULL,
+    code         TEXT        NOT NULL,
+    access_token TEXT        DEFAULT '',
+    expires_at   TIMESTAMPTZ NOT NULL,
+    created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_two_fa_codes_user_id ON two_fa_codes(user_id);
+
+ALTER TABLE two_fa_codes ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='two_fa_codes' AND policyname='service_all_two_fa_codes') THEN
+    CREATE POLICY "service_all_two_fa_codes" ON two_fa_codes FOR ALL USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+
 -- ============================================================
 -- After running this SQL, add these to your Vercel env vars:
 --   SUPABASE_URL          → Project Settings → API → Project URL
