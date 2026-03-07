@@ -76,6 +76,9 @@ CREATE TABLE IF NOT EXISTS artifacts (
 -- Drop slug column if it exists from a previous schema version
 ALTER TABLE artifacts DROP COLUMN IF EXISTS slug;
 
+-- Add likes column for artifact reactions
+ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS likes INTEGER DEFAULT 0;
+
 CREATE INDEX IF NOT EXISTS idx_artifacts_created_at ON artifacts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_artifacts_user_id    ON artifacts(user_id);
 

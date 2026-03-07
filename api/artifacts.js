@@ -74,6 +74,66 @@ module.exports = async function handler(req, res) {
             return res.status(201).json(Array.isArray(data) ? data[0] : data);
         }
 
+        // PATCH /api/artifacts?id=xxx — edit title/description (owner) or like (anyone)
+        if (req.method === 'PATCH') {
+            const { id, action } = req.query;
+            if (!id) return res.status(400).json({ error: 'id required' });
+
+            if (action === 'like') {
+                // Increment likes atomically: fetch current then increment
+                const r = await fetch(
+                    `${SUPABASE_URL}/rest/v1/artifacts?id=eq.${encodeURIComponent(id)}&select=likes`,
+                    { headers: sbHeaders }
+                );
+                const data = await r.json();
+                if (!Array.isArray(data) || data.length === 0) return res.status(404).json({ error: 'Not found' });
+                const newLikes = ((data[0].likes) || 0) + 1;
+                await fetch(`${SUPABASE_URL}/rest/v1/artifacts?id=eq.${encodeURIComponent(id)}`, {
+                    method: 'PATCH',
+                    headers: sbHeaders,
+                    body: JSON.stringify({ likes: newLikes })
+                });
+                return res.json({ likes: newLikes });
+            }
+
+            // Edit: title and/or description — owner only
+            const authHeader = req.headers['authorization'] || '';
+            const token = authHeader.replace('Bearer ', '');
+            let userId = null;
+            if (token) {
+                try {
+                    const parts = token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+                        userId = payload.sub || null;
+                    }
+                } catch (_) {}
+            }
+
+            if (userId) {
+                const checkR = await fetch(
+                    `${SUPABASE_URL}/rest/v1/artifacts?id=eq.${encodeURIComponent(id)}&select=user_id`,
+                    { headers: sbHeaders }
+                );
+                const checkData = await checkR.json();
+                if (!Array.isArray(checkData) || checkData.length === 0) return res.status(404).json({ error: 'Not found' });
+                if (checkData[0].user_id !== userId) return res.status(403).json({ error: 'Not authorized' });
+            }
+
+            const { title, description } = req.body || {};
+            const updateData = {};
+            if (title) updateData.title = title.slice(0, 200);
+            if (description !== undefined) updateData.description = description.slice(0, 500);
+            if (Object.keys(updateData).length === 0) return res.status(400).json({ error: 'Nothing to update' });
+
+            await fetch(`${SUPABASE_URL}/rest/v1/artifacts?id=eq.${encodeURIComponent(id)}`, {
+                method: 'PATCH',
+                headers: sbHeaders,
+                body: JSON.stringify(updateData)
+            });
+            return res.json({ success: true });
+        }
+
         // DELETE /api/artifacts?id=xxx — delete an artifact (only own)
         if (req.method === 'DELETE') {
             const { id } = req.query;
