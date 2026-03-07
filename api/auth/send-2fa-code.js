@@ -90,12 +90,12 @@ module.exports = async function handler(req, res) {
         if (!emailRes || !emailRes.ok) {
             const errText = emailRes ? await emailRes.text().catch(() => '') : 'network error';
             console.error('[send-2fa-code] EmailJS send failed:', emailRes?.status, errText);
-            // Still return success — the code is stored in DB. The client shows a
-            // "check your spam" hint. A server-side email config issue shouldn't
-            // break the gate entirely.
+            // Return success so the gate stays open, but include emailOk:false so
+            // the client can show a diagnostic message to help debug config issues.
+            return res.json({ sent: true, emailOk: false, emailStatus: emailRes?.status ?? 0, emailError: errText });
         }
 
-        return res.json({ sent: true });
+        return res.json({ sent: true, emailOk: true });
     } catch (err) {
         console.error('[send-2fa-code] error:', err);
         return res.status(500).json({ error: err.message });
