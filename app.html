@@ -1558,8 +1558,8 @@
                     }
                 }
             } catch (_) {}
-            // 2FA gate: ask once per session if 2FA is enabled
-            if (currentUser.two_fa_enabled && !sessionStorage.getItem('clarity_2fa_ok')) {
+            // 2FA gate: skip if this device is trusted (within 12-hour sliding window)
+            if (currentUser.two_fa_enabled && !isDeviceTrusted(currentUser.id || currentUser.email)) {
                 initTwofaGate();
             }
             loadConversations();
@@ -3644,13 +3644,41 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 localStorage.setItem('clarity_user', JSON.stringify(currentUser));
                 // If 2FA was just enabled, clear the session gate flag so it
                 // triggers on the next page load even in the same browser session.
-                if (enabled) sessionStorage.removeItem('clarity_2fa_ok');
+                if (enabled) clearDeviceTrust(currentUser.id || currentUser.email);
                 showAccountToast(enabled ? '2FA enabled. You\'ll be asked to verify on next load.' : '2FA disabled.', 'success');
             } catch {
                 track.classList.toggle('on', !enabled);
                 label.textContent = !enabled ? 'Enabled' : 'Disabled';
                 showAccountToast('Connection error.');
             }
+        }
+
+        // ── 2FA device trust ─────────────────────────────────────
+        // Trusted for 12 hours sliding window. Key is per-user so
+        // switching accounts is handled correctly.
+        const TRUST_TTL = 12 * 60 * 60 * 1000; // 12 hours in ms
+        function _trustKey(uid) { return 'clarity_dt_' + uid; }
+        function isDeviceTrusted(uid) {
+            if (!uid) return false;
+            try {
+                const raw = localStorage.getItem(_trustKey(uid));
+                if (!raw) return false;
+                const { verifiedAt } = JSON.parse(raw);
+                if (Date.now() - verifiedAt < TRUST_TTL) {
+                    // Refresh the sliding window on every trusted visit
+                    localStorage.setItem(_trustKey(uid), JSON.stringify({ verifiedAt: Date.now() }));
+                    return true;
+                }
+                return false;
+            } catch { return false; }
+        }
+        function trustDevice(uid) {
+            if (!uid) return;
+            localStorage.setItem(_trustKey(uid), JSON.stringify({ verifiedAt: Date.now() }));
+        }
+        function clearDeviceTrust(uid) {
+            if (!uid) return;
+            localStorage.removeItem(_trustKey(uid));
         }
 
         // ── 2FA session gate ─────────────────────────────────────
@@ -3708,7 +3736,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 if (data.access_token) localStorage.setItem('clarity_token', data.access_token);
                 btn.textContent = 'Loading…';
                 await sleep(2000);
-                sessionStorage.setItem('clarity_2fa_ok', '1');
+                trustDevice(currentUser.id || currentUser.email);
                 const gate = document.getElementById('twofa-gate');
                 gate.style.transition = 'opacity 0.4s ease';
                 gate.style.opacity = '0';
@@ -3755,7 +3783,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         function signOut() {
             localStorage.removeItem('clarity_token');
             localStorage.removeItem('clarity_user');
-            sessionStorage.removeItem('clarity_2fa_ok');
+            clearDeviceTrust(currentUser.id || currentUser.email);
             window.location.href = '/';
         }
 
