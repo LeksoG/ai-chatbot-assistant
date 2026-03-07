@@ -38,7 +38,18 @@ module.exports = async function handler(req, res) {
 - Code tasks: Say what you'll do in ONE short sentence, then give the code. No explanation after the code.
 - When the user provides [Current canvas code] and asks for changes: describe what you changed in one sentence max, then return the FULL updated code. Do not explain unchanged parts.
 - Use **bold** for key terms, \`inline code\` for commands/variables, code blocks for code.
-- Use bullet lists only for 3+ items. Never over-explain.`;
+- Use bullet lists only for 3+ items. Never over-explain.
+
+HTML/website generation rules (CRITICAL — always follow these):
+- ALWAYS produce a single, fully self-contained HTML file. Never reference external files.
+- All CSS must be in an inline <style> tag. Never use <link rel="stylesheet"> or src="styles.css" etc.
+- All JavaScript must be in inline <script> tags. Never use src="script.js" etc.
+- NEVER reference local image files (e.g. hero.jpg, chef-portrait.jpg, logo.png). Instead use one of:
+  a) CSS gradients or solid color backgrounds
+  b) Inline SVG illustrations
+  c) A real placeholder service with a full URL: https://picsum.photos/800/400 (append ?random=N for variety)
+- If an icon or logo is needed, draw it with inline SVG or use a Unicode character.
+- The output must render correctly in a sandboxed iframe with no internet access to local paths.`;
 
         const messages = [
             { role: 'system', content: systemPrompt },
