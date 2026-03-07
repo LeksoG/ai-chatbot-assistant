@@ -3617,12 +3617,18 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             gate.classList.add('flex');
             lucide.createIcons();
             try {
-                await fetch('/api/auth/send-2fa-code', {
+                const r = await fetch('/api/auth/send-2fa-code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: currentUser.email, access_token: authToken })
                 });
-            } catch (_) {}
+                if (!r.ok) {
+                    const data = await r.json().catch(() => ({}));
+                    showGateAlert(data.error || 'Failed to send verification code. Please reload and try again.');
+                }
+            } catch (_) {
+                showGateAlert('Failed to send verification code. Check your connection.');
+            }
         }
         async function submitTwofaGate() {
             const code = document.getElementById('twofa-gate-code').value.trim();
