@@ -1112,7 +1112,8 @@
                 </div>
                 <div class="flex items-center gap-2 shrink-0" id="artifact-viewer-actions">
                     <span id="artifact-viewer-author" class="text-xs text-gray-600"></span>
-                    <!-- Action buttons injected by openArtifactViewer() -->
+                    <!-- Dedicated slot for injected action buttons -->
+                    <div id="artifact-viewer-action-btns" class="flex items-center gap-2"></div>
                     <button onclick="copyArtifactViewerLink()" id="artifact-viewer-share-btn"
                         class="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 hover:bg-white/10 border border-white/8 rounded-lg text-xs text-gray-400 hover:text-white transition-colors">
                         <i data-lucide="link" class="w-3"></i> Share
@@ -4320,11 +4321,8 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                         <i data-lucide="play" class="w-3"></i> Use Artifact
                     </button>`;
             }
-            // Insert action buttons before the share button
-            const shareBtn = document.getElementById('artifact-viewer-share-btn');
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = actionBtns;
-            while (tempDiv.firstChild) actionsEl.insertBefore(tempDiv.firstChild, shareBtn);
+            // Inject action buttons into the dedicated slot
+            document.getElementById('artifact-viewer-action-btns').innerHTML = actionBtns;
 
             const iframe = document.getElementById('artifact-viewer-iframe');
             if (artifactData.code) {
@@ -4344,12 +4342,8 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         function closeArtifactViewer() {
             document.getElementById('artifact-viewer-modal').classList.remove('avm-open');
             document.getElementById('artifact-viewer-iframe').srcdoc = '';
-            // Remove injected action buttons (keep only share btn)
-            const actionsEl = document.getElementById('artifact-viewer-actions');
-            const shareBtn = document.getElementById('artifact-viewer-share-btn');
-            while (actionsEl.firstChild && actionsEl.firstChild !== shareBtn) {
-                actionsEl.removeChild(actionsEl.firstChild);
-            }
+            // Clear only the injected action buttons slot
+            document.getElementById('artifact-viewer-action-btns').innerHTML = '';
             currentViewerArtifact = null;
         }
 
