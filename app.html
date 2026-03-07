@@ -372,6 +372,21 @@
         .art-action-btn.like.liked    { background:rgba(236,72,153,0.3); border-color:rgba(236,72,153,0.6); color:#f472b6; }
         .art-action-btn.use     { background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); color:#f1f5f9; }
         .art-action-btn.use:hover     { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.35); }
+        .art-action-btn.view    { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.15); color:#e2e8f0; }
+        .art-action-btn.view:hover    { background:rgba(255,255,255,0.18); border-color:rgba(255,255,255,0.3); }
+
+        /* ── Privacy toggle ── */
+        .privacy-toggle-row { display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.85rem; background:#1a1a1a; border:1px solid rgba(255,255,255,0.08); border-radius:0.75rem; margin-bottom:0.75rem; cursor:pointer; user-select:none; }
+        .privacy-toggle-row:hover { border-color:rgba(255,255,255,0.14); }
+        .privacy-toggle-label { display:flex; flex-direction:column; gap:0.1rem; }
+        .privacy-toggle-label span { font-size:0.78rem; font-weight:500; color:#e2e8f0; }
+        .privacy-toggle-label small { font-size:0.68rem; color:#6b7280; }
+        .priv-switch { position:relative; display:inline-block; width:36px; height:20px; flex-shrink:0; }
+        .priv-switch input { opacity:0; width:0; height:0; position:absolute; }
+        .priv-track { position:absolute; inset:0; background:#2a2a2a; border:1px solid rgba(255,255,255,0.1); border-radius:10px; transition:all 0.2s; cursor:pointer; }
+        .priv-switch input:checked + .priv-track { background:rgba(124,58,237,0.4); border-color:rgba(124,58,237,0.7); }
+        .priv-thumb { position:absolute; top:3px; left:3px; width:12px; height:12px; border-radius:50%; background:#6b7280; transition:all 0.2s; pointer-events:none; }
+        .priv-switch input:checked ~ .priv-thumb { transform:translateX(16px); background:#a78bfa; }
 
         /* ── Edit artifact modal ── */
         #edit-artifact-modal { position:fixed; inset:0; z-index:350; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); }
@@ -989,6 +1004,18 @@
                 <textarea id="publish-description" rows="2" placeholder="Describe what this artifact does…"
                     class="w-full bg-[#1a1a1a] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-violet-600/60 transition-colors placeholder-gray-600 resize-none leading-relaxed"></textarea>
             </div>
+            <!-- Privacy toggle -->
+            <label class="privacy-toggle-row" for="publish-private-toggle">
+                <div class="privacy-toggle-label">
+                    <span id="publish-privacy-label">Public</span>
+                    <small id="publish-privacy-hint">Visible to everyone in User Artifacts</small>
+                </div>
+                <label class="priv-switch">
+                    <input type="checkbox" id="publish-private-toggle" onchange="updatePublishPrivacyLabel()">
+                    <div class="priv-track"></div>
+                    <div class="priv-thumb"></div>
+                </label>
+            </label>
             <!-- Actions -->
             <div class="flex gap-2">
                 <button onclick="closePublishModal()" class="flex-1 py-2.5 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Cancel</button>
@@ -1040,10 +1067,13 @@
                     onblur="setTimeout(hideArtifactsSuggestions, 180)">
                 <div id="artifacts-suggestions" class="absolute top-full left-5 right-5 mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-2xl hidden z-20"></div>
             </div>
-            <!-- Tabs: Public / My Artifacts -->
+            <!-- Tabs: Public / My Artifacts / Private -->
             <div class="artifacts-tab-bar">
-                <button id="art-tab-all" class="artifacts-tab-btn active" onclick="switchArtifactsTab('all')">Public Artifacts</button>
-                <button id="art-tab-mine" class="artifacts-tab-btn" onclick="switchArtifactsTab('mine')">My Artifacts</button>
+                <button id="art-tab-all"     class="artifacts-tab-btn active" onclick="switchArtifactsTab('all')">Public Artifacts</button>
+                <button id="art-tab-mine"    class="artifacts-tab-btn"        onclick="switchArtifactsTab('mine')">My Artifacts</button>
+                <button id="art-tab-private" class="artifacts-tab-btn"        onclick="switchArtifactsTab('private')">
+                    <i data-lucide="lock" style="width:10px;height:10px;display:inline;vertical-align:middle;margin-right:3px"></i>Private
+                </button>
             </div>
         </div>
         <!-- Grid content -->
@@ -1119,11 +1149,23 @@
                 <input id="edit-artifact-title" type="text" placeholder="Artifact name…"
                     class="w-full bg-[#1a1a1a] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-violet-600/60 transition-colors placeholder-gray-600">
             </div>
-            <div class="mb-4">
+            <div class="mb-3">
                 <label class="text-xs text-gray-500 mb-1.5 block font-medium">Description <span class="text-gray-700 font-normal">(optional)</span></label>
                 <textarea id="edit-artifact-description" rows="2" placeholder="Describe what this artifact does…"
                     class="w-full bg-[#1a1a1a] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-violet-600/60 transition-colors placeholder-gray-600 resize-none leading-relaxed"></textarea>
             </div>
+            <!-- Privacy toggle -->
+            <label class="privacy-toggle-row" for="edit-private-toggle">
+                <div class="privacy-toggle-label">
+                    <span id="edit-privacy-label">Public</span>
+                    <small id="edit-privacy-hint">Visible to everyone in User Artifacts</small>
+                </div>
+                <label class="priv-switch">
+                    <input type="checkbox" id="edit-private-toggle" onchange="updateEditPrivacyLabel()">
+                    <div class="priv-track"></div>
+                    <div class="priv-thumb"></div>
+                </label>
+            </label>
             <div class="flex gap-2">
                 <button onclick="closeEditArtifactModal()" class="flex-1 py-2.5 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Cancel</button>
                 <button onclick="saveArtifactEdit()" id="edit-artifact-save-btn"
@@ -3882,7 +3924,8 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         // ═══════════════════════════════════════════════════════
 
         let allArtifactsSidebar = [];
-        let activeArtifactsTab = 'all'; // 'all' | 'mine'
+        let activeArtifactsTab = 'all'; // 'all' | 'mine' | 'private'
+        let allMyArtifacts = []; // current user's own artifacts (public + private)
         let allArtifactsPage = [];
         let artifactSuggestFocusIdx = -1;
         let currentViewerArtifact = null;
@@ -3900,6 +3943,12 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
         // ── Publish modal ─────────────────────────────────────
 
+        function updatePublishPrivacyLabel() {
+            const isPrivate = document.getElementById('publish-private-toggle').checked;
+            document.getElementById('publish-privacy-label').textContent = isPrivate ? 'Private' : 'Public';
+            document.getElementById('publish-privacy-hint').textContent = isPrivate ? 'Only visible to you in your Private tab' : 'Visible to everyone in User Artifacts';
+        }
+
         function openPublishModal() {
             if (!monacoEditor) { showAppToast('Open the canvas first.', 'error'); return; }
             const code = monacoEditor.getValue();
@@ -3908,6 +3957,9 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
             document.getElementById('publish-title').value = canvasTitle || '';
             document.getElementById('publish-description').value = '';
+            // Reset privacy toggle to public
+            document.getElementById('publish-private-toggle').checked = false;
+            updatePublishPrivacyLabel();
             const modal = document.getElementById('publish-modal');
             modal.classList.add('pm-open');
             lucide.createIcons();
@@ -3927,6 +3979,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 return;
             }
             const description = document.getElementById('publish-description').value.trim();
+            const isPrivate   = document.getElementById('publish-private-toggle').checked;
             const code = monacoEditor ? monacoEditor.getValue() : '';
             const userName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.email || 'Anonymous';
 
@@ -3939,16 +3992,19 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 const res = await fetch('/api/artifacts', {
                     method: 'POST',
                     headers: authHeaders(),
-                    body: JSON.stringify({ userId: currentUser.id, userName, title, description, code })
+                    body: JSON.stringify({ userId: currentUser.id, userName, title, description, code, is_private: isPrivate })
                 });
                 if (!res.ok) {
                     const errData = await res.json().catch(() => ({}));
                     throw new Error(errData.error || `HTTP ${res.status}`);
                 }
                 closePublishModal();
-                showAppToast('\u2713 Artifact published!', 'success');
+                showAppToast('\u2713 Artifact ' + (isPrivate ? 'saved privately!' : 'published!'), 'success');
                 // Refresh sidebar artifacts if the tab is active
                 if (activeSidebarTab === 'artifacts') loadArtifactsSidebar();
+                // Reload artifacts page data if open (to show new artifact in correct tab)
+                const apPage = document.getElementById('artifacts-page');
+                if (apPage && apPage.classList.contains('ap2-open')) loadArtifactsPageData();
             } catch (err) {
                 showAppToast('Failed to publish: ' + err.message, 'error');
             } finally {
@@ -4049,6 +4105,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             activeArtifactsTab = 'all';
             document.getElementById('art-tab-all').classList.add('active');
             document.getElementById('art-tab-mine').classList.remove('active');
+            document.getElementById('art-tab-private').classList.remove('active');
             await loadArtifactsPageData();
         }
 
@@ -4064,14 +4121,16 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             loadEl.classList.remove('hidden'); loadEl.classList.add('flex');
             emptyEl.classList.add('hidden');
             try {
-                const res = await fetch('/api/artifacts');
-                if (!res.ok) throw new Error();
-                const data = await res.json();
-                allArtifactsPage = data || [];
+                const fetches = [fetch('/api/artifacts')];
+                if (currentUser) fetches.push(fetch('/api/artifacts?userId=' + encodeURIComponent(currentUser.id)));
+                const [pubRes, myRes] = await Promise.all(fetches);
+                allArtifactsPage = pubRes.ok ? (await pubRes.json() || []) : [];
+                allMyArtifacts   = (myRes && myRes.ok) ? (await myRes.json() || []) : [];
                 loadEl.classList.add('hidden'); loadEl.classList.remove('flex');
                 applyArtifactsTabFilter();
+                const total = allArtifactsPage.length;
                 const badge = document.getElementById('artifacts-count-badge');
-                badge.textContent = allArtifactsPage.length + ' artifact' + (allArtifactsPage.length !== 1 ? 's' : '');
+                badge.textContent = total + ' artifact' + (total !== 1 ? 's' : '');
                 badge.classList.remove('hidden');
             } catch (_) {
                 loadEl.classList.add('hidden'); loadEl.classList.remove('flex');
@@ -4083,14 +4142,19 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             activeArtifactsTab = tab;
             document.getElementById('art-tab-all').classList.toggle('active', tab === 'all');
             document.getElementById('art-tab-mine').classList.toggle('active', tab === 'mine');
+            document.getElementById('art-tab-private').classList.toggle('active', tab === 'private');
             applyArtifactsTabFilter();
         }
 
         function applyArtifactsTabFilter() {
             const query = document.getElementById('artifacts-search').value.trim().toLowerCase();
-            let filtered = allArtifactsPage;
-            if (activeArtifactsTab === 'mine' && currentUser) {
-                filtered = filtered.filter(a => a.user_id === currentUser.id);
+            let filtered;
+            if (activeArtifactsTab === 'private') {
+                filtered = allMyArtifacts.filter(a => a.is_private);
+            } else if (activeArtifactsTab === 'mine') {
+                filtered = allMyArtifacts;
+            } else {
+                filtered = allArtifactsPage; // public only
             }
             if (query) {
                 filtered = filtered.filter(a =>
@@ -4114,11 +4178,14 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 const dateStr = a.created_at ? new Date(a.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
                 const isOwn = currentUser && a.user_id === currentUser.id;
                 const isLiked = likedSet.has(a.id);
-                const safeData = escapeHtml(JSON.stringify(a)).replace(/'/g, '&#39;');
-                let overlayBtns = '';
+                const safeTitle = escapeHtml(a.title).replace(/'/g, "\\'");
+                const safeDesc  = escapeHtml(a.description || '').replace(/'/g, "\\'");
+                // "View" button is shown on all cards
+                const viewBtn = `<button class="art-action-btn view" onclick="event.stopPropagation();openArtifactViewer(${JSON.stringify(a).replace(/'/g,"&#39;")})"><i data-lucide="eye" class="w-3"></i> View</button>`;
+                let extraBtns = '';
                 if (isOwn) {
-                    overlayBtns = `
-                        <button class="art-action-btn edit" onclick="event.stopPropagation();openEditArtifactModal('${a.id}','${escapeHtml(a.title).replace(/'/g,"\\'")}','${escapeHtml(a.description||'').replace(/'/g,"\\'")}')">
+                    extraBtns = `
+                        <button class="art-action-btn edit" onclick="event.stopPropagation();openEditArtifactModal('${a.id}','${safeTitle}','${safeDesc}',${!!a.is_private})">
                             <i data-lucide="pencil" class="w-3"></i> Edit
                         </button>
                         <button class="art-action-btn danger" onclick="event.stopPropagation();deleteArtifactFromGrid('${a.id}')">
@@ -4126,24 +4193,25 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                         </button>`;
                 } else {
                     const likesCount = a.likes || 0;
-                    overlayBtns = `
+                    extraBtns = `
                         <button class="art-action-btn like${isLiked ? ' liked' : ''}" onclick="event.stopPropagation();likeArtifact('${a.id}',this)" data-likes="${likesCount}">
                             <i data-lucide="heart" class="w-3"></i> ${isLiked ? 'Liked' : 'Like'}${likesCount > 0 ? ' &bull; ' + likesCount : ''}
                         </button>
-                        <button class="art-action-btn use" onclick="event.stopPropagation();useArtifact('${a.id}','${escapeHtml(a.title).replace(/'/g,"\\'")}')">
+                        <button class="art-action-btn use" onclick="event.stopPropagation();useArtifact('${a.id}','${safeTitle}')">
                             <i data-lucide="play" class="w-3"></i> Use
                         </button>`;
                 }
+                const privateBadge = a.is_private ? '<span style="font-size:0.6rem;color:#a78bfa;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);border-radius:4px;padding:1px 5px;margin-left:4px">Private</span>' : '';
                 return `
                 <div class="artifact-card" onclick='openArtifactViewer(${JSON.stringify(a)})'>
-                    <div class="artifact-card-overlay">${overlayBtns}</div>
+                    <div class="artifact-card-overlay">${viewBtn}${extraBtns}</div>
                     <div class="artifact-thumb">
                         <div class="artifact-thumb-iframe-wrap">
                             <iframe srcdoc="${escapeHtml(a.code || '')}" sandbox="allow-scripts" title="${escapeHtml(a.title)}" loading="lazy"></iframe>
                         </div>
                     </div>
                     <div class="artifact-info">
-                        <p class="artifact-title">${escapeHtml(a.title)}</p>
+                        <p class="artifact-title">${escapeHtml(a.title)}${privateBadge}</p>
                         <p class="artifact-desc">${escapeHtml(a.description || '\u00a0')}</p>
                         <div class="artifact-meta">
                             <span class="artifact-author">${escapeHtml(a.user_name || 'Anonymous')}</span>
@@ -4233,9 +4301,11 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             const isLiked = likedSet.has(artifactData.id);
             const likesCount = artifactData.likes || 0;
             let actionBtns = '';
+            const safeTitle = escapeHtml(artifactData.title || '').replace(/'/g, "\\'");
+            const safeDesc  = escapeHtml(artifactData.description || '').replace(/'/g, "\\'");
             if (isOwn) {
                 actionBtns = `
-                    <button class="av-action-btn edit" onclick="openEditArtifactModal('${artifactData.id}','${escapeHtml(artifactData.title||'').replace(/'/g,"\\'")}','${escapeHtml(artifactData.description||'').replace(/'/g,"\\'")}')">
+                    <button class="av-action-btn edit" onclick="openEditArtifactModal('${artifactData.id}','${safeTitle}','${safeDesc}',${!!artifactData.is_private})">
                         <i data-lucide="pencil" class="w-3"></i> Edit
                     </button>
                     <button class="av-action-btn danger" id="av-delete-btn" onclick="deleteArtifactFromViewer('${artifactData.id}')">
@@ -4246,7 +4316,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     <button class="av-action-btn like${isLiked ? ' liked' : ''}" id="av-like-btn" onclick="likeArtifact('${artifactData.id}',this)" data-likes="${likesCount}">
                         <i data-lucide="heart" class="w-3"></i> ${isLiked ? 'Liked' : 'Like'}${likesCount > 0 ? ' &bull; ' + likesCount : ''}
                     </button>
-                    <button class="av-action-btn use" onclick="useArtifact('${artifactData.id}','${escapeHtml(artifactData.title||'').replace(/'/g,"\\'")}')">
+                    <button class="av-action-btn use" onclick="useArtifact('${artifactData.id}','${safeTitle}')">
                         <i data-lucide="play" class="w-3"></i> Use Artifact
                     </button>`;
             }
@@ -4325,6 +4395,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 });
                 if (!res.ok) { showAppToast('Failed to delete artifact', 'error'); return; }
                 allArtifactsPage = allArtifactsPage.filter(a => a.id !== id);
+                allMyArtifacts   = allMyArtifacts.filter(a => a.id !== id);
                 applyArtifactsTabFilter();
                 showAppToast('Artifact deleted', 'success');
             } catch (_) { showAppToast('Failed to delete', 'error'); }
@@ -4338,11 +4409,19 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         }
 
         // ── Edit artifact modal ───────────────────────────────
+        function updateEditPrivacyLabel() {
+            const isPrivate = document.getElementById('edit-private-toggle').checked;
+            document.getElementById('edit-privacy-label').textContent = isPrivate ? 'Private' : 'Public';
+            document.getElementById('edit-privacy-hint').textContent = isPrivate ? 'Only visible to you in your Private tab' : 'Visible to everyone in User Artifacts';
+        }
+
         let pendingEditArtifactId = null;
-        function openEditArtifactModal(id, currentTitle, currentDesc) {
+        function openEditArtifactModal(id, currentTitle, currentDesc, currentIsPrivate) {
             pendingEditArtifactId = id;
             document.getElementById('edit-artifact-title').value = currentTitle || '';
             document.getElementById('edit-artifact-description').value = currentDesc || '';
+            document.getElementById('edit-private-toggle').checked = !!currentIsPrivate;
+            updateEditPrivacyLabel();
             document.getElementById('edit-artifact-modal').classList.add('eam-open');
             lucide.createIcons();
             setTimeout(() => document.getElementById('edit-artifact-title').focus(), 50);
@@ -4353,8 +4432,9 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         }
         async function saveArtifactEdit() {
             const id = pendingEditArtifactId;
-            const title = document.getElementById('edit-artifact-title').value.trim();
+            const title       = document.getElementById('edit-artifact-title').value.trim();
             const description = document.getElementById('edit-artifact-description').value.trim();
+            const is_private  = document.getElementById('edit-private-toggle').checked;
             if (!title || !id) { closeEditArtifactModal(); return; }
             const btn = document.getElementById('edit-artifact-save-btn');
             btn.disabled = true;
@@ -4364,19 +4444,18 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 const res = await fetch('/api/artifacts?id=' + encodeURIComponent(id), {
                     method: 'PATCH',
                     headers: authHeaders(),
-                    body: JSON.stringify({ title, description })
+                    body: JSON.stringify({ title, description, is_private })
                 });
                 if (!res.ok) { showAppToast('Failed to save', 'error'); }
                 else {
-                    // Update cache
-                    const art = allArtifactsPage.find(a => a.id === id);
-                    if (art) { art.title = title; art.description = description; }
+                    // Update both caches
+                    [allArtifactsPage, allMyArtifacts].forEach(arr => {
+                        const art = arr.find(a => a.id === id);
+                        if (art) { art.title = title; art.description = description; art.is_private = is_private; }
+                    });
                     showAppToast('Artifact updated', 'success');
                     closeEditArtifactModal();
-                    // Close viewer too if open, then re-open with updated data
-                    if (currentViewerArtifact && currentViewerArtifact.id === id) {
-                        closeArtifactViewer();
-                    }
+                    if (currentViewerArtifact && currentViewerArtifact.id === id) closeArtifactViewer();
                     applyArtifactsTabFilter();
                 }
             } catch (_) { showAppToast('Failed to save', 'error'); }
