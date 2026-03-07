@@ -993,6 +993,10 @@
                     <i data-lucide="x" class="w-3.5 text-gray-400"></i>
                 </button>
             </div>
+            <!-- Preview thumbnail (auto-filled from canvas capture) -->
+            <div id="publish-preview-wrap" class="hidden mb-3">
+                <img id="publish-preview-img" src="" alt="Preview" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:0.6rem;border:1px solid rgba(255,255,255,0.08);">
+            </div>
             <!-- Name -->
             <div class="mb-3">
                 <label class="text-xs text-gray-500 mb-1.5 block font-medium">Artifact Name</label>
@@ -1800,6 +1804,7 @@
             }
             monacoEditor.setValue(code);
             updateCanvasPreview();
+            captureCanvasPreview();
         }
 
         // ── Diff-aware canvas update (blue line-by-line scanning like ChatGPT) ──
@@ -1870,6 +1875,7 @@
             await sleep(400);
             monacoEditor.deltaDecorations(highlightDecos, []);
             updateCanvasPreview();
+            captureCanvasPreview();
 
             // Show "Edited:" diff summary
             showCanvasEditedBanner(addedEntries, removedEntries);
@@ -4082,6 +4088,16 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             // Reset privacy toggle to public
             document.getElementById('publish-private-toggle').checked = false;
             updatePublishPrivacyLabel();
+            // Show preview thumbnail if we have a captured snapshot
+            const previewWrap = document.getElementById('publish-preview-wrap');
+            const previewImg  = document.getElementById('publish-preview-img');
+            if (pendingCanvasSnap) {
+                previewImg.src = pendingCanvasSnap;
+                previewWrap.classList.remove('hidden');
+            } else {
+                previewWrap.classList.add('hidden');
+                previewImg.src = '';
+            }
             const modal = document.getElementById('publish-modal');
             modal.classList.add('pm-open');
             lucide.createIcons();
@@ -4114,11 +4130,16 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 const res = await fetch('/api/artifacts', {
                     method: 'POST',
                     headers: authHeaders(),
-                    body: JSON.stringify({ userId: currentUser.id, userName, title, description, code, is_private: isPrivate })
+                    body: JSON.stringify({ userId: currentUser.id, userName, title, description, code, is_private: isPrivate, snapshot_url: pendingCanvasSnap || undefined })
                 });
                 if (!res.ok) {
                     const errData = await res.json().catch(() => ({}));
                     throw new Error(errData.error || `HTTP ${res.status}`);
+                }
+                const newArtifact = await res.json();
+                // Cache snapshot locally so the card shows it immediately on this device
+                if (pendingCanvasSnap && newArtifact && newArtifact.id) {
+                    localStorage.setItem('art_snap_' + newArtifact.id, pendingCanvasSnap);
                 }
                 closePublishModal();
                 showAppToast('\u2713 Artifact ' + (isPrivate ? 'saved privately!' : 'published!'), 'success');
@@ -4165,7 +4186,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
             const sliced = arts.slice(0, 15);
             list.innerHTML = sliced.map((a, idx) => {
-                const snap = localStorage.getItem('art_snap_' + a.id);
+                const snap = a.snapshot_url || localStorage.getItem('art_snap_' + a.id);
                 const thumbInner = snap
                     ? `<img src="${snap}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="">`
                     : `<iframe id="art-sb-frame-${idx}" sandbox="allow-scripts" title="${escapeHtml(a.title)}"></iframe>`;
@@ -4181,7 +4202,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }).join('');
             // Set srcdoc via JS to avoid double-quote breaking the HTML attribute
             sliced.forEach((a, idx) => {
-                if (localStorage.getItem('art_snap_' + a.id)) return; // already using img
+                if (a.snapshot_url || localStorage.getItem('art_snap_' + a.id)) return; // already using img
                 const frame = document.getElementById('art-sb-frame-' + idx);
                 if (frame) frame.srcdoc = a.code || '';
             });
@@ -4338,10 +4359,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 return `
                 <div class="artifact-card" onclick='openArtifactViewer(${JSON.stringify(a)})'>
                     <div class="artifact-card-overlay">${viewBtn}${extraBtns}</div>
-                    <div class="artifact-thumb">
-                        <div class="artifact-thumb-iframe-wrap">
-                            <iframe id="art-grid-frame-${idx}" sandbox="allow-scripts" title="${escapeHtml(a.title)}" loading="lazy"></iframe>
-                        </div>
+                    <div class="artifact-thumb" id="art-grid-thumb-${idx}">
                     </div>
                     <div class="artifact-info">
                         <p class="artifact-title">${escapeHtml(a.title)}${privateBadge}</p>
@@ -4353,10 +4371,28 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     </div>
                 </div>`;
             }).join('');
-            // Set srcdoc via JS to avoid double-quote breaking the HTML attribute
+            // Fill thumbnails: prefer snapshot (DB or local cache), else live iframe
             arts.forEach((a, idx) => {
-                const frame = document.getElementById('art-grid-frame-' + idx);
-                if (frame) frame.srcdoc = a.code || '';
+                const thumb = document.getElementById('art-grid-thumb-' + idx);
+                if (!thumb) return;
+                const snap = a.snapshot_url || localStorage.getItem('art_snap_' + a.id);
+                if (snap) {
+                    const img = document.createElement('img');
+                    img.src = snap;
+                    img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+                    img.alt = '';
+                    thumb.appendChild(img);
+                } else {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'artifact-thumb-iframe-wrap';
+                    const iframe = document.createElement('iframe');
+                    iframe.sandbox = 'allow-scripts';
+                    iframe.title = a.title || '';
+                    iframe.loading = 'lazy';
+                    iframe.srcdoc = a.code || '';
+                    wrap.appendChild(iframe);
+                    thumb.appendChild(wrap);
+                }
             });
             lucide.createIcons();
         }
@@ -4449,6 +4485,60 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 ctx.drawImage(src, (240 - w) / 2, (160 - h) / 2, w, h);
                 localStorage.setItem('art_snap_' + artifactId, thumb.toDataURL('image/jpeg', 0.8));
             } catch (_) { /* cross-origin or tainted canvas — skip */ }
+        }
+
+        // ── Silent canvas preview capture for artifact thumbnails ──────────
+        // Called after AI finishes generating/updating the canvas code.
+        // Injects html2canvas into the live canvas iframe (without resetting srcdoc),
+        // takes a 480×270 JPEG, and stores it in memory as pendingCanvasSnap.
+        let pendingCanvasSnap = null;
+        let _captureTimer = null;
+
+        function captureCanvasPreview() {
+            clearTimeout(_captureTimer);
+            _captureTimer = setTimeout(_doCapture, 2000);
+        }
+
+        function _doCapture() {
+            try {
+                const iframe = document.getElementById('canvas-iframe');
+                if (!iframe || !iframe.contentDocument || !iframe.contentDocument.body) return;
+                const iwin = iframe.contentWindow;
+                if (iwin.html2canvas) {
+                    _runCapture(iframe);
+                } else {
+                    const s = iframe.contentDocument.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+                    s.onload = () => _runCapture(iframe);
+                    iframe.contentDocument.head.appendChild(s);
+                }
+            } catch (_) {}
+        }
+
+        function _runCapture(iframe) {
+            try {
+                const iwin = iframe.contentWindow;
+                const idoc = iframe.contentDocument;
+                iwin.html2canvas(idoc.body || idoc.documentElement, {
+                    useCORS: true, allowTaint: false, logging: false,
+                    width: iwin.innerWidth || 1200,
+                    height: iwin.innerHeight || 800,
+                    scale: Math.min(1, 480 / (iwin.innerWidth || 1200))
+                }).then(function(canvas) {
+                    const out = document.createElement('canvas');
+                    out.width = 480; out.height = 270;
+                    const ctx = out.getContext('2d');
+                    ctx.fillStyle = '#111';
+                    ctx.fillRect(0, 0, 480, 270);
+                    const sc = Math.min(480 / canvas.width, 270 / canvas.height);
+                    ctx.drawImage(canvas,
+                        Math.round((480 - canvas.width * sc) / 2),
+                        Math.round((270 - canvas.height * sc) / 2),
+                        Math.round(canvas.width * sc),
+                        Math.round(canvas.height * sc));
+                    pendingCanvasSnap = out.toDataURL('image/jpeg', 0.72);
+                }).catch(function() {});
+            } catch (_) {}
         }
 
         // ── Artifact viewer modal ─────────────────────────────
