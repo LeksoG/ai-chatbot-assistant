@@ -317,7 +317,9 @@
         .artifact-card:hover { border-color:rgba(124,58,237,0.35); background:#161616; transform:translateY(-2px); box-shadow:0 8px 32px rgba(0,0,0,0.4); }
         .artifact-thumb { width:100%; aspect-ratio:16/9; background:#0a0a0a; border-bottom:1px solid rgba(255,255,255,0.05); overflow:hidden; position:relative; }
         .artifact-thumb-iframe-wrap { position:absolute; inset:0; overflow:hidden; }
-        .artifact-thumb-iframe-wrap iframe { width:500%; height:500%; transform:scale(0.2); transform-origin:0 0; pointer-events:none; border:0; background:white; }
+        .artifact-thumb-iframe-wrap iframe { width:500%; height:500%; transform:scale(0.2); transform-origin:0 0; pointer-events:none; border:0; background:#111; }
+        #artifacts-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+        @media (max-width:640px) { #artifacts-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:0.6rem; } }
         .artifact-info { padding:0.75rem; }
         .artifact-title { font-size:0.8rem; font-weight:600; color:#f1f5f9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .artifact-desc { font-size:0.7rem; color:#6b7280; margin-top:0.25rem; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; min-height:2.1em; }
@@ -328,7 +330,7 @@
         .artifact-sidebar-card { display:flex; align-items:center; gap:0.65rem; padding:0.55rem 0.7rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:0.75rem; cursor:pointer; transition:all 0.15s; margin-bottom:0.4rem; }
         .artifact-sidebar-card:hover { background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.12); }
         .art-sb-thumb { width:48px; height:32px; border-radius:4px; background:#0d0d0d; border:1px solid rgba(255,255,255,0.08); overflow:hidden; flex-shrink:0; position:relative; }
-        .art-sb-thumb iframe { width:500%; height:500%; transform:scale(0.2); transform-origin:0 0; pointer-events:none; border:0; background:white; }
+        .art-sb-thumb iframe { width:500%; height:500%; transform:scale(0.2); transform-origin:0 0; pointer-events:none; border:0; background:#111; }
         /* Publish modal */
         #publish-modal { position:fixed; inset:0; z-index:310; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); }
         #publish-modal.pm-open { display:flex; }
@@ -1088,7 +1090,7 @@
                 <p class="text-gray-400 text-sm font-medium mb-1">No artifacts yet</p>
                 <p class="text-gray-600 text-xs max-w-xs">Be the first to publish a creation from the Canvas using the Publish button</p>
             </div>
-            <div id="artifacts-grid" class="grid gap-4" style="grid-template-columns:repeat(4,minmax(0,1fr));max-width:1200px;margin:0 auto">
+            <div id="artifacts-grid" class="grid gap-4" style="max-width:1200px;margin:0 auto">
                 <!-- Artifact cards injected by JS -->
             </div>
         </div>
@@ -1418,24 +1420,66 @@
     <!-- Account toast -->
     <div id="account-toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] hidden px-4 py-3 rounded-xl text-sm shadow-xl border pointer-events-none"></div>
 
-    <!-- 2FA session gate (shown on load when 2FA is enabled) -->
-    <div id="twofa-gate" class="fixed inset-0 z-[700] bg-[#050505]/96 backdrop-blur-sm hidden items-center justify-center">
-        <div class="w-full max-w-sm mx-4">
-            <div class="text-center mb-6">
-                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-2xl shadow-violet-900/40 mx-auto mb-4">
-                    <i data-lucide="shield" class="text-white w-7"></i>
+    <!-- 2FA session gate — full-screen, replaces the app entirely until verified -->
+    <div id="twofa-gate" class="fixed inset-0 z-[9000] hidden flex-col" style="background:linear-gradient(160deg,#07070f 0%,#0c0c18 60%,#07070f 100%);">
+        <!-- Top bar -->
+        <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid rgba(255,255,255,0.05)">
+            <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:rgba(124,58,237,0.18);border:1px solid rgba(124,58,237,0.25)">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-violet-400"></i>
                 </div>
-                <h2 class="text-xl font-bold text-white mb-1">Verify Your Identity</h2>
-                <p class="text-gray-500 text-sm">A 6-digit code was sent to <span id="twofa-gate-email" class="text-gray-300 font-medium"></span></p>
+                <span class="text-sm font-semibold text-white">Clarity AI</span>
             </div>
-            <div id="twofa-gate-alert" class="hidden mb-4 p-3 rounded-xl text-sm border bg-red-950/50 border-red-900/40 text-red-400"></div>
-            <input id="twofa-gate-code" type="text" placeholder="000000" maxlength="6"
-                class="w-full bg-[#111] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-violet-600/70 transition-colors tracking-[0.5em] text-center font-mono mb-3"
-                onkeydown="if(event.key==='Enter')submitTwofaGate()">
-            <button id="twofa-gate-btn" onclick="submitTwofaGate()"
-                class="w-full py-3 bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white font-semibold rounded-xl transition-colors text-sm">
-                Continue
-            </button>
+            <span class="text-xs text-gray-700 tracking-wide">SECURED SESSION</span>
+        </div>
+        <!-- Main -->
+        <div class="flex-1 flex items-center justify-center px-4 py-10">
+            <div class="w-full max-w-sm">
+                <!-- Icon -->
+                <div class="flex justify-center mb-8">
+                    <div class="relative">
+                        <div class="w-[4.5rem] h-[4.5rem] rounded-[1.4rem] flex items-center justify-center" style="background:linear-gradient(135deg,rgba(124,58,237,0.18),rgba(79,70,229,0.18));border:1px solid rgba(124,58,237,0.22);box-shadow:0 0 40px rgba(124,58,237,0.12)">
+                            <i data-lucide="shield" class="w-9 h-9 text-violet-400"></i>
+                        </div>
+                        <div class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-violet-600 rounded-full flex items-center justify-center shadow-lg">
+                            <i data-lucide="lock" class="w-2.5 h-2.5 text-white"></i>
+                        </div>
+                    </div>
+                </div>
+                <!-- Banner pill -->
+                <div class="flex justify-center mb-5">
+                    <div class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1" style="background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.22)">
+                        <div class="w-1.5 h-1.5 rounded-full bg-violet-400" style="box-shadow:0 0 6px rgba(167,139,250,0.8)"></div>
+                        <span class="text-xs text-violet-300 font-medium">This account is protected by 2FA</span>
+                    </div>
+                </div>
+                <!-- Heading -->
+                <div class="text-center mb-7">
+                    <h1 class="text-2xl font-bold text-white mb-2">Verify Your Identity</h1>
+                    <p class="text-sm text-gray-500">A 6-digit code was sent to<br><span id="twofa-gate-email" class="text-gray-300 font-medium"></span></p>
+                </div>
+                <!-- Alert -->
+                <div id="twofa-gate-alert" class="hidden mb-4 p-3 rounded-xl text-sm border bg-red-950/40 border-red-900/40 text-red-400"></div>
+                <!-- Code input -->
+                <input id="twofa-gate-code" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="000000" maxlength="6"
+                    class="w-full rounded-2xl px-4 py-4 text-white text-xl placeholder-gray-700 outline-none transition-all tracking-[0.65em] text-center font-mono mb-3"
+                    style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);"
+                    onfocus="this.style.borderColor='rgba(124,58,237,0.55)';this.style.background='rgba(255,255,255,0.06)'"
+                    onblur="this.style.borderColor='rgba(255,255,255,0.1)';this.style.background='rgba(255,255,255,0.04)'"
+                    onkeydown="if(event.key==='Enter')submitTwofaGate()">
+                <!-- Button -->
+                <button id="twofa-gate-btn" onclick="submitTwofaGate()"
+                    class="w-full py-3.5 font-semibold rounded-2xl transition-all text-sm text-white mb-4"
+                    style="background:linear-gradient(135deg,#7c3aed,#6d28d9);box-shadow:0 4px 20px rgba(124,58,237,0.3)"
+                    onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+                    Continue
+                </button>
+                <!-- Resend -->
+                <p class="text-center text-xs text-gray-600">Didn't receive a code?
+                    <button id="twofa-resend-btn" onclick="resendTwofaCode()" class="text-violet-400 hover:text-violet-300 transition-colors ml-0.5">Resend</button>
+                </p>
+                <p class="text-center text-xs mt-2" style="color:#2d2d3a">Code expires in 10 minutes · Check your spam folder</p>
+            </div>
         </div>
     </div>
 
@@ -3667,6 +3711,25 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             const el = document.getElementById('twofa-gate-alert');
             el.textContent = msg;
             el.classList.remove('hidden');
+        }
+        async function resendTwofaCode() {
+            const btn = document.getElementById('twofa-resend-btn');
+            btn.disabled = true;
+            btn.textContent = 'Sending…';
+            document.getElementById('twofa-gate-alert').classList.add('hidden');
+            try {
+                await fetch('/api/auth/send-2fa-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: currentUser.email, access_token: authToken })
+                });
+                btn.textContent = 'Sent!';
+                setTimeout(() => { btn.textContent = 'Resend'; btn.disabled = false; }, 4000);
+            } catch (_) {
+                btn.textContent = 'Resend';
+                btn.disabled = false;
+                showGateAlert('Could not resend code. Check your connection.');
+            }
         }
 
         function signOut() {

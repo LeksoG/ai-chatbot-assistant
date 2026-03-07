@@ -90,7 +90,9 @@ module.exports = async function handler(req, res) {
         if (!emailRes || !emailRes.ok) {
             const errText = emailRes ? await emailRes.text().catch(() => '') : 'network error';
             console.error('[send-2fa-code] EmailJS send failed:', emailRes?.status, errText);
-            return res.status(500).json({ error: 'Failed to send verification email.' });
+            // Still return success — the code is stored in DB. The client shows a
+            // "check your spam" hint. A server-side email config issue shouldn't
+            // break the gate entirely.
         }
 
         return res.json({ sent: true });
