@@ -9,7 +9,7 @@ module.exports = async function handler(req, res) {
     const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
     if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(503).json({ error: 'Supabase not configured' });
 
-    const { email, access_token } = req.body || {};
+    const { email, access_token, first_name: clientFirstName } = req.body || {};
     if (!email) return res.status(400).json({ error: 'email required' });
 
     const sbHeaders = {
@@ -22,7 +22,7 @@ module.exports = async function handler(req, res) {
         // Use the session token to get the auth user ID, then look up profile
         // by ID (same as login.js) — more reliable than querying by email column.
         let userId = null;
-        let firstName = 'User';
+        let firstName = clientFirstName || 'User';
 
         if (access_token) {
             const authRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
