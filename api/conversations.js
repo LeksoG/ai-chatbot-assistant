@@ -50,15 +50,19 @@ module.exports = async function handler(req, res) {
             return res.status(201).json(Array.isArray(data) ? data[0] : data);
         }
 
-        // PATCH /api/conversations?id=xxx — touch updated_at
+        // PATCH /api/conversations?id=xxx — touch updated_at or update title
         if (req.method === 'PATCH') {
             const { id } = req.query;
             if (!id) return res.status(400).json({ error: 'id required' });
 
+            const body = req.body || {};
+            const updateData = { updated_at: new Date().toISOString() };
+            if (body.title) updateData.title = body.title.slice(0, 100);
+
             await fetch(`${SUPABASE_URL}/rest/v1/conversations?id=eq.${id}`, {
                 method: 'PATCH',
                 headers: sbHeaders,
-                body: JSON.stringify({ updated_at: new Date().toISOString() })
+                body: JSON.stringify(updateData)
             });
             return res.json({ success: true });
         }

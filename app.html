@@ -352,6 +352,43 @@
         #artifacts-empty { flex-direction:column; align-items:center; justify-content:center; }
         #artifacts-loading { align-items:center; justify-content:center; }
 
+        /* ── Artifacts page tabs ── */
+        .artifacts-tab-bar { display:flex; gap:0.5rem; justify-content:center; margin-top:1rem; }
+        .artifacts-tab-btn { padding:0.45rem 1.2rem; border-radius:9999px; font-size:0.75rem; font-weight:500; border:1px solid rgba(255,255,255,0.1); color:#6b7280; background:transparent; cursor:pointer; transition:all 0.15s; }
+        .artifacts-tab-btn:hover { color:#d1d5db; border-color:rgba(255,255,255,0.2); }
+        .artifacts-tab-btn.active { background:rgba(124,58,237,0.15); border-color:rgba(124,58,237,0.4); color:#c4b5fd; }
+
+        /* ── Artifact card hover actions overlay ── */
+        .artifact-card { position:relative; }
+        .artifact-card-overlay { position:absolute; inset:0; border-radius:1rem; background:rgba(0,0,0,0.72); backdrop-filter:blur(2px); opacity:0; transition:opacity 0.18s ease; display:flex; align-items:center; justify-content:center; gap:0.6rem; z-index:5; }
+        .artifact-card:hover .artifact-card-overlay { opacity:1; }
+        .art-action-btn { display:flex; align-items:center; gap:0.4rem; padding:0.55rem 1rem; border-radius:9999px; font-size:0.72rem; font-weight:600; cursor:pointer; transition:all 0.15s; border:1px solid; white-space:nowrap; }
+        .art-action-btn.danger  { background:rgba(153,27,27,0.25); border-color:rgba(239,68,68,0.35); color:#fca5a5; }
+        .art-action-btn.danger:hover  { background:rgba(153,27,27,0.45); border-color:rgba(239,68,68,0.6); }
+        .art-action-btn.edit    { background:rgba(124,58,237,0.2); border-color:rgba(124,58,237,0.4); color:#c4b5fd; }
+        .art-action-btn.edit:hover    { background:rgba(124,58,237,0.35); border-color:rgba(124,58,237,0.6); }
+        .art-action-btn.like    { background:rgba(236,72,153,0.15); border-color:rgba(236,72,153,0.35); color:#f9a8d4; }
+        .art-action-btn.like:hover    { background:rgba(236,72,153,0.3); border-color:rgba(236,72,153,0.55); }
+        .art-action-btn.like.liked    { background:rgba(236,72,153,0.3); border-color:rgba(236,72,153,0.6); color:#f472b6; }
+        .art-action-btn.use     { background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); color:#f1f5f9; }
+        .art-action-btn.use:hover     { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.35); }
+
+        /* ── Edit artifact modal ── */
+        #edit-artifact-modal { position:fixed; inset:0; z-index:350; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); }
+        #edit-artifact-modal.eam-open { display:flex; }
+
+        /* ── Artifact viewer action buttons ── */
+        .av-action-btn { display:flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; border-radius:0.5rem; font-size:0.72rem; font-weight:500; cursor:pointer; transition:all 0.15s; border:1px solid; white-space:nowrap; }
+        .av-action-btn.like   { background:rgba(236,72,153,0.12); border-color:rgba(236,72,153,0.3); color:#f9a8d4; }
+        .av-action-btn.like:hover  { background:rgba(236,72,153,0.25); border-color:rgba(236,72,153,0.5); }
+        .av-action-btn.like.liked  { background:rgba(236,72,153,0.28); border-color:rgba(236,72,153,0.55); color:#f472b6; }
+        .av-action-btn.use    { background:rgba(124,58,237,0.15); border-color:rgba(124,58,237,0.35); color:#c4b5fd; }
+        .av-action-btn.use:hover   { background:rgba(124,58,237,0.28); border-color:rgba(124,58,237,0.55); }
+        .av-action-btn.edit   { background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.1); color:#9ca3af; }
+        .av-action-btn.edit:hover  { background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); color:#fff; }
+        .av-action-btn.danger { background:rgba(153,27,27,0.15); border-color:rgba(239,68,68,0.25); color:#fca5a5; }
+        .av-action-btn.danger:hover{ background:rgba(153,27,27,0.3); border-color:rgba(239,68,68,0.5); }
+
         /* ── Code logo ── */
         .cl-seg { stroke:none; transform-origin:center; fill:url(#codeRainbow); }
         .cl-seg-top { animation:clMorphTop 5s infinite cubic-bezier(0.6,0.05,0.01,1); }
@@ -1003,6 +1040,11 @@
                     onblur="setTimeout(hideArtifactsSuggestions, 180)">
                 <div id="artifacts-suggestions" class="absolute top-full left-5 right-5 mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-2xl hidden z-20"></div>
             </div>
+            <!-- Tabs: Public / My Artifacts -->
+            <div class="artifacts-tab-bar">
+                <button id="art-tab-all" class="artifacts-tab-btn active" onclick="switchArtifactsTab('all')">Public Artifacts</button>
+                <button id="art-tab-mine" class="artifacts-tab-btn" onclick="switchArtifactsTab('mine')">My Artifacts</button>
+            </div>
         </div>
         <!-- Grid content -->
         <div class="flex-1 overflow-y-auto px-6 py-6">
@@ -1028,7 +1070,7 @@
     <div id="artifact-viewer-modal">
         <div class="absolute inset-0" onclick="closeArtifactViewer()"></div>
         <div class="relative flex flex-col bg-[#0d0d0d] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
-             style="width:min(92vw,1100px);height:min(88vh,720px)">
+             style="width:min(96vw,1400px);height:min(94vh,900px)">
             <!-- Viewer toolbar -->
             <div class="flex items-center gap-3 px-4 py-3 border-b border-white/6 shrink-0 bg-[#0d0d0d]">
                 <button onclick="closeArtifactViewer()" class="w-7 h-7 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors">
@@ -1038,8 +1080,9 @@
                     <p id="artifact-viewer-title" class="text-white font-semibold text-sm truncate"></p>
                     <p id="artifact-viewer-desc" class="text-gray-500 text-xs truncate mt-0.5"></p>
                 </div>
-                <div class="flex items-center gap-2 shrink-0">
+                <div class="flex items-center gap-2 shrink-0" id="artifact-viewer-actions">
                     <span id="artifact-viewer-author" class="text-xs text-gray-600"></span>
+                    <!-- Action buttons injected by openArtifactViewer() -->
                     <button onclick="copyArtifactViewerLink()" id="artifact-viewer-share-btn"
                         class="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 hover:bg-white/10 border border-white/8 rounded-lg text-xs text-gray-400 hover:text-white transition-colors">
                         <i data-lucide="link" class="w-3"></i> Share
@@ -1050,6 +1093,43 @@
             <div class="flex-1 relative bg-white">
                 <iframe id="artifact-viewer-iframe" class="w-full h-full border-0"
                     sandbox="allow-scripts allow-same-origin allow-modals allow-forms allow-popups"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         EDIT ARTIFACT MODAL
+    ═══════════════════════════════════════════════════════ -->
+    <div id="edit-artifact-modal">
+        <div class="absolute inset-0" onclick="closeEditArtifactModal()"></div>
+        <div class="relative w-[440px] max-w-[95vw] bg-[#111] border border-white/10 rounded-2xl p-5 shadow-2xl mx-4" style="animation:splash-in 0.3s ease">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-violet-950/60 border border-violet-700/30 flex items-center justify-center">
+                        <i data-lucide="pencil" class="w-3.5 text-violet-400"></i>
+                    </div>
+                    <h3 class="text-white font-semibold text-sm">Edit Artifact</h3>
+                </div>
+                <button onclick="closeEditArtifactModal()" class="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
+                    <i data-lucide="x" class="w-3.5 text-gray-400"></i>
+                </button>
+            </div>
+            <div class="mb-3">
+                <label class="text-xs text-gray-500 mb-1.5 block font-medium">Artifact Name</label>
+                <input id="edit-artifact-title" type="text" placeholder="Artifact name…"
+                    class="w-full bg-[#1a1a1a] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-violet-600/60 transition-colors placeholder-gray-600">
+            </div>
+            <div class="mb-4">
+                <label class="text-xs text-gray-500 mb-1.5 block font-medium">Description <span class="text-gray-700 font-normal">(optional)</span></label>
+                <textarea id="edit-artifact-description" rows="2" placeholder="Describe what this artifact does…"
+                    class="w-full bg-[#1a1a1a] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-violet-600/60 transition-colors placeholder-gray-600 resize-none leading-relaxed"></textarea>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="closeEditArtifactModal()" class="flex-1 py-2.5 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Cancel</button>
+                <button onclick="saveArtifactEdit()" id="edit-artifact-save-btn"
+                    class="flex-1 py-2.5 text-sm text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition-colors flex items-center justify-center gap-2 font-medium">
+                    <i data-lucide="check" class="w-3.5"></i> Save Changes
+                </button>
             </div>
         </div>
     </div>
@@ -3219,6 +3299,27 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             } catch (_) {}
         }
 
+        // Generate a 2-word AI title and update the conversation in the sidebar
+        async function generateAndUpdateTitle(firstMessage) {
+            if (!activeConversationId) return;
+            try {
+                const res = await fetch('/api/generate-title', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: firstMessage })
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.title) return;
+                await fetch('/api/conversations?id=' + activeConversationId, {
+                    method: 'PATCH',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ title: data.title })
+                });
+                loadConversations();
+            } catch (_) {}
+        }
+
         async function saveMessage(role, content) {
             if (!activeConversationId) return;
             try {
@@ -3751,6 +3852,10 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                         avatarEl.innerHTML = STATIC_LOGO_SVG;
                     }
                     saveMessage('assistant', data.reply);
+                    // Generate AI 2-word title on first exchange (non-blocking)
+                    if (conversationHistory.length === 2) {
+                        generateAndUpdateTitle(val);
+                    }
                 }
             } catch (err) {
                 if (_thinkInterval) { clearInterval(_thinkInterval); _thinkInterval = null; }
@@ -3777,6 +3882,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         // ═══════════════════════════════════════════════════════
 
         let allArtifactsSidebar = [];
+        let activeArtifactsTab = 'all'; // 'all' | 'mine'
         let allArtifactsPage = [];
         let artifactSuggestFocusIdx = -1;
         let currentViewerArtifact = null;
@@ -3939,6 +4045,10 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             page.classList.add('ap2-open');
             lucide.createIcons();
             document.getElementById('artifacts-search').value = '';
+            // Reset tab to 'all' each time page opens
+            activeArtifactsTab = 'all';
+            document.getElementById('art-tab-all').classList.add('active');
+            document.getElementById('art-tab-mine').classList.remove('active');
             await loadArtifactsPageData();
         }
 
@@ -3959,7 +4069,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 const data = await res.json();
                 allArtifactsPage = data || [];
                 loadEl.classList.add('hidden'); loadEl.classList.remove('flex');
-                renderArtifactsGrid(allArtifactsPage);
+                applyArtifactsTabFilter();
                 const badge = document.getElementById('artifacts-count-badge');
                 badge.textContent = allArtifactsPage.length + ' artifact' + (allArtifactsPage.length !== 1 ? 's' : '');
                 badge.classList.remove('hidden');
@@ -3967,6 +4077,27 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 loadEl.classList.add('hidden'); loadEl.classList.remove('flex');
                 renderArtifactsGrid([]);
             }
+        }
+
+        function switchArtifactsTab(tab) {
+            activeArtifactsTab = tab;
+            document.getElementById('art-tab-all').classList.toggle('active', tab === 'all');
+            document.getElementById('art-tab-mine').classList.toggle('active', tab === 'mine');
+            applyArtifactsTabFilter();
+        }
+
+        function applyArtifactsTabFilter() {
+            const query = document.getElementById('artifacts-search').value.trim().toLowerCase();
+            let filtered = allArtifactsPage;
+            if (activeArtifactsTab === 'mine' && currentUser) {
+                filtered = filtered.filter(a => a.user_id === currentUser.id);
+            }
+            if (query) {
+                filtered = filtered.filter(a =>
+                    a.title.toLowerCase().includes(query) || (a.description || '').toLowerCase().includes(query)
+                );
+            }
+            renderArtifactsGrid(filtered);
         }
 
         function renderArtifactsGrid(arts) {
@@ -3978,10 +4109,34 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 return;
             }
             emptyEl.classList.add('hidden');
+            const likedSet = getLikedArtifactIds();
             grid.innerHTML = arts.map(a => {
                 const dateStr = a.created_at ? new Date(a.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+                const isOwn = currentUser && a.user_id === currentUser.id;
+                const isLiked = likedSet.has(a.id);
+                const safeData = escapeHtml(JSON.stringify(a)).replace(/'/g, '&#39;');
+                let overlayBtns = '';
+                if (isOwn) {
+                    overlayBtns = `
+                        <button class="art-action-btn edit" onclick="event.stopPropagation();openEditArtifactModal('${a.id}','${escapeHtml(a.title).replace(/'/g,"\\'")}','${escapeHtml(a.description||'').replace(/'/g,"\\'")}')">
+                            <i data-lucide="pencil" class="w-3"></i> Edit
+                        </button>
+                        <button class="art-action-btn danger" onclick="event.stopPropagation();deleteArtifactFromGrid('${a.id}')">
+                            <i data-lucide="trash-2" class="w-3"></i> Delete
+                        </button>`;
+                } else {
+                    const likesCount = a.likes || 0;
+                    overlayBtns = `
+                        <button class="art-action-btn like${isLiked ? ' liked' : ''}" onclick="event.stopPropagation();likeArtifact('${a.id}',this)" data-likes="${likesCount}">
+                            <i data-lucide="heart" class="w-3"></i> ${isLiked ? 'Liked' : 'Like'}${likesCount > 0 ? ' &bull; ' + likesCount : ''}
+                        </button>
+                        <button class="art-action-btn use" onclick="event.stopPropagation();useArtifact('${a.id}','${escapeHtml(a.title).replace(/'/g,"\\'")}')">
+                            <i data-lucide="play" class="w-3"></i> Use
+                        </button>`;
+                }
                 return `
                 <div class="artifact-card" onclick='openArtifactViewer(${JSON.stringify(a)})'>
+                    <div class="artifact-card-overlay">${overlayBtns}</div>
                     <div class="artifact-thumb">
                         <div class="artifact-thumb-iframe-wrap">
                             <iframe srcdoc="${escapeHtml(a.code || '')}" sandbox="allow-scripts" title="${escapeHtml(a.title)}" loading="lazy"></iframe>
@@ -3997,22 +4152,15 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     </div>
                 </div>`;
             }).join('');
+            lucide.createIcons();
         }
 
         // ── Artifacts page search + suggestions ───────────────
         function filterArtifactsPage(query) {
-            const q = query.trim().toLowerCase();
             artifactSuggestFocusIdx = -1;
-            if (!q) {
-                renderArtifactsGrid(allArtifactsPage);
-                showArtifactsSuggestions('');
-                return;
-            }
-            const filtered = allArtifactsPage.filter(a =>
-                a.title.toLowerCase().includes(q) || (a.description || '').toLowerCase().includes(q)
-            );
-            renderArtifactsGrid(filtered);
-            showArtifactsSuggestions(q);
+            applyArtifactsTabFilter();
+            if (query.trim()) showArtifactsSuggestions(query.trim());
+            else showArtifactsSuggestions('');
         }
 
         function showArtifactsSuggestions(q) {
@@ -4073,17 +4221,46 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
         // ── Artifact viewer modal ─────────────────────────────
         function openArtifactViewer(artifactData) {
-            // artifactData may be an object (from inline onclick) or we need to fetch full code
             currentViewerArtifact = artifactData;
             document.getElementById('artifact-viewer-title').textContent = artifactData.title || '';
             document.getElementById('artifact-viewer-desc').textContent = artifactData.description || '';
             document.getElementById('artifact-viewer-author').textContent = 'by ' + (artifactData.user_name || 'Anonymous');
+
+            // Inject action buttons based on ownership
+            const actionsEl = document.getElementById('artifact-viewer-actions');
+            const isOwn = currentUser && artifactData.user_id === currentUser.id;
+            const likedSet = getLikedArtifactIds();
+            const isLiked = likedSet.has(artifactData.id);
+            const likesCount = artifactData.likes || 0;
+            let actionBtns = '';
+            if (isOwn) {
+                actionBtns = `
+                    <button class="av-action-btn edit" onclick="openEditArtifactModal('${artifactData.id}','${escapeHtml(artifactData.title||'').replace(/'/g,"\\'")}','${escapeHtml(artifactData.description||'').replace(/'/g,"\\'")}')">
+                        <i data-lucide="pencil" class="w-3"></i> Edit
+                    </button>
+                    <button class="av-action-btn danger" id="av-delete-btn" onclick="deleteArtifactFromViewer('${artifactData.id}')">
+                        <i data-lucide="trash-2" class="w-3"></i> Delete
+                    </button>`;
+            } else {
+                actionBtns = `
+                    <button class="av-action-btn like${isLiked ? ' liked' : ''}" id="av-like-btn" onclick="likeArtifact('${artifactData.id}',this)" data-likes="${likesCount}">
+                        <i data-lucide="heart" class="w-3"></i> ${isLiked ? 'Liked' : 'Like'}${likesCount > 0 ? ' &bull; ' + likesCount : ''}
+                    </button>
+                    <button class="av-action-btn use" onclick="useArtifact('${artifactData.id}','${escapeHtml(artifactData.title||'').replace(/'/g,"\\'")}')">
+                        <i data-lucide="play" class="w-3"></i> Use Artifact
+                    </button>`;
+            }
+            // Insert action buttons before the share button
+            const shareBtn = document.getElementById('artifact-viewer-share-btn');
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = actionBtns;
+            while (tempDiv.firstChild) actionsEl.insertBefore(tempDiv.firstChild, shareBtn);
+
             const iframe = document.getElementById('artifact-viewer-iframe');
             if (artifactData.code) {
                 iframe.srcdoc = artifactData.code;
             } else {
-                // Fetch full code if not available (sidebar cards don't include code)
-                iframe.srcdoc = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a0a;color:#6b7280;font-family:sans-serif;font-size:0.9rem">Loading…</div>';
+                iframe.srcdoc = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a0a;color:#6b7280;font-family:sans-serif;font-size:0.9rem">Loading\u2026</div>';
                 fetch('/api/artifacts?id=' + encodeURIComponent(artifactData.id))
                     .then(r => r.json())
                     .then(data => { if (data && data.code) { iframe.srcdoc = data.code; currentViewerArtifact = data; } })
@@ -4097,7 +4274,140 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         function closeArtifactViewer() {
             document.getElementById('artifact-viewer-modal').classList.remove('avm-open');
             document.getElementById('artifact-viewer-iframe').srcdoc = '';
+            // Remove injected action buttons (keep only share btn)
+            const actionsEl = document.getElementById('artifact-viewer-actions');
+            const shareBtn = document.getElementById('artifact-viewer-share-btn');
+            while (actionsEl.firstChild && actionsEl.firstChild !== shareBtn) {
+                actionsEl.removeChild(actionsEl.firstChild);
+            }
             currentViewerArtifact = null;
+        }
+
+        // ── Liked artifacts tracking ──────────────────────────
+        function getLikedArtifactIds() {
+            try { return new Set(JSON.parse(localStorage.getItem('clarity_liked_artifacts') || '[]')); } catch(_) { return new Set(); }
+        }
+        function addLikedArtifactId(id) {
+            const set = getLikedArtifactIds();
+            set.add(id);
+            localStorage.setItem('clarity_liked_artifacts', JSON.stringify([...set]));
+        }
+
+        // ── Like an artifact ──────────────────────────────────
+        async function likeArtifact(id, btn) {
+            const likedSet = getLikedArtifactIds();
+            if (likedSet.has(id)) return; // already liked
+            try {
+                const res = await fetch('/api/artifacts?id=' + encodeURIComponent(id) + '&action=like', {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                addLikedArtifactId(id);
+                const newCount = data.likes || 0;
+                if (btn) {
+                    btn.classList.add('liked');
+                    btn.innerHTML = `<i data-lucide="heart" class="w-3"></i> Liked${newCount > 0 ? ' &bull; ' + newCount : ''}`;
+                    lucide.createIcons();
+                }
+                // Update in allArtifactsPage cache
+                const art = allArtifactsPage.find(a => a.id === id);
+                if (art) art.likes = newCount;
+            } catch (_) {}
+        }
+
+        // ── Delete artifact from grid card ───────────────────
+        async function deleteArtifactFromGrid(id) {
+            if (!confirm('Delete this artifact? This cannot be undone.')) return;
+            try {
+                const res = await fetch('/api/artifacts?id=' + encodeURIComponent(id), {
+                    method: 'DELETE', headers: authHeaders()
+                });
+                if (!res.ok) { showAppToast('Failed to delete artifact', 'error'); return; }
+                allArtifactsPage = allArtifactsPage.filter(a => a.id !== id);
+                applyArtifactsTabFilter();
+                showAppToast('Artifact deleted', 'success');
+            } catch (_) { showAppToast('Failed to delete', 'error'); }
+        }
+
+        // ── Delete artifact from viewer ───────────────────────
+        async function deleteArtifactFromViewer(id) {
+            if (!confirm('Delete this artifact? This cannot be undone.')) return;
+            closeArtifactViewer();
+            await deleteArtifactFromGrid(id);
+        }
+
+        // ── Edit artifact modal ───────────────────────────────
+        let pendingEditArtifactId = null;
+        function openEditArtifactModal(id, currentTitle, currentDesc) {
+            pendingEditArtifactId = id;
+            document.getElementById('edit-artifact-title').value = currentTitle || '';
+            document.getElementById('edit-artifact-description').value = currentDesc || '';
+            document.getElementById('edit-artifact-modal').classList.add('eam-open');
+            lucide.createIcons();
+            setTimeout(() => document.getElementById('edit-artifact-title').focus(), 50);
+        }
+        function closeEditArtifactModal() {
+            pendingEditArtifactId = null;
+            document.getElementById('edit-artifact-modal').classList.remove('eam-open');
+        }
+        async function saveArtifactEdit() {
+            const id = pendingEditArtifactId;
+            const title = document.getElementById('edit-artifact-title').value.trim();
+            const description = document.getElementById('edit-artifact-description').value.trim();
+            if (!title || !id) { closeEditArtifactModal(); return; }
+            const btn = document.getElementById('edit-artifact-save-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 animate-spin"></i> Saving…';
+            lucide.createIcons();
+            try {
+                const res = await fetch('/api/artifacts?id=' + encodeURIComponent(id), {
+                    method: 'PATCH',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ title, description })
+                });
+                if (!res.ok) { showAppToast('Failed to save', 'error'); }
+                else {
+                    // Update cache
+                    const art = allArtifactsPage.find(a => a.id === id);
+                    if (art) { art.title = title; art.description = description; }
+                    showAppToast('Artifact updated', 'success');
+                    closeEditArtifactModal();
+                    // Close viewer too if open, then re-open with updated data
+                    if (currentViewerArtifact && currentViewerArtifact.id === id) {
+                        closeArtifactViewer();
+                    }
+                    applyArtifactsTabFilter();
+                }
+            } catch (_) { showAppToast('Failed to save', 'error'); }
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="check" class="w-3.5"></i> Save Changes';
+            lucide.createIcons();
+        }
+
+        // ── Use artifact: load code into canvas and start new conversation ──
+        async function useArtifact(id, title) {
+            // Fetch full code first
+            let code = null;
+            if (currentViewerArtifact && currentViewerArtifact.id === id && currentViewerArtifact.code) {
+                code = currentViewerArtifact.code;
+            } else {
+                try {
+                    const res = await fetch('/api/artifacts?id=' + encodeURIComponent(id));
+                    if (res.ok) { const d = await res.json(); code = d.code; }
+                } catch (_) {}
+            }
+            closeArtifactViewer();
+            closeArtifactsPage();
+            newConversation();
+            if (code) {
+                // Open canvas with artifact code
+                await openCanvas(title, code);
+                // Pre-fill chat input with a prompt about the artifact
+                fillInput('Improve and expand this artifact: ' + title);
+            } else {
+                fillInput('I want to work on this artifact: ' + title);
+            }
         }
 
         function copyArtifactViewerLink() {
