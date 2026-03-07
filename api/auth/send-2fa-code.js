@@ -31,6 +31,7 @@ module.exports = async function handler(req, res) {
             if (authRes.ok) {
                 const authUser = await authRes.json();
                 userId = authUser.id;
+                if (authUser.user_metadata?.first_name) firstName = authUser.user_metadata.first_name;
             }
         }
 
