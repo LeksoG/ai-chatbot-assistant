@@ -495,11 +495,10 @@
             </button>
         </div>
 
-        <!-- Sidebar tabs: Chat / Presentations / Artifacts -->
+        <!-- Sidebar tabs: Chat / Presentations -->
         <div class="sidebar-tabs px-3">
             <button id="sidebar-tab-chat" class="sidebar-tab active" onclick="switchSidebarTab('chat')">Chat</button>
             <button id="sidebar-tab-pres" class="sidebar-tab" onclick="switchSidebarTab('presentations')">Slides</button>
-            <button id="sidebar-tab-artifacts" class="sidebar-tab" onclick="switchSidebarTab('artifacts')">Artifacts</button>
         </div>
 
         <!-- Search -->
@@ -2409,15 +2408,12 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             activeSidebarTab = tab;
             document.getElementById('sidebar-tab-chat').classList.toggle('active', tab === 'chat');
             document.getElementById('sidebar-tab-pres').classList.toggle('active', tab === 'presentations');
-            document.getElementById('sidebar-tab-artifacts').classList.toggle('active', tab === 'artifacts');
             document.getElementById('sidebar-chat-panel').classList.toggle('hidden', tab !== 'chat');
             document.getElementById('sidebar-pres-panel').classList.toggle('hidden', tab !== 'presentations');
-            document.getElementById('sidebar-artifacts-panel').classList.toggle('hidden', tab !== 'artifacts');
             const searchInput = document.getElementById('sidebar-search');
-            searchInput.placeholder = tab === 'chat' ? 'Search conversations\u2026' : tab === 'presentations' ? 'Search presentations\u2026' : 'Search artifacts\u2026';
+            searchInput.placeholder = tab === 'chat' ? 'Search conversations\u2026' : 'Search presentations\u2026';
             searchInput.value = '';
             if (tab === 'presentations') loadPresentations();
-            if (tab === 'artifacts') loadArtifactsSidebar();
         }
 
         function filterSidebarContent(query) {
@@ -4167,17 +4163,21 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 list.innerHTML = '<div class="p-3 text-gray-600 text-sm text-center">No artifacts yet</div>';
                 return;
             }
-            list.innerHTML = arts.slice(0, 15).map(a => `
+            list.innerHTML = arts.slice(0, 15).map(a => {
+                const snap = localStorage.getItem('art_snap_' + a.id);
+                const thumbInner = snap
+                    ? `<img src="${snap}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="">`
+                    : `<iframe srcdoc="${escapeHtml(a.code || '')}" sandbox="allow-scripts" title="${escapeHtml(a.title)}"></iframe>`;
+                return `
                 <div class="artifact-sidebar-card" onclick='openArtifactViewer(${JSON.stringify(a)})'>
-                    <div class="art-sb-thumb">
-                        <iframe srcdoc="${escapeHtml(a.code || '')}" sandbox="allow-scripts" title="${escapeHtml(a.title)}"></iframe>
-                    </div>
+                    <div class="art-sb-thumb">${thumbInner}</div>
                     <div class="flex-1 min-w-0">
                         <p class="text-xs text-gray-300 font-medium truncate">${escapeHtml(a.title)}</p>
                         <p class="text-[10px] text-gray-600 mt-0.5 truncate">${escapeHtml(a.user_name || 'Unknown')}</p>
                     </div>
                     <i data-lucide="chevron-right" class="w-3 text-gray-600 shrink-0"></i>
-                </div>`).join('');
+                </div>`;
+            }).join('');
             lucide.createIcons();
         }
 
@@ -4413,6 +4413,32 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
         }
 
+        // ── Artifact snapshot capture ────────────────────────
+        // After the viewer iframe renders, grab the largest canvas inside it,
+        // composite it to a small JPEG, and cache in localStorage so sidebar
+        // thumbnails show a real preview instead of a blank iframe.
+        function captureArtifactSnapshot(iframe, artifactId) {
+            try {
+                const doc = iframe.contentDocument || iframe.contentWindow?.document;
+                if (!doc) return;
+                const canvases = Array.from(doc.querySelectorAll('canvas'));
+                if (!canvases.length) return;
+                // Pick the canvas with the most pixels
+                const src = canvases.reduce((best, c) =>
+                    c.width * c.height > best.width * best.height ? c : best, canvases[0]);
+                if (!src.width || !src.height) return;
+                const thumb = document.createElement('canvas');
+                thumb.width = 240; thumb.height = 160;
+                const ctx = thumb.getContext('2d');
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(0, 0, 240, 160);
+                const ratio = Math.min(240 / src.width, 160 / src.height);
+                const w = src.width * ratio, h = src.height * ratio;
+                ctx.drawImage(src, (240 - w) / 2, (160 - h) / 2, w, h);
+                localStorage.setItem('art_snap_' + artifactId, thumb.toDataURL('image/jpeg', 0.8));
+            } catch (_) { /* cross-origin or tainted canvas — skip */ }
+        }
+
         // ── Artifact viewer modal ─────────────────────────────
         function openArtifactViewer(artifactData) {
             currentViewerArtifact = artifactData;
@@ -4450,6 +4476,13 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             document.getElementById('artifact-viewer-action-btns').innerHTML = actionBtns;
 
             const iframe = document.getElementById('artifact-viewer-iframe');
+            // After the iframe renders, capture a snapshot for sidebar thumbnails
+            iframe.onload = () => {
+                const id = artifactData.id;
+                if (!localStorage.getItem('art_snap_' + id)) {
+                    setTimeout(() => captureArtifactSnapshot(iframe, id), 1500);
+                }
+            };
             if (artifactData.code) {
                 iframe.srcdoc = artifactData.code;
             } else {
