@@ -495,10 +495,11 @@
             </button>
         </div>
 
-        <!-- Sidebar tabs: Chat / Presentations -->
+        <!-- Sidebar tabs: Chat / Presentations / Artifacts -->
         <div class="sidebar-tabs px-3">
             <button id="sidebar-tab-chat" class="sidebar-tab active" onclick="switchSidebarTab('chat')">Chat</button>
             <button id="sidebar-tab-pres" class="sidebar-tab" onclick="switchSidebarTab('presentations')">Slides</button>
+            <button id="sidebar-tab-artifacts" class="sidebar-tab" onclick="switchSidebarTab('artifacts')">Artifacts</button>
         </div>
 
         <!-- Search -->
@@ -3702,7 +3703,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 const r = await fetch('/api/auth/send-2fa-code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: currentUser.email, access_token: authToken })
+                    body: JSON.stringify({ email: currentUser.email, access_token: authToken, first_name: currentUser.first_name || '' })
                 });
                 const data = await r.json().catch(() => ({}));
                 if (!r.ok) {
@@ -3761,7 +3762,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 const r = await fetch('/api/auth/send-2fa-code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: currentUser.email, access_token: authToken })
+                    body: JSON.stringify({ email: currentUser.email, access_token: authToken, first_name: currentUser.first_name || '' })
                 });
                 const data = await r.json().catch(() => ({}));
                 if (!r.ok) {
