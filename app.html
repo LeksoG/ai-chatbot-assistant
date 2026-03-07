@@ -4027,7 +4027,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 if (err.name === 'AbortError') {
                     aiEl.innerHTML = `<div class="text-gray-500 text-sm italic">Generation stopped.</div>`;
                 } else {
-                    aiEl.innerHTML = `<div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3"><i data-lucide="wifi-off" class="w-4 shrink-0 mt-0.5"></i><span>Connection error. Check your network.</span></div>`;
+                    aiEl.innerHTML = `<div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3"><i data-lucide="wifi-off" class="w-4 shrink-0 mt-0.5"></i><span>Request timed out or connection lost. Try again — complex requests (like full websites) may take a moment.</span></div>`;
                     lucide.createIcons();
                 }
             }
