@@ -4163,11 +4163,12 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 list.innerHTML = '<div class="p-3 text-gray-600 text-sm text-center">No artifacts yet</div>';
                 return;
             }
-            list.innerHTML = arts.slice(0, 15).map(a => {
+            const sliced = arts.slice(0, 15);
+            list.innerHTML = sliced.map((a, idx) => {
                 const snap = localStorage.getItem('art_snap_' + a.id);
                 const thumbInner = snap
                     ? `<img src="${snap}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="">`
-                    : `<iframe srcdoc="${escapeHtml(a.code || '')}" sandbox="allow-scripts" title="${escapeHtml(a.title)}"></iframe>`;
+                    : `<iframe id="art-sb-frame-${idx}" sandbox="allow-scripts" title="${escapeHtml(a.title)}"></iframe>`;
                 return `
                 <div class="artifact-sidebar-card" onclick='openArtifactViewer(${JSON.stringify(a)})'>
                     <div class="art-sb-thumb">${thumbInner}</div>
@@ -4178,6 +4179,12 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     <i data-lucide="chevron-right" class="w-3 text-gray-600 shrink-0"></i>
                 </div>`;
             }).join('');
+            // Set srcdoc via JS to avoid double-quote breaking the HTML attribute
+            sliced.forEach((a, idx) => {
+                if (localStorage.getItem('art_snap_' + a.id)) return; // already using img
+                const frame = document.getElementById('art-sb-frame-' + idx);
+                if (frame) frame.srcdoc = a.code || '';
+            });
             lucide.createIcons();
         }
 
@@ -4300,7 +4307,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
             emptyEl.classList.add('hidden');
             const likedSet = getLikedArtifactIds();
-            grid.innerHTML = arts.map(a => {
+            grid.innerHTML = arts.map((a, idx) => {
                 const dateStr = a.created_at ? new Date(a.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
                 const isOwn = currentUser && a.user_id === currentUser.id;
                 const isLiked = likedSet.has(a.id);
@@ -4333,7 +4340,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     <div class="artifact-card-overlay">${viewBtn}${extraBtns}</div>
                     <div class="artifact-thumb">
                         <div class="artifact-thumb-iframe-wrap">
-                            <iframe srcdoc="${escapeHtml(a.code || '')}" sandbox="allow-scripts" title="${escapeHtml(a.title)}" loading="lazy"></iframe>
+                            <iframe id="art-grid-frame-${idx}" sandbox="allow-scripts" title="${escapeHtml(a.title)}" loading="lazy"></iframe>
                         </div>
                     </div>
                     <div class="artifact-info">
@@ -4346,6 +4353,11 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     </div>
                 </div>`;
             }).join('');
+            // Set srcdoc via JS to avoid double-quote breaking the HTML attribute
+            arts.forEach((a, idx) => {
+                const frame = document.getElementById('art-grid-frame-' + idx);
+                if (frame) frame.srcdoc = a.code || '';
+            });
             lucide.createIcons();
         }
 
