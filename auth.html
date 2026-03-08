@@ -119,6 +119,49 @@
         let awaiting2FA  = false;
         let pendingEmail = '';
 
+        // ── Location detection for 2FA trust ──────────────────
+        let currentLocationKey = null;
+        let currentIpAddress   = null;
+
+        // Fetch approximate location via IP geolocation (no permission needed)
+        (async function fetchLocation() {
+            try {
+                const r    = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(4000) });
+                const data = await r.json();
+                if (data && data.city && data.country_code) {
+                    // Use city+country as location key (low precision, good enough for geo-trust)
+                    currentLocationKey = (data.city + ',' + data.country_code).toLowerCase().replace(/\s+/g,'_');
+                    currentIpAddress   = data.ip || '';
+                }
+            } catch (_) { /* geolocation unavailable — 2FA will always be required */ }
+        })();
+
+        function getTrustedDevice(email) {
+            try {
+                const key  = 'clarity_trusted_dev_' + email;
+                const data = JSON.parse(localStorage.getItem(key) || 'null');
+                if (!data) return null;
+                // Check: same location AND within 12 hours
+                const twelveHrs = 12 * 60 * 60 * 1000;
+                if (data.locationKey === currentLocationKey && (Date.now() - data.lastVerified) < twelveHrs) {
+                    return data.deviceTrustKey;
+                }
+            } catch (_) {}
+            return null;
+        }
+
+        function storeTrustedDevice(email, deviceTrustKey) {
+            if (!currentLocationKey || !deviceTrustKey) return;
+            try {
+                const key = 'clarity_trusted_dev_' + email;
+                localStorage.setItem(key, JSON.stringify({
+                    deviceTrustKey,
+                    locationKey:  currentLocationKey,
+                    lastVerified: Date.now()
+                }));
+            } catch (_) {}
+        }
+
         // ── Tab switching ──────────────────────────────────
         function showLogin() {
             document.getElementById('login-form').classList.remove('hidden');
@@ -168,10 +211,19 @@
                     const res  = await fetch('/api/auth/verify-2fa', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: pendingEmail, code })
+                        body: JSON.stringify({
+                            email:       pendingEmail,
+                            code,
+                            locationKey: currentLocationKey,
+                            ipAddress:   currentIpAddress
+                        })
                     });
                     const data = await res.json();
                     if (!res.ok) { showAlert(data.error || 'Invalid or expired code.'); return; }
+                    // Store device trust key so next login from same location skips 2FA
+                    if (data.device_trust_key) {
+                        storeTrustedDevice(pendingEmail, data.device_trust_key);
+                    }
                     completeLogin(data);
                 } catch { showAlert('Connection error. Try again.'); }
                 finally   { setLoading('login-btn', false, 'Verify Code'); }
@@ -184,10 +236,19 @@
 
             setLoading('login-btn', true, 'Log In');
             try {
+                // Check if this device+location is trusted (skip 2FA)
+                const trustedKey = getTrustedDevice(email);
+
+                const body = { email, password };
+                if (trustedKey && currentLocationKey) {
+                    body.deviceTrustKey = trustedKey;
+                    body.locationKey    = currentLocationKey;
+                }
+
                 const res  = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify(body)
                 });
                 const data = await res.json();
                 if (!res.ok) { showAlert(data.error || 'Invalid email or password.'); return; }
@@ -200,6 +261,8 @@
                     showAlert('Check your email for a 6-digit code.', 'success');
                     lucide.createIcons();
                 } else {
+                    // If trusted login succeeded, refresh the trust timestamp
+                    if (trustedKey && data.trusted) storeTrustedDevice(email, trustedKey);
                     completeLogin(data);
                 }
             } catch { showAlert('Connection error. Try again.'); }

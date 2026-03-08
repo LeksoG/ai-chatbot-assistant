@@ -87,6 +87,29 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- Trusted devices table (for 2FA location-based trust)
+-- Stores device trust tokens so users aren't re-prompted for 2FA from known locations
+CREATE TABLE IF NOT EXISTS trusted_devices (
+    id              UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id         TEXT        NOT NULL,
+    device_key      TEXT        NOT NULL UNIQUE,  -- random token stored in user's localStorage
+    location_key    TEXT        NOT NULL,          -- hashed city+country from IP geolocation
+    ip_address      TEXT        DEFAULT '',
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    last_used_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_trusted_devices_user_id    ON trusted_devices(user_id);
+CREATE INDEX IF NOT EXISTS idx_trusted_devices_device_key ON trusted_devices(device_key);
+
+ALTER TABLE trusted_devices ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='trusted_devices' AND policyname='service_all_trusted_devices') THEN
+    CREATE POLICY "service_all_trusted_devices" ON trusted_devices FOR ALL USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+
 -- ============================================================
 -- After running this SQL, add these to your Vercel env vars:
 --   SUPABASE_URL          → Project Settings → API → Project URL

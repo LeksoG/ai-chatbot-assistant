@@ -9,7 +9,7 @@ module.exports = async function handler(req, res) {
     const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
     if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(503).json({ error: 'Supabase not configured' });
 
-    const { email, password } = req.body || {};
+    const { email, password, deviceTrustKey, locationKey } = req.body || {};
     if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
 
     try {
@@ -42,6 +42,40 @@ module.exports = async function handler(req, res) {
 
         // Handle 2FA
         if (profile && profile.two_fa_enabled) {
+            // Check trusted device: if client sends a device key + location key,
+            // verify it exists in trusted_devices and was used within the last 12 hours
+            if (deviceTrustKey && locationKey) {
+                const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+                const trustRes = await fetch(
+                    `${SUPABASE_URL}/rest/v1/trusted_devices?user_id=eq.${userId}&device_key=eq.${encodeURIComponent(deviceTrustKey)}&location_key=eq.${encodeURIComponent(locationKey)}&last_used_at=gt.${twelveHoursAgo}&limit=1`,
+                    { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+                );
+                const trustRecords = await trustRes.json();
+                if (Array.isArray(trustRecords) && trustRecords.length > 0) {
+                    // Trusted device at known location within 12h — skip 2FA, update last_used_at
+                    await fetch(`${SUPABASE_URL}/rest/v1/trusted_devices?id=eq.${trustRecords[0].id}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=minimal'
+                        },
+                        body: JSON.stringify({ last_used_at: new Date().toISOString() })
+                    }).catch(() => {});
+                    return res.json({
+                        access_token: accessToken,
+                        user: {
+                            id:             userId,
+                            email:          loginData.user.email,
+                            first_name:     profile?.first_name  || '',
+                            last_name:      profile?.last_name   || '',
+                            two_fa_enabled: profile?.two_fa_enabled || false
+                        },
+                        trusted: true
+                    });
+                }
+            }
             const code      = String(Math.floor(100000 + Math.random() * 900000));
             const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
