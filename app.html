@@ -23,8 +23,9 @@
         .chat-input-wrapper { transition:left 0.42s cubic-bezier(0.4,0,0.2,1), max-width 0.42s ease, width 0.42s ease, bottom 0.5s ease, position 0s; z-index:50; }
         .conversation-started .chat-input-wrapper { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%); width:100%; max-width:42rem; }
         body.canvas-open.conversation-started .chat-input-wrapper { left:24% !important; max-width:min(38rem,calc(48vw - 3rem)); }
-        .hide-on-start { transition:all 0.6s ease; }
+        .hide-on-start { }
         .conversation-started .hide-on-start { opacity:0; transform:translateY(-20px); pointer-events:none; display:none; }
+        @keyframes home-fade-up { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
         #main-ui { transition:justify-content 0.5s ease; }
         .conversation-started #main-ui { justify-content:flex-start; padding-top:5.5rem; }
         #chat-results { display:none; opacity:0; }
@@ -1712,19 +1713,38 @@
         });
 
         async function runGreeting() {
-            const myGen   = ++greetingGen;
+            const myGen     = ++greetingGen;
             const firstName = (currentUser.first_name || '').trim() || 'there';
-            const messages = [
+            const messages  = [
                 `Hi ${firstName}, how can I help?`,
                 `What can I build for you, ${firstName}?`,
                 `Hey ${firstName}, what's on your mind?`,
                 `Ready to help, ${firstName}. Ask away!`,
                 `Welcome back, ${firstName}!`,
             ];
-            let idx = 0;
-            // Clear any leftover text from a previous cycle
+
+            // Always show the first message fully visible right away —
+            // it appears as the greeting fades in, then typing takes over.
             const startEl = document.getElementById('greeting-text');
-            if (startEl) startEl.textContent = '';
+            if (startEl) startEl.textContent = messages[0];
+
+            // Wait for the home-screen fade-in to finish + a comfortable reading pause
+            await sleep(520 + 1800);
+            if (myGen !== greetingGen) return;
+
+            // Erase the first message, then cycle through the rest via typing
+            const firstMsg = messages[0];
+            for (let i = firstMsg.length; i >= 0; i--) {
+                if (myGen !== greetingGen) return;
+                const e = document.getElementById('greeting-text');
+                if (!e) return;
+                e.textContent = firstMsg.slice(0, i);
+                await sleep(22);
+            }
+            await sleep(280);
+
+            // Cycle remaining messages (skip index 0 — already shown)
+            let idx = 1;
             while (myGen === greetingGen) {
                 const el = document.getElementById('greeting-text');
                 if (!el) break;
@@ -3681,7 +3701,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             activeConversationId = null;
             conversationHistory  = [];
             chatResults.innerHTML = '';
-            document.body.classList.remove('conversation-started');
             topBrand.style.opacity = '0';
             topBrand.style.pointerEvents = 'none';
             resetCanvasPages();
@@ -3692,7 +3711,45 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             window.scrollTo({ top: 0, behavior: 'smooth' });
             setCanvasTitle('');
             loadConversations();
-            // Restart greeting cycle (incrementing greetingGen stops any old loop)
+
+            // Pre-set greeting text to first message before revealing, so it's
+            // already there when the elements fade in.
+            const firstName = (currentUser?.first_name || '').trim() || 'there';
+            const greetEl = document.getElementById('greeting-text');
+            if (greetEl) greetEl.textContent = `Hi ${firstName}, how can I help?`;
+
+            // Stamp each hide-on-start element with an opacity:0 / translateY starting
+            // state while they're still display:none (inline styles apply on reveal).
+            const homeEls = [...document.querySelectorAll('.hide-on-start')];
+            homeEls.forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+            });
+
+            // Remove conversation-started — this un-hides the home elements.
+            document.body.classList.remove('conversation-started');
+
+            // Two rAFs: first lets the browser process the display change,
+            // second starts the transition so the browser can interpolate.
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    homeEls.forEach((el, i) => {
+                        const delay = `${i * 0.13}s`;
+                        el.style.transition = `opacity 0.52s cubic-bezier(0.16,1,0.3,1) ${delay}, transform 0.52s cubic-bezier(0.16,1,0.3,1) ${delay}`;
+                        el.style.opacity    = '1';
+                        el.style.transform  = 'translateY(0)';
+                        // Clean up inline styles after animation completes
+                        setTimeout(() => {
+                            el.style.transition = '';
+                            el.style.opacity    = '';
+                            el.style.transform  = '';
+                        }, 700 + i * 130);
+                    });
+                });
+            });
+
+            // Restart greeting cycle (greetingGen increments inside runGreeting,
+            // stopping any previously running instance immediately).
             runGreeting();
         }
 
