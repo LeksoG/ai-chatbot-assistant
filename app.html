@@ -219,6 +219,32 @@
         .pp-orb-fill { position:absolute; inset:6px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); animation:pp-orb-pulse 3s ease-in-out infinite; border:1px solid rgba(255,255,255,0.06); }
         .pp-orb-text { position:relative; z-index:2; color:#fff; font-size:0.82rem; font-weight:500; text-align:center; max-width:240px; line-height:1.5; opacity:0.85; }
 
+        /* ── Mobile presentation layout ── */
+        .pp-mobile-slides-btn { display:none; }
+        #pp-slides-close-btn { display:none; }
+        @media (max-width:768px) {
+            .pp-mobile-slides-btn { display:flex !important; }
+            #presentation-page .pp-slides-panel {
+                position:fixed;
+                inset:0;
+                z-index:210;
+                width:100%;
+                border-right:none;
+                transform:translateX(-100%);
+                transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+                padding-top:0;
+            }
+            #presentation-page .pp-slides-panel.pp-panel-mobile-open {
+                transform:translateX(0);
+            }
+            #pp-slides-panel-header { display:flex; }
+            #pp-slides-close-btn { display:flex; }
+            #presentation-page .pp-topbar .pp-new-pres-span { display:none; }
+            #presentation-page .pp-slide-view { padding:0.75rem; }
+            .pp-active-slide { border-radius:0.65rem; }
+        }
+        #pp-slides-panel-header { display:none; align-items:center; justify-content:space-between; padding:0.75rem 0.75rem 0.5rem; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; }
+
         /* ── Thinking phase text (wave glow, no bounce) ── */
         @keyframes think-glow { 0%,100%{opacity:0.35;text-shadow:none} 50%{opacity:1;text-shadow:0 0 10px rgba(167,139,250,0.75),0 0 3px rgba(167,139,250,0.4)} }
         .thinking-phase-text { font-size:0.85rem; color:#a78bfa; font-style:italic; letter-spacing:0.01em; }
@@ -898,6 +924,10 @@
             <button onclick="ppBackButton()" class="w-8 h-8 flex items-center justify-center bg-white/6 hover:bg-white/12 border border-white/8 rounded-full transition-colors group">
                 <i data-lucide="arrow-left" class="w-3.5 text-gray-400 group-hover:text-white group-hover:-translate-x-0.5 transition-all"></i>
             </button>
+            <!-- Mobile: toggle slides panel (shown below back btn, only on phone) -->
+            <button id="pp-mobile-slides-btn-el" onclick="toggleMobileSlidesPanel()" class="pp-mobile-slides-btn w-8 h-8 items-center justify-center bg-white/6 hover:bg-white/12 border border-white/8 rounded-full transition-colors">
+                <i data-lucide="layout-list" class="w-3.5 text-gray-400"></i>
+            </button>
             <div class="flex-1 min-w-0">
                 <input id="pp-title" type="text" value="Untitled Presentation" placeholder="Presentation title"
                     class="bg-transparent text-white font-semibold text-sm outline-none border-b border-transparent hover:border-white/10 focus:border-violet-500/50 transition-colors w-full max-w-xs"
@@ -906,7 +936,7 @@
             <!-- New Presentation button (absolute center) -->
             <button onclick="newPresentationFromEditor()" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 hover:bg-violet-600/35 border border-violet-500/25 rounded-full text-xs text-violet-300 hover:text-violet-200 font-medium transition-all">
                 <i data-lucide="plus" class="w-3"></i>
-                <span>New Presentation</span>
+                <span class="pp-new-pres-span">New Presentation</span>
             </button>
             <div class="flex items-center gap-2">
                 <span id="pp-slide-count" class="text-[10px] text-gray-500 font-medium">0 slides</span>
@@ -922,10 +952,17 @@
         <div class="pp-content">
             <!-- Left: slide thumbnails -->
             <div class="pp-slides-panel" id="pp-slides-panel">
-                <div id="pp-slide-list">
+                <!-- Mobile header with close button -->
+                <div id="pp-slides-panel-header">
+                    <span class="text-xs font-semibold text-white">Slides</span>
+                    <button onclick="toggleMobileSlidesPanel()" id="pp-slides-close-btn" class="w-7 h-7 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors">
+                        <i data-lucide="x" class="w-3.5 text-gray-400"></i>
+                    </button>
+                </div>
+                <div id="pp-slide-list" class="overflow-y-auto flex-1 p-0.5">
                     <!-- Slide cards rendered by JS -->
                 </div>
-                <button onclick="addNewSlide()" class="w-full mt-2 py-2 border-2 border-dashed border-white/10 hover:border-violet-500/30 rounded-lg text-xs text-gray-500 hover:text-violet-400 transition-all flex items-center justify-center gap-1.5">
+                <button onclick="addNewSlide()" class="w-full mt-2 py-2 border-2 border-dashed border-white/10 hover:border-violet-500/30 rounded-lg text-xs text-gray-500 hover:text-violet-400 transition-all flex items-center justify-center gap-1.5 shrink-0">
                     <i data-lucide="plus" class="w-3"></i> Add slide
                 </button>
             </div>
@@ -2679,6 +2716,18 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             if (!activePresentationData) return;
             activeSlideIndex = index;
             renderPPSlides();
+            // On mobile, auto-close the slides panel after selection
+            if (window.innerWidth <= 768) {
+                const panel = document.getElementById('pp-slides-panel');
+                if (panel) panel.classList.remove('pp-panel-mobile-open');
+            }
+        }
+
+        function toggleMobileSlidesPanel() {
+            const panel = document.getElementById('pp-slides-panel');
+            if (!panel) return;
+            panel.classList.toggle('pp-panel-mobile-open');
+            lucide.createIcons();
         }
 
         function addNewSlide() {
@@ -4190,7 +4239,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             list.innerHTML = sliced.map((a, idx) => {
                 const snap = a.snapshot_url || localStorage.getItem('art_snap_' + a.id);
                 const thumbInner = snap
-                    ? `<img src="${snap}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="">`
+                    ? `<img src="${snap}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block;" alt="">`
                     : `<iframe id="art-sb-frame-${idx}" sandbox="allow-scripts" title="${escapeHtml(a.title)}"></iframe>`;
                 return `
                 <div class="artifact-sidebar-card" onclick='openArtifactViewer(${JSON.stringify(a)})'>
@@ -4381,7 +4430,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 if (snap) {
                     const img = document.createElement('img');
                     img.src = snap;
-                    img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+                    img.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block;';
                     img.alt = '';
                     thumb.appendChild(img);
                 } else {
