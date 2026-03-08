@@ -221,9 +221,9 @@
         @keyframes pp-orb-spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
         @keyframes pp-rainbow-shift { 0% { filter:hue-rotate(0deg); } 100% { filter:hue-rotate(360deg); } }
         @keyframes pp-orb-pulse { 0%,100% { transform:scale(1); opacity:0.7; } 50% { transform:scale(1.06); opacity:1; } }
-        .pp-orb-wrap { position:relative; width:200px; height:200px; display:flex; align-items:center; justify-content:center; margin-bottom:2rem; }
+        .pp-orb-wrap { position:relative; width:260px; height:175px; display:flex; align-items:center; justify-content:center; margin-bottom:2rem; }
         .pp-orb-bg { position:absolute; inset:0; border-radius:50%; background:conic-gradient(from 0deg, #ff0040, #ff8000, #ffe000, #00ff80, #00c8ff, #8000ff, #ff0080, #ff0040); animation:pp-orb-spin 6s linear infinite; }
-        .pp-orb-fill { position:absolute; inset:14px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0a0a0a 70%, #000 100%); animation:pp-orb-pulse 3s ease-in-out infinite; }
+        .pp-orb-fill { position:absolute; inset:14px; border-radius:50%; background:radial-gradient(ellipse at 40% 35%, #1f1235 0%, #0a0a0a 70%, #000 100%); animation:pp-orb-pulse 3s ease-in-out infinite; }
         .pp-orb-text { position:relative; z-index:2; color:#fff; font-size:0.82rem; font-weight:500; text-align:center; max-width:240px; line-height:1.5; opacity:0.85; }
 
         /* ── Mobile presentation layout ── */
@@ -231,8 +231,12 @@
         #pp-slides-close-btn { display:none; }
         #pp-mobile-title-row { display:none; }
         #pp-mobile-slide-indicator { display:none; }
+        /* Mobile new-presentation pill row — hidden by default */
+        #pp-mobile-new-pres-row { display:none; width:100%; justify-content:center; padding:0.15rem 0; }
         /* Slides panel header: hidden by default, shown on mobile — MUST be before @media so the media rule wins */
         #pp-slides-panel-header { display:none; align-items:center; justify-content:space-between; padding:0.85rem 1rem 0.75rem; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; background:#0d0d0d; }
+        /* Touch-capture overlay for swipe — hidden by default, shown on mobile; MUST be before @media so media rule wins */
+        #pp-swipe-overlay { display:none; position:absolute; inset:0; z-index:9; touch-action:none; }
         @media (max-width:768px) {
             .pp-mobile-slides-btn { display:flex !important; }
             /* Topbar: compact two-row layout on mobile */
@@ -243,7 +247,9 @@
             }
             /* Row 1: back + slide indicator + panel toggle + action icons */
             #pp-topbar-row1 { display:flex; width:100%; align-items:center; gap:0.5rem; }
-            /* Row 2: centered title — only on mobile */
+            /* Row 2: New Presentation pill (centered) */
+            #pp-mobile-new-pres-row { display:flex; }
+            /* Row 3: centered title — only on mobile */
             #pp-mobile-title-row {
                 display:flex; width:100%;
                 justify-content:center; align-items:center;
@@ -286,8 +292,8 @@
             .pp-active-slide { border-radius:0.75rem; max-width:100%; }
             /* Swipe overlay — transparent div over iframe to capture touches */
             #pp-swipe-overlay { display:block; }
-            /* Orb: smaller on mobile */
-            .pp-orb-wrap { width:160px; height:160px; margin-bottom:1.25rem; }
+            /* Orb: smaller on mobile, keep oval shape */
+            .pp-orb-wrap { width:220px; height:148px; margin-bottom:1.25rem; }
             .pp-orb-fill { inset:12px; }
             .pp-gen-orb { width:160px; height:160px; }
         }
@@ -296,8 +302,6 @@
         .pp-swipe-hint.pp-swipe-left  { left:0.6rem; }
         .pp-swipe-hint.pp-swipe-right { right:0.6rem; }
         .pp-swipe-hint.pp-swipe-active { opacity:1; }
-        /* Touch-capture overlay for swipe (only active on mobile) */
-        #pp-swipe-overlay { display:none; position:absolute; inset:0; z-index:9; touch-action:pan-y; }
 
         /* ── Thinking phase text (wave glow, no bounce) ── */
         @keyframes think-glow { 0%,100%{opacity:0.35;text-shadow:none} 50%{opacity:1;text-shadow:0 0 10px rgba(167,139,250,0.75),0 0 3px rgba(167,139,250,0.4)} }
@@ -1003,12 +1007,15 @@
                 <button onclick="deletePresentationConfirm()" class="p-1.5 hover:bg-red-900/30 rounded-lg transition-colors" title="Delete presentation">
                     <i data-lucide="trash-2" class="w-3.5 text-gray-500 hover:text-red-400"></i>
                 </button>
-                <!-- Mobile: New Presentation as + icon only -->
-                <button onclick="newPresentationFromEditor()" class="pp-mobile-slides-btn p-1.5 hover:bg-violet-900/30 rounded-lg transition-colors" title="New Presentation">
-                    <i data-lucide="plus" class="w-3.5 text-violet-400"></i>
+            </div>
+            <!-- ── Mobile row 2: New Presentation oval pill (centered, above title) ── -->
+            <div id="pp-mobile-new-pres-row">
+                <button onclick="newPresentationFromEditor()" class="flex items-center gap-1.5 px-4 py-1.5 bg-violet-600/20 hover:bg-violet-600/35 border border-violet-500/30 rounded-full text-xs text-violet-300 hover:text-violet-200 font-medium transition-all">
+                    <i data-lucide="plus" class="w-3"></i>
+                    <span>New Presentation</span>
                 </button>
             </div>
-            <!-- ── Mobile row 2: centered title ── -->
+            <!-- ── Mobile row 3: centered title ── -->
             <div id="pp-mobile-title-row">
                 <input id="pp-title-mobile" type="text" value="Untitled Presentation" placeholder="Presentation title"
                     class="bg-transparent text-white font-semibold text-sm outline-none text-center w-full max-w-[220px] border-b border-transparent focus:border-violet-500/50 transition-colors"
