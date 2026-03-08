@@ -222,8 +222,38 @@
         /* ── Mobile presentation layout ── */
         .pp-mobile-slides-btn { display:none; }
         #pp-slides-close-btn { display:none; }
+        #pp-mobile-title-row { display:none; }
+        #pp-mobile-slide-indicator { display:none; }
         @media (max-width:768px) {
             .pp-mobile-slides-btn { display:flex !important; }
+            /* Topbar: compact two-row layout on mobile */
+            #presentation-page .pp-topbar {
+                flex-wrap:wrap;
+                padding:0.55rem 0.75rem 0.45rem;
+                gap:0.4rem;
+            }
+            /* Row 1: back + slide indicator + panel toggle + action icons */
+            #pp-topbar-row1 { display:flex; width:100%; align-items:center; gap:0.5rem; }
+            /* Row 2: centered title — only on mobile */
+            #pp-mobile-title-row {
+                display:flex; width:100%;
+                justify-content:center; align-items:center;
+                padding-bottom:0.1rem;
+            }
+            /* Hide desktop title input and absolutely-positioned New Pres button */
+            #pp-title-desktop-wrap { display:none !important; }
+            #pp-new-pres-btn { display:none !important; }
+            /* Slide number pill at top of slide view */
+            #pp-mobile-slide-indicator {
+                display:flex; position:absolute;
+                top:0.6rem; left:50%; transform:translateX(-50%);
+                z-index:12; align-items:center; gap:0.35rem;
+                background:rgba(0,0,0,0.55); backdrop-filter:blur(6px);
+                border:1px solid rgba(255,255,255,0.1);
+                padding:0.2rem 0.65rem; border-radius:9999px;
+                font-size:0.68rem; color:#d1d5db; font-weight:500;
+                pointer-events:none; white-space:nowrap;
+            }
             #presentation-page .pp-slides-panel {
                 position:fixed;
                 inset:0;
@@ -239,11 +269,19 @@
             }
             #pp-slides-panel-header { display:flex; }
             #pp-slides-close-btn { display:flex; }
-            #presentation-page .pp-topbar .pp-new-pres-span { display:none; }
-            #presentation-page .pp-slide-view { padding:0.75rem; }
+            #presentation-page .pp-slide-view { padding:0.5rem; }
             .pp-active-slide { border-radius:0.65rem; }
+            /* Orb: smaller on mobile */
+            .pp-orb-wrap { width:150px; height:150px; margin-bottom:1.25rem; }
+            .pp-orb-bg { inset:-8px; filter:blur(22px); }
+            .pp-gen-orb { width:160px; height:160px; }
         }
         #pp-slides-panel-header { display:none; align-items:center; justify-content:space-between; padding:0.75rem 0.75rem 0.5rem; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; }
+        /* Swipe feedback indicator */
+        .pp-swipe-hint { position:absolute; top:50%; transform:translateY(-50%); width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.1); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.15s ease; pointer-events:none; z-index:15; }
+        .pp-swipe-hint.pp-swipe-left  { left:0.6rem; }
+        .pp-swipe-hint.pp-swipe-right { right:0.6rem; }
+        .pp-swipe-hint.pp-swipe-active { opacity:1; }
 
         /* ── Thinking phase text (wave glow, no bounce) ── */
         @keyframes think-glow { 0%,100%{opacity:0.35;text-shadow:none} 50%{opacity:1;text-shadow:0 0 10px rgba(167,139,250,0.75),0 0 3px rgba(167,139,250,0.4)} }
@@ -921,31 +959,45 @@
     <div id="presentation-page">
         <!-- Top bar -->
         <div class="pp-topbar">
-            <button onclick="ppBackButton()" class="w-8 h-8 flex items-center justify-center bg-white/6 hover:bg-white/12 border border-white/8 rounded-full transition-colors group">
+            <!-- ── Desktop layout (single flex row) ── -->
+            <button onclick="ppBackButton()" class="w-8 h-8 flex items-center justify-center bg-white/6 hover:bg-white/12 border border-white/8 rounded-full transition-colors group shrink-0">
                 <i data-lucide="arrow-left" class="w-3.5 text-gray-400 group-hover:text-white group-hover:-translate-x-0.5 transition-all"></i>
             </button>
-            <!-- Mobile: toggle slides panel (shown below back btn, only on phone) -->
-            <button id="pp-mobile-slides-btn-el" onclick="toggleMobileSlidesPanel()" class="pp-mobile-slides-btn w-8 h-8 items-center justify-center bg-white/6 hover:bg-white/12 border border-white/8 rounded-full transition-colors">
+            <!-- Mobile slides toggle (only visible on phones) -->
+            <button id="pp-mobile-slides-btn-el" onclick="toggleMobileSlidesPanel()" class="pp-mobile-slides-btn w-8 h-8 items-center justify-center bg-white/6 hover:bg-white/12 border border-white/8 rounded-full transition-colors shrink-0">
                 <i data-lucide="layout-list" class="w-3.5 text-gray-400"></i>
             </button>
-            <div class="flex-1 min-w-0">
+            <!-- Desktop: title input (hidden on mobile via CSS) -->
+            <div id="pp-title-desktop-wrap" class="flex-1 min-w-0">
                 <input id="pp-title" type="text" value="Untitled Presentation" placeholder="Presentation title"
                     class="bg-transparent text-white font-semibold text-sm outline-none border-b border-transparent hover:border-white/10 focus:border-violet-500/50 transition-colors w-full max-w-xs"
                     onchange="updatePresentationTitle(this.value)">
             </div>
-            <!-- New Presentation button (absolute center) -->
-            <button onclick="newPresentationFromEditor()" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 hover:bg-violet-600/35 border border-violet-500/25 rounded-full text-xs text-violet-300 hover:text-violet-200 font-medium transition-all">
+            <!-- Desktop: New Presentation button (absolute center, hidden on mobile) -->
+            <button id="pp-new-pres-btn" onclick="newPresentationFromEditor()" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 hover:bg-violet-600/35 border border-violet-500/25 rounded-full text-xs text-violet-300 hover:text-violet-200 font-medium transition-all">
                 <i data-lucide="plus" class="w-3"></i>
-                <span class="pp-new-pres-span">New Presentation</span>
+                <span>New Presentation</span>
             </button>
-            <div class="flex items-center gap-2">
-                <span id="pp-slide-count" class="text-[10px] text-gray-500 font-medium">0 slides</span>
+            <!-- Actions: slide count + download + delete -->
+            <div class="flex items-center gap-1.5 shrink-0 ml-auto">
+                <span id="pp-slide-count" class="text-[10px] text-gray-500 font-medium hidden-on-mobile"></span>
                 <button onclick="downloadPresentation()" class="p-1.5 hover:bg-violet-900/30 rounded-lg transition-colors" title="Download presentation">
                     <i data-lucide="download" class="w-3.5 text-gray-500 hover:text-violet-400"></i>
                 </button>
                 <button onclick="deletePresentationConfirm()" class="p-1.5 hover:bg-red-900/30 rounded-lg transition-colors" title="Delete presentation">
                     <i data-lucide="trash-2" class="w-3.5 text-gray-500 hover:text-red-400"></i>
                 </button>
+                <!-- Mobile: New Presentation as + icon only -->
+                <button onclick="newPresentationFromEditor()" class="pp-mobile-slides-btn p-1.5 hover:bg-violet-900/30 rounded-lg transition-colors" title="New Presentation">
+                    <i data-lucide="plus" class="w-3.5 text-violet-400"></i>
+                </button>
+            </div>
+            <!-- ── Mobile row 2: centered title ── -->
+            <div id="pp-mobile-title-row">
+                <input id="pp-title-mobile" type="text" value="Untitled Presentation" placeholder="Presentation title"
+                    class="bg-transparent text-white font-semibold text-sm outline-none text-center w-full max-w-[220px] border-b border-transparent focus:border-violet-500/50 transition-colors"
+                    oninput="syncMobileTitle(this.value)"
+                    onchange="updatePresentationTitle(this.value)">
             </div>
         </div>
         <!-- Content -->
@@ -972,6 +1024,17 @@
                 <div class="pp-slide-view" id="pp-slide-view">
                     <div class="pp-active-slide" id="pp-active-slide">
                         <iframe id="pp-slide-iframe" class="w-full h-full border-0 bg-black" sandbox="allow-scripts allow-same-origin"></iframe>
+                        <!-- Mobile: slide number indicator (shown on top of slide) -->
+                        <div id="pp-mobile-slide-indicator">
+                            <span id="pp-mobile-slide-num">Slide 1</span>
+                        </div>
+                        <!-- Mobile: swipe hint arrows (briefly flash on swipe) -->
+                        <div class="pp-swipe-hint pp-swipe-left" id="pp-swipe-left-hint">
+                            <i data-lucide="chevron-left" style="width:16px;height:16px;color:#fff"></i>
+                        </div>
+                        <div class="pp-swipe-hint pp-swipe-right" id="pp-swipe-right-hint">
+                            <i data-lucide="chevron-right" style="width:16px;height:16px;color:#fff"></i>
+                        </div>
                         <!-- Empty state: filled rainbow orb -->
                         <div id="pp-empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8" style="background:var(--bg);">
                             <div class="pp-orb-wrap">
@@ -1639,8 +1702,17 @@
         }
 
         // ── Greeting cycling animation ────────────────────────────
-        let greetingActive = true;
+        // Use a generation counter instead of a boolean so that calling
+        // runGreeting() again always invalidates any prior running instance.
+        let greetingGen = 0;
+        // Keep legacy alias used elsewhere to stop the animation
+        Object.defineProperty(window, 'greetingActive', {
+            set(v) { if (!v) greetingGen++; },
+            get()  { return false; } // not used for control
+        });
+
         async function runGreeting() {
+            const myGen   = ++greetingGen;
             const firstName = (currentUser.first_name || '').trim() || 'there';
             const messages = [
                 `Hi ${firstName}, how can I help?`,
@@ -1650,14 +1722,17 @@
                 `Welcome back, ${firstName}!`,
             ];
             let idx = 0;
-            while (greetingActive) {
+            // Clear any leftover text from a previous cycle
+            const startEl = document.getElementById('greeting-text');
+            if (startEl) startEl.textContent = '';
+            while (myGen === greetingGen) {
                 const el = document.getElementById('greeting-text');
                 if (!el) break;
                 const msg = messages[idx % messages.length];
                 idx++;
                 // Type out
                 for (let i = 0; i <= msg.length; i++) {
-                    if (!greetingActive) return;
+                    if (myGen !== greetingGen) return;
                     const e2 = document.getElementById('greeting-text');
                     if (!e2) return;
                     e2.textContent = msg.slice(0, i);
@@ -1667,7 +1742,7 @@
                 await sleep(2600);
                 // Erase
                 for (let i = msg.length; i >= 0; i--) {
-                    if (!greetingActive) return;
+                    if (myGen !== greetingGen) return;
                     const e2 = document.getElementById('greeting-text');
                     if (!e2) return;
                     e2.textContent = msg.slice(0, i);
@@ -2599,6 +2674,8 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                     activePresentationId = pres.id;
                     activePresentationData = { id: pres.id, title: pres.title, slides: pres.slides || [] };
                     document.getElementById('pp-title').value = pres.title;
+                    const mob = document.getElementById('pp-title-mobile');
+                    if (mob) mob.value = pres.title;
                     activeSlideIndex = 0;
                     renderPPSlides();
                     return;
@@ -2608,6 +2685,8 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             activePresentationId = null;
             activePresentationData = { id: null, title: 'Untitled Presentation', slides: [] };
             document.getElementById('pp-title').value = 'Untitled Presentation';
+            const mobInput = document.getElementById('pp-title-mobile');
+            if (mobInput) mobInput.value = 'Untitled Presentation';
             activeSlideIndex = 0;
             renderPPSlides();
             lucide.createIcons();
@@ -2709,6 +2788,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             if (slides[activeSlideIndex]) {
                 document.getElementById('pp-slide-iframe').srcdoc = slides[activeSlideIndex].html || '';
             }
+            updateMobileSlideIndicator();
             lucide.createIcons();
         }
 
@@ -2716,11 +2796,19 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             if (!activePresentationData) return;
             activeSlideIndex = index;
             renderPPSlides();
+            updateMobileSlideIndicator();
             // On mobile, auto-close the slides panel after selection
             if (window.innerWidth <= 768) {
                 const panel = document.getElementById('pp-slides-panel');
                 if (panel) panel.classList.remove('pp-panel-mobile-open');
             }
+        }
+
+        function updateMobileSlideIndicator() {
+            const el = document.getElementById('pp-mobile-slide-num');
+            if (!el || !activePresentationData) return;
+            const total = (activePresentationData.slides || []).length;
+            el.textContent = total > 0 ? `${activeSlideIndex + 1} / ${total}` : '';
         }
 
         function toggleMobileSlidesPanel() {
@@ -2729,6 +2817,58 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             panel.classList.toggle('pp-panel-mobile-open');
             lucide.createIcons();
         }
+
+        // Sync both title inputs (desktop hidden + mobile visible)
+        function syncMobileTitle(value) {
+            const dt = document.getElementById('pp-title');
+            if (dt) dt.value = value;
+        }
+
+        // ── Touch/swipe slide navigation (mobile) ─────────────
+        (function initPPSwipe() {
+            let touchStartX = 0, touchStartY = 0, swiping = false;
+            const SWIPE_THRESHOLD = 45;
+
+            function getSlideView() { return document.getElementById('pp-active-slide'); }
+
+            function flashHint(side) {
+                const hint = document.getElementById(side === 'left' ? 'pp-swipe-left-hint' : 'pp-swipe-right-hint');
+                if (!hint) return;
+                hint.classList.add('pp-swipe-active');
+                setTimeout(() => hint.classList.remove('pp-swipe-active'), 300);
+            }
+
+            document.addEventListener('touchstart', function(e) {
+                const sv = getSlideView();
+                if (!sv || !sv.contains(e.target)) return;
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                swiping = true;
+            }, { passive: true });
+
+            document.addEventListener('touchend', function(e) {
+                if (!swiping || window.innerWidth > 768) { swiping = false; return; }
+                const sv = getSlideView();
+                if (!sv || !sv.contains(e.changedTouches[0].target)) { swiping = false; return; }
+                const dx = e.changedTouches[0].clientX - touchStartX;
+                const dy = e.changedTouches[0].clientY - touchStartY;
+                swiping = false;
+                // Only handle mostly-horizontal swipes
+                if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dy) > Math.abs(dx) * 0.8) return;
+                if (!activePresentationData) return;
+                const slides = activePresentationData.slides || [];
+                if (slides.length < 2) return;
+                if (dx < 0 && activeSlideIndex < slides.length - 1) {
+                    // Swipe left → next slide
+                    flashHint('right');
+                    selectSlide(activeSlideIndex + 1);
+                } else if (dx > 0 && activeSlideIndex > 0) {
+                    // Swipe right → previous slide
+                    flashHint('left');
+                    selectSlide(activeSlideIndex - 1);
+                }
+            }, { passive: true });
+        })();
 
         function addNewSlide() {
             if (!activePresentationData) return;
@@ -3552,8 +3692,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             window.scrollTo({ top: 0, behavior: 'smooth' });
             setCanvasTitle('');
             loadConversations();
-            // Restart greeting cycle
-            greetingActive = true;
+            // Restart greeting cycle (incrementing greetingGen stops any old loop)
             runGreeting();
         }
 
