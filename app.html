@@ -3792,6 +3792,21 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             // Restart greeting cycle (greetingGen increments inside runGreeting,
             // stopping any previously running instance immediately).
             runGreeting();
+
+            // Replay the rainbow glow sweep on the input oval (same as first page load)
+            const _glowW = document.getElementById('rainbow-glow');
+            if (_glowW) {
+                const _glowC = _glowW.querySelector('.glow-content');
+                if (_glowC) {
+                    _glowC.style.animation = 'none';
+                    _glowW.style.opacity   = '0';
+                    void _glowC.offsetWidth; // force reflow so animation restarts
+                    setTimeout(() => {
+                        _glowC.style.animation = '';  // restores CSS rainbow-trace
+                        _glowW.style.opacity   = '1'; // 1s fade-in transition kicks in
+                    }, 60);
+                }
+            }
         }
 
         // ── Account page ──────────────────────────────────────────
