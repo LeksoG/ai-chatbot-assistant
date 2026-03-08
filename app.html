@@ -222,8 +222,8 @@
         @keyframes pp-rainbow-shift { 0% { filter:hue-rotate(0deg); } 100% { filter:hue-rotate(360deg); } }
         @keyframes pp-orb-pulse { 0%,100% { transform:scale(1); opacity:0.7; } 50% { transform:scale(1.06); opacity:1; } }
         .pp-orb-wrap { position:relative; width:200px; height:200px; display:flex; align-items:center; justify-content:center; margin-bottom:2rem; }
-        .pp-orb-bg { position:absolute; inset:-12px; border-radius:50%; background:conic-gradient(from 0deg, #ff0040, #ff8000, #ffe000, #00ff80, #00c8ff, #8000ff, #ff0080, #ff0040); animation:pp-orb-spin 4s linear infinite, pp-rainbow-shift 6s linear infinite; filter:blur(32px); opacity:0.35; }
-        .pp-orb-fill { position:absolute; inset:6px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0d0d0d 70%); animation:pp-orb-pulse 3s ease-in-out infinite; border:1px solid rgba(255,255,255,0.06); }
+        .pp-orb-bg { position:absolute; inset:0; border-radius:50%; background:conic-gradient(from 0deg, #ff0040, #ff8000, #ffe000, #00ff80, #00c8ff, #8000ff, #ff0080, #ff0040); animation:pp-orb-spin 6s linear infinite; }
+        .pp-orb-fill { position:absolute; inset:14px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #1f1235 0%, #0a0a0a 70%, #000 100%); animation:pp-orb-pulse 3s ease-in-out infinite; }
         .pp-orb-text { position:relative; z-index:2; color:#fff; font-size:0.82rem; font-weight:500; text-align:center; max-width:240px; line-height:1.5; opacity:0.85; }
 
         /* ── Mobile presentation layout ── */
@@ -231,6 +231,8 @@
         #pp-slides-close-btn { display:none; }
         #pp-mobile-title-row { display:none; }
         #pp-mobile-slide-indicator { display:none; }
+        /* Slides panel header: hidden by default, shown on mobile — MUST be before @media so the media rule wins */
+        #pp-slides-panel-header { display:none; align-items:center; justify-content:space-between; padding:0.85rem 1rem 0.75rem; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; background:#0d0d0d; }
         @media (max-width:768px) {
             .pp-mobile-slides-btn { display:flex !important; }
             /* Topbar: compact two-row layout on mobile */
@@ -285,11 +287,10 @@
             /* Swipe overlay — transparent div over iframe to capture touches */
             #pp-swipe-overlay { display:block; }
             /* Orb: smaller on mobile */
-            .pp-orb-wrap { width:150px; height:150px; margin-bottom:1.25rem; }
-            .pp-orb-bg { inset:-8px; filter:blur(22px); }
+            .pp-orb-wrap { width:160px; height:160px; margin-bottom:1.25rem; }
+            .pp-orb-fill { inset:12px; }
             .pp-gen-orb { width:160px; height:160px; }
         }
-        #pp-slides-panel-header { display:none; align-items:center; justify-content:space-between; padding:0.85rem 1rem 0.75rem; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; background:#0d0d0d; }
         /* Swipe feedback indicator */
         .pp-swipe-hint { position:absolute; top:50%; transform:translateY(-50%); width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.1); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.15s ease; pointer-events:none; z-index:15; }
         .pp-swipe-hint.pp-swipe-left  { left:0.6rem; }
