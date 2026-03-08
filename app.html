@@ -217,14 +217,22 @@
         @keyframes pp-page-fade { from { opacity:0; } to { opacity:1; } }
         #presentation-page.pp-open { animation:pp-page-fade 0.4s ease forwards; }
 
-        /* ── Rainbow orb (filled circle) ── */
-        @keyframes pp-orb-spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
-        @keyframes pp-rainbow-shift { 0% { filter:hue-rotate(0deg); } 100% { filter:hue-rotate(360deg); } }
-        @keyframes pp-orb-pulse { 0%,100% { transform:scale(1); opacity:0.7; } 50% { transform:scale(1.06); opacity:1; } }
-        .pp-orb-wrap { position:relative; width:260px; height:175px; display:flex; align-items:center; justify-content:center; margin-bottom:2rem; }
-        .pp-orb-bg { position:absolute; inset:0; border-radius:50%; background:conic-gradient(from 0deg, #ff0040, #ff8000, #ffe000, #00ff80, #00c8ff, #8000ff, #ff0080, #ff0040); animation:pp-orb-spin 6s linear infinite; }
-        .pp-orb-fill { position:absolute; inset:14px; border-radius:50%; background:radial-gradient(ellipse at 40% 35%, #1f1235 0%, #0a0a0a 70%, #000 100%); animation:pp-orb-pulse 3s ease-in-out infinite; }
-        .pp-orb-text { position:relative; z-index:2; color:#fff; font-size:0.82rem; font-weight:500; text-align:center; max-width:240px; line-height:1.5; opacity:0.85; }
+        /* ── Presentation empty-state hero container ── */
+        @keyframes pp-wave-reveal { 0%{clip-path:circle(0% at 0% 0%);opacity:0;transform:scale(0.98)} 10%{opacity:1} 100%{clip-path:circle(150% at 0% 0%);opacity:1;transform:scale(1)} }
+        @keyframes pp-rainbow-sweep { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        @keyframes pp-hero-text-fade { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pp-border-line-fade { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
+        @keyframes pp-edge-glow-stay { 0%{opacity:0.8;filter:blur(12px)} 100%{opacity:0.6;filter:blur(15px)} }
+        @keyframes pp-border-dash { to{stroke-dashoffset:0;opacity:1} }
+        .pp-hero-container { position:relative; width:85%; max-width:640px; height:300px; border-radius:40px; display:flex; align-items:center; justify-content:center; background:#0f0f0f; box-shadow:0 40px 100px rgba(0,0,0,0.9); overflow:hidden; mask-image:radial-gradient(white,black); -webkit-mask-image:-webkit-radial-gradient(white,black); }
+        .pp-border-svg { position:absolute; inset:0; width:100%; height:100%; fill:none; stroke-linecap:round; z-index:10; pointer-events:none; }
+        .pp-border-path { stroke:url(#pp-rainbow-grad); stroke-dasharray:2000; stroke-dashoffset:2000; stroke-width:2; animation:pp-border-dash 1.2s cubic-bezier(0.4,0,1,1) forwards, pp-border-line-fade 1s forwards 2s; }
+        .pp-border-glow-persistent { stroke:url(#pp-rainbow-grad); stroke-dasharray:2000; stroke-dashoffset:2000; stroke-width:14; filter:blur(12px); opacity:0; animation:pp-border-dash 1.2s cubic-bezier(0.4,0,1,1) forwards, pp-edge-glow-stay 3s ease-in-out infinite alternate 1.2s; }
+        .pp-rainbow-shared-gradient { background:linear-gradient(-45deg,#ff3b3b,#ff9f1c,#f9eb38,#2ec4b6,#20adff,#8338ec,#ff006e,#ff3b3b); background-size:300% 300%; }
+        .pp-rainbow-fill { position:absolute; inset:0; opacity:0; z-index:1; border-radius:40px; animation:pp-wave-reveal 1.5s cubic-bezier(0.19,1,0.22,1) forwards 1.2s, pp-rainbow-sweep 10s ease-in-out infinite 2.7s; }
+        .pp-outer-glow { position:absolute; inset:-25px; filter:blur(70px); opacity:0; z-index:-1; animation:pp-wave-reveal 1.5s cubic-bezier(0.19,1,0.22,1) forwards 1.2s, pp-rainbow-sweep 10s ease-in-out infinite 2.7s; }
+        .pp-glass-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.1); backdrop-filter:blur(35px) saturate(220%); -webkit-backdrop-filter:blur(35px) saturate(220%); border-radius:40px; z-index:2; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12); }
+        .pp-hero-text { color:#fff; font-size:1.15rem; font-weight:700; text-align:center; padding:0 3rem; z-index:3; opacity:0; animation:pp-hero-text-fade 2s ease-out forwards 2.3s; letter-spacing:-0.02em; line-height:1.35; text-shadow:0 4px 25px rgba(0,0,0,0.7); }
 
         /* ── Mobile presentation layout ── */
         .pp-mobile-slides-btn { display:none; }
@@ -292,9 +300,9 @@
             .pp-active-slide { border-radius:0.75rem; max-width:100%; }
             /* Swipe overlay — transparent div over iframe to capture touches */
             #pp-swipe-overlay { display:block; }
-            /* Orb: smaller on mobile, keep oval shape */
-            .pp-orb-wrap { width:220px; height:148px; margin-bottom:1.25rem; }
-            .pp-orb-fill { inset:12px; }
+            /* Hero container: smaller on mobile */
+            .pp-hero-container { height:220px; width:92%; border-radius:28px; }
+            .pp-hero-text { font-size:0.92rem; padding:0 1.75rem; }
             .pp-gen-orb { width:160px; height:160px; }
         }
         /* Swipe feedback indicator */
@@ -1066,13 +1074,28 @@
                         <div class="pp-swipe-hint pp-swipe-right" id="pp-swipe-right-hint">
                             <i data-lucide="chevron-right" style="width:16px;height:16px;color:#fff"></i>
                         </div>
-                        <!-- Empty state: filled rainbow orb -->
-                        <div id="pp-empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8" style="background:var(--bg);">
-                            <div class="pp-orb-wrap">
-                                <div class="pp-orb-bg"></div>
-                                <div class="pp-orb-fill"></div>
+                        <!-- Empty state: animated rainbow hero container -->
+                        <div id="pp-empty-state" class="absolute inset-0 flex items-center justify-center" style="background:var(--bg);">
+                            <div class="pp-hero-container">
+                                <svg class="pp-border-svg" viewBox="0 0 700 320" preserveAspectRatio="none">
+                                    <defs>
+                                        <linearGradient id="pp-rainbow-grad" x1="100%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%"   stop-color="#ff3b3b"/>
+                                            <stop offset="20%"  stop-color="#ff9f1c"/>
+                                            <stop offset="40%"  stop-color="#f9eb38"/>
+                                            <stop offset="60%"  stop-color="#2ec4b6"/>
+                                            <stop offset="80%"  stop-color="#8338ec"/>
+                                            <stop offset="100%" stop-color="#ff006e"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <rect class="pp-border-glow-persistent" x="4" y="4" width="692" height="312" rx="40"/>
+                                    <rect class="pp-border-path"            x="4" y="4" width="692" height="312" rx="40"/>
+                                </svg>
+                                <div class="pp-outer-glow pp-rainbow-shared-gradient"></div>
+                                <div class="pp-rainbow-fill pp-rainbow-shared-gradient"></div>
+                                <div class="pp-glass-overlay"></div>
+                                <p class="pp-hero-text">Type a prompt to generate a presentation in minutes</p>
                             </div>
-                            <p class="pp-orb-text">Type a prompt to generate a presentation in minutes</p>
                         </div>
                         <!-- Generation overlay (orb that morphs to rectangle) -->
                         <div id="pp-gen-overlay" class="pp-gen-overlay">
@@ -2813,6 +2836,11 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             if (slides.length === 0) {
                 list.innerHTML = '';
                 emptyState.style.display = 'flex';
+                // Restart hero container animations so they replay on each new presentation
+                (function restartHeroAnims() {
+                    const els = emptyState.querySelectorAll('.pp-border-path,.pp-border-glow-persistent,.pp-rainbow-fill,.pp-outer-glow,.pp-hero-text');
+                    els.forEach(el => { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; });
+                })();
                 document.getElementById('pp-slide-iframe').srcdoc = '';
                 ppLastSlideCount = 0;
                 lucide.createIcons();
