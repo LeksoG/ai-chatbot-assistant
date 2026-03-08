@@ -9,7 +9,7 @@ module.exports = async function handler(req, res) {
     const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
     if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(503).json({ error: 'Supabase not configured' });
 
-    const { email, code } = req.body || {};
+    const { email, code, locationKey, ipAddress } = req.body || {};
     if (!email || !code) return res.status(400).json({ error: 'Email and code are required' });
 
     try {
@@ -42,8 +42,33 @@ module.exports = async function handler(req, res) {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
 
+        // Generate a device trust key and store it so this device+location is trusted for 12 hours
+        let deviceTrustKey = null;
+        if (locationKey) {
+            const crypto = require('crypto');
+            deviceTrustKey = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
+            // Upsert: if same user+location exists, update; otherwise insert
+            await fetch(`${SUPABASE_URL}/rest/v1/trusted_devices`, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify({
+                    user_id:      profile.id,
+                    device_key:   deviceTrustKey,
+                    location_key: locationKey,
+                    ip_address:   ipAddress || '',
+                    last_used_at: new Date().toISOString()
+                })
+            }).catch(() => {});
+        }
+
         return res.json({
             access_token: accessToken,
+            device_trust_key: deviceTrustKey,
             user: {
                 id:             profile.id,
                 email:          profile.email,
