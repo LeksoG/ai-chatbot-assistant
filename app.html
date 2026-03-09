@@ -99,9 +99,155 @@
         .greeting-cursor { display:inline-block; width:2px; height:1.1em; background:#a78bfa; margin-left:1px; vertical-align:text-bottom; border-radius:1px; animation:blink 0.65s step-end infinite; }
 
         /* ── Email Mode ── */
-        #email-overlay { position:fixed; inset:0; z-index:60; background:var(--bg); display:none; flex-direction:column; align-items:center; }
-        #email-overlay.email-active { display:flex; animation:fade-up 0.4s ease forwards; }
-        #email-exit-btn { position:absolute; top:1.25rem; left:50%; transform:translateX(-50%); z-index:65; }
+        #email-overlay { position:fixed; inset:0; z-index:60; background:var(--bg); display:none; flex-direction:column; align-items:center; overflow:hidden; }
+        #email-overlay.email-active { display:flex; }
+        #email-exit-btn { position:absolute; top:1.25rem; left:50%; transform:translateX(-50%); z-index:65; opacity:0; transition:opacity 0.5s ease 0.6s; }
+        #email-overlay.email-active #email-exit-btn { opacity:1; }
+
+        /* ── Email viewport wrap transition ── */
+        #email-viewport-wrap {
+            position:relative; width:100vw; height:100vh;
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            transition: all 1s cubic-bezier(0.2,0.8,0.2,1);
+            transform-origin:center center;
+            background:var(--bg);
+        }
+        #email-viewport-wrap.email-wrapped {
+            width:94vw; height:90vh;
+            border-radius:40px;
+            background:#0f0f0f;
+            box-shadow:0 60px 120px rgba(0,0,0,0.9), 0 0 1px 1px rgba(255,255,255,0.05);
+            transform:scale(0.97) translateY(-8px);
+        }
+
+        /* ── Email hero (visible before wrap) ── */
+        .email-hero-header { transition:all 0.5s ease; }
+        #email-viewport-wrap.email-wrapped .email-hero-header { opacity:0; transform:translateY(-20px); pointer-events:none; }
+
+        /* ── Email AI cards (pre-wrap state) ── */
+        .email-ai-cards { position:relative; width:100%; max-width:700px; height:280px; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:40px; }
+        .email-ai-card {
+            position:absolute; width:calc(50% - 10px);
+            background:#121212; border:1px solid rgba(255,255,255,0.05); border-radius:1.25rem;
+            padding:1.25rem; cursor:pointer; text-align:left;
+            transition:all 0.6s cubic-bezier(0.16,1,0.3,1);
+            opacity:0; transform:translateY(30px) scale(0.96);
+            display:flex; align-items:center; gap:1rem;
+        }
+        .email-ai-card:hover { background:#181818; border-color:rgba(255,255,255,0.15); }
+        .email-ai-card .eac-icon { width:40px; height:40px; border-radius:0.75rem; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); flex-shrink:0; }
+        .email-ai-card .eac-label { font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:2px; }
+        .email-ai-card .eac-text { font-size:0.82rem; color:#9ca3af; font-weight:400; line-height:1.35; }
+
+        /* Card positions and entrance */
+        .email-ai-cards.cards-ready .email-ai-card { opacity:1; transform:translateY(0) scale(1); }
+        .email-ai-card.eac-1 { top:0; left:0; transition-delay:0.1s; }
+        .email-ai-card.eac-2 { top:0; right:0; transition-delay:0.2s; }
+        .email-ai-card.eac-3 { bottom:0; left:0; transition-delay:0.3s; }
+        .email-ai-card.eac-4 { bottom:0; right:0; transition-delay:0.4s; }
+
+        /* Cards exit when wrapped */
+        #email-viewport-wrap.email-wrapped .email-ai-card {
+            opacity:0; transform:translateY(-15px) scale(0.92);
+            transition:opacity 0.25s ease, transform 0.25s ease;
+            transition-delay:0s !important;
+        }
+
+        /* ── Typing text in email mode ── */
+        .email-typing-container {
+            position:absolute; top:-50px;
+            opacity:0; transform:translateY(8px);
+            transition:all 0.5s ease;
+            font-size:1.1rem; font-weight:400; color:#6b7280;
+            display:flex; align-items:center; justify-content:center;
+        }
+        #email-viewport-wrap.email-wrapped .email-typing-container {
+            opacity:1; transform:translateY(0); transition-delay:0.7s;
+        }
+        .email-typing-cursor { display:inline-block; width:2px; height:1.1em; background:#7c3aed; margin-left:3px; vertical-align:text-bottom; border-radius:1px; animation:blink 0.65s step-end infinite; }
+
+        /* ── Edge glow suggestion cards (shown in wrapped state) ── */
+        .email-glow-suggestions {
+            position:absolute; top:50%; left:50%;
+            transform:translate(-50%,-50%) scale(0.85);
+            display:flex; gap:14px; flex-wrap:wrap; justify-content:center;
+            opacity:0; visibility:hidden;
+            transition:all 0.5s cubic-bezier(0.34,1,0.64,1);
+        }
+        #email-viewport-wrap.email-wrapped .email-glow-suggestions {
+            opacity:1; visibility:visible;
+            transform:translate(-50%,-50%) scale(1);
+            transition-delay:0.35s;
+        }
+        .email-glow-card {
+            position:relative; min-width:130px; max-width:180px;
+            padding:12px 18px;
+            background:#161616; border-radius:14px;
+            display:flex; align-items:center; gap:10px;
+            font-size:0.78rem; font-weight:500; color:#bdc1c6;
+            cursor:pointer; z-index:10;
+            transition:all 0.2s ease;
+        }
+        .email-glow-card:hover { background:#1e1e1e; color:#e8eaed; transform:translateY(-1px); }
+        .email-glow-card .egc-icon { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); flex-shrink:0; }
+
+        /* SVG edge trace glow */
+        .email-glow-card .svg-trace {
+            position:absolute; top:-2px; left:-2px;
+            width:calc(100% + 4px); height:calc(100% + 4px);
+            pointer-events:none; z-index:-1;
+        }
+        .email-glow-card .trace-path {
+            fill:none; stroke-width:2.5; stroke-linecap:round;
+            stroke-dasharray:100 360; stroke-dashoffset:460; opacity:0;
+        }
+        @keyframes email-edge-trace {
+            0% { stroke-dashoffset:460; opacity:1; }
+            80% { opacity:1; }
+            100% { stroke-dashoffset:0; opacity:0; }
+        }
+        #email-viewport-wrap.email-wrapped .trace-path {
+            animation:email-edge-trace 2s cubic-bezier(0.4,0,0.2,1) forwards;
+            animation-delay:calc(0.5s + (var(--trace-delay) * 0.12s));
+        }
+
+        /* ── Email input transition in wrap ── */
+        .email-wrap-input {
+            position:absolute; bottom:40px; width:100%;
+            display:flex; justify-content:center;
+        }
+        .email-wrap-input-bar {
+            width:100%; max-width:480px;
+            height:50px; background:#111;
+            border:1px solid rgba(255,255,255,0.1); border-radius:25px;
+            display:flex; align-items:center; padding:0 18px; gap:10px;
+            transition:all 0.8s cubic-bezier(0.4,0,0.2,1);
+        }
+        #email-viewport-wrap.email-wrapped .email-wrap-input-bar {
+            max-width:400px; background:#161616; border-color:rgba(255,255,255,0.08);
+        }
+        .email-wrap-input-bar input {
+            flex:1; background:transparent; border:none; outline:none;
+            color:white; font-size:0.875rem;
+        }
+        .email-wrap-input-bar input::placeholder { color:#4b5563; }
+        .email-wrap-input-bar .ewi-icon {
+            width:28px; height:28px; border-radius:50%;
+            background:linear-gradient(135deg, #7c3aed, #a78bfa);
+            display:flex; align-items:center; justify-content:center; flex-shrink:0;
+        }
+        .email-wrap-input-bar button {
+            padding:8px; border-radius:50%;
+            background:white; color:black;
+            display:flex; align-items:center; justify-content:center;
+            transition:all 0.2s;
+        }
+        .email-wrap-input-bar button:disabled { opacity:0.3; cursor:not-allowed; }
+
+        /* Email chat interface (after transition) */
+        #email-chat-interface { animation:fade-up 0.4s ease forwards; }
+
+        /* Suggestion cards grid (post-transition, in chat mode) */
         .email-suggestions { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; width:100%; max-width:42rem; padding:0 1rem; }
         .email-suggestion-card { display:flex; align-items:center; gap:0.75rem; padding:1rem 1.15rem; background:#121212; border:1px solid rgba(255,255,255,0.05); border-radius:1rem; cursor:pointer; transition:all 0.2s; text-align:left; }
         .email-suggestion-card:hover { background:#181818; border-color:rgba(255,255,255,0.15); transform:translateY(-1px); }
@@ -887,44 +1033,91 @@
         <div id="email-exit-btn">
             <button onclick="exitEmailMode()" class="flex items-center gap-2 px-4 py-2 bg-[#1a1a1a] border border-white/10 rounded-full text-xs text-gray-300 hover:text-white hover:bg-[#222] hover:border-white/20 shadow-xl transition-all">
                 <i data-lucide="log-out" class="w-3.5"></i>
-                <span>Exit Email Mode</span>
+                <span>Back to AI</span>
             </button>
         </div>
 
-        <!-- Email header -->
-        <div class="pt-16 pb-4 text-center w-full max-w-42rem px-4" id="email-header-area">
-            <div class="flex items-center justify-center gap-2 mb-2">
-                <i data-lucide="mail" class="w-6 h-6 text-violet-400"></i>
-                <h2 class="text-xl font-bold text-white">Email Assistant</h2>
+        <!-- ── Viewport Wrap Container (transition animation) ── -->
+        <div id="email-viewport-wrap">
+            <!-- Hero header (fades out on wrap) -->
+            <div class="email-hero-header text-center mb-10">
+                <div class="flex items-center justify-center gap-3 mb-4">
+                    <i data-lucide="mail" class="w-10 h-10 text-violet-400"></i>
+                    <h1 class="text-4xl font-extrabold tracking-tight">Email Assistant</h1>
+                </div>
+                <p class="text-gray-500 text-lg font-light" id="email-connected-label">Connected as: <span id="email-connected-email" class="text-gray-400"></span></p>
             </div>
-            <p class="text-gray-500 text-sm" id="email-connected-label">Connected as: <span id="email-connected-email" class="text-gray-400"></span></p>
+
+            <!-- AI-style suggestion cards (visible before wrap) -->
+            <div class="email-ai-cards" id="email-ai-cards-grid">
+                <!-- Typing text (visible after wrap) -->
+                <div class="email-typing-container">
+                    <span id="email-typing-text"></span><span class="email-typing-cursor"></span>
+                </div>
+
+                <!-- 4 AI-style cards (populated by JS) -->
+                <div class="email-ai-card eac-1" id="email-ai-card-1"></div>
+                <div class="email-ai-card eac-2" id="email-ai-card-2"></div>
+                <div class="email-ai-card eac-3" id="email-ai-card-3"></div>
+                <div class="email-ai-card eac-4" id="email-ai-card-4"></div>
+
+                <!-- Edge glow suggestion cards (visible after wrap) -->
+                <div class="email-glow-suggestions" id="email-glow-suggestions"></div>
+            </div>
+
+            <!-- Input bar at bottom of wrap -->
+            <div class="email-wrap-input">
+                <div class="email-wrap-input-bar">
+                    <div class="ewi-icon">
+                        <i data-lucide="sparkles" class="w-3.5 text-white"></i>
+                    </div>
+                    <input id="email-wrap-input-field" type="text" placeholder="Ask AI to manage emails..."
+                        autocomplete="off" autocorrect="off" spellcheck="false"
+                        onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();emailWrapInputSubmit()}">
+                    <button onclick="emailWrapInputSubmit()" id="email-wrap-send-btn" disabled>
+                        <i data-lucide="arrow-up" class="w-3.5 stroke-[3]"></i>
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <!-- Email suggestions (shown initially) -->
-        <div id="email-suggestions-area" class="email-suggestions mb-4"></div>
-
-        <!-- Email chat messages -->
-        <div id="email-chat-area"></div>
-
-        <!-- Recipient bar (shown when sending) -->
-        <div id="email-recipient-bar" class="email-recipient-bar">
-            <label>From:</label>
-            <input type="text" id="email-from-field" disabled class="opacity-60 cursor-not-allowed">
-            <label class="ml-2">To:</label>
-            <input type="email" id="email-to-field" placeholder="recipient@email.com">
-        </div>
-
-        <!-- Email input bar -->
-        <div class="email-input-bar">
-            <div class="email-input-inner">
-                <input id="email-input" type="text" placeholder="Ask me to draft, reply, or manage your emails..."
-                    autocomplete="off" autocorrect="off" spellcheck="false"
-                    oninput="updateEmailSendBtn()" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();handleEmailSend()}">
-                <button id="email-send-btn" onclick="handleEmailSend()" disabled>
-                    <i data-lucide="arrow-up" class="w-4 stroke-[3]"></i>
-                </button>
+        <!-- ── Full Email Chat Interface (shown after first message) ── -->
+        <div id="email-chat-interface" style="display:none; width:100%; height:100%; flex-direction:column; align-items:center;">
+            <!-- Email header (compact) -->
+            <div class="pt-16 pb-4 text-center w-full max-w-42rem px-4" id="email-header-area">
+                <div class="flex items-center justify-center gap-2 mb-1">
+                    <i data-lucide="mail" class="w-5 h-5 text-violet-400"></i>
+                    <h2 class="text-lg font-bold text-white">Email Assistant</h2>
+                </div>
+                <p class="text-gray-600 text-xs">Connected as: <span id="email-chat-connected-email" class="text-gray-500"></span></p>
             </div>
-            <p class="text-center text-xs text-gray-700 mt-2">Clarity AI · Email Mode · Powered by Gmail</p>
+
+            <!-- Email suggestions (shown initially in chat mode) -->
+            <div id="email-suggestions-area" class="email-suggestions mb-4"></div>
+
+            <!-- Email chat messages -->
+            <div id="email-chat-area"></div>
+
+            <!-- Recipient bar (shown when sending) -->
+            <div id="email-recipient-bar" class="email-recipient-bar">
+                <label>From:</label>
+                <input type="text" id="email-from-field" disabled class="opacity-60 cursor-not-allowed">
+                <label class="ml-2">To:</label>
+                <input type="email" id="email-to-field" placeholder="recipient@email.com">
+            </div>
+
+            <!-- Email input bar -->
+            <div class="email-input-bar">
+                <div class="email-input-inner">
+                    <input id="email-input" type="text" placeholder="Ask me to draft, reply, or manage your emails..."
+                        autocomplete="off" autocorrect="off" spellcheck="false"
+                        oninput="updateEmailSendBtn()" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();handleEmailSend()}">
+                    <button id="email-send-btn" onclick="handleEmailSend()" disabled>
+                        <i data-lucide="arrow-up" class="w-4 stroke-[3]"></i>
+                    </button>
+                </div>
+                <p class="text-center text-xs text-gray-700 mt-2">Clarity AI · Email Mode · Powered by Gmail</p>
+            </div>
         </div>
     </div>
 
@@ -5294,14 +5487,59 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
         // ── Email Mode ──────────────────────────────────────────
 
+        let emailWrapSuggestions = [];
+        let emailTypingInterval = null;
+        const emailTypingPhrases = [
+            "Draft emails with AI assistance...",
+            "Summarize long threads in seconds...",
+            "Reply professionally in one click...",
+            "Find important emails instantly..."
+        ];
+        let emailPhraseIdx = 0, emailCharIdx = 0, emailIsDeleting = false;
+
+        function emailTypingEffect() {
+            const el = document.getElementById('email-typing-text');
+            if (!el) return;
+            const phrase = emailTypingPhrases[emailPhraseIdx];
+            if (emailIsDeleting) {
+                emailCharIdx--;
+                el.textContent = phrase.substring(0, emailCharIdx);
+                if (emailCharIdx === 0) {
+                    emailIsDeleting = false;
+                    emailPhraseIdx = (emailPhraseIdx + 1) % emailTypingPhrases.length;
+                    emailTypingInterval = setTimeout(emailTypingEffect, 400);
+                    return;
+                }
+                emailTypingInterval = setTimeout(emailTypingEffect, 25);
+            } else {
+                emailCharIdx++;
+                el.textContent = phrase.substring(0, emailCharIdx);
+                if (emailCharIdx === phrase.length) {
+                    emailIsDeleting = true;
+                    emailTypingInterval = setTimeout(emailTypingEffect, 1800);
+                    return;
+                }
+                emailTypingInterval = setTimeout(emailTypingEffect, 50);
+            }
+        }
+
         async function enterEmailMode() {
             emailModeActive = true;
             const overlay = document.getElementById('email-overlay');
+            const wrap = document.getElementById('email-viewport-wrap');
+            const chatInterface = document.getElementById('email-chat-interface');
+
             overlay.classList.add('email-active');
+
+            // Reset to wrap view
+            wrap.style.display = '';
+            wrap.classList.remove('email-wrapped');
+            chatInterface.style.display = 'none';
 
             // Set connected email labels
             document.getElementById('email-connected-email').textContent = gmailEmail;
             document.getElementById('email-from-field').value = gmailEmail;
+            document.getElementById('email-chat-connected-email').textContent = gmailEmail;
 
             // Clear previous state
             emailConversationHistory = [];
@@ -5311,22 +5549,96 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             document.getElementById('email-suggestions-area').innerHTML = '';
             document.getElementById('email-header-area').style.display = '';
 
+            // Clear AI cards
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById('email-ai-card-' + i).innerHTML = '';
+            }
+            document.getElementById('email-glow-suggestions').innerHTML = '';
+            document.getElementById('email-ai-cards-grid').classList.remove('cards-ready');
+
+            // Enable wrap input
+            const wrapInput = document.getElementById('email-wrap-input-field');
+            wrapInput.value = '';
+            document.getElementById('email-wrap-send-btn').disabled = true;
+            wrapInput.oninput = () => { document.getElementById('email-wrap-send-btn').disabled = !wrapInput.value.trim(); };
+
             lucide.createIcons();
 
             // Load emails and generate suggestions
             await loadEmailSuggestions();
+
+            // Start typing effect
+            emailPhraseIdx = 0; emailCharIdx = 0; emailIsDeleting = false;
+            if (emailTypingInterval) clearTimeout(emailTypingInterval);
+            emailTypingEffect();
         }
 
         function exitEmailMode() {
             emailModeActive = false;
-            document.getElementById('email-overlay').classList.remove('email-active');
-            emailConversationHistory = [];
-            activeEmailConversationId = null;
+            const overlay = document.getElementById('email-overlay');
+            const wrap = document.getElementById('email-viewport-wrap');
+
+            // Animate unwrap
+            wrap.classList.remove('email-wrapped');
+
+            setTimeout(() => {
+                overlay.classList.remove('email-active');
+                emailConversationHistory = [];
+                activeEmailConversationId = null;
+                if (emailTypingInterval) clearTimeout(emailTypingInterval);
+            }, 400);
+        }
+
+        function emailWrapInputSubmit() {
+            const inp = document.getElementById('email-wrap-input-field');
+            const val = inp.value.trim();
+            if (!val) return;
+            transitionToEmailChat(val);
+        }
+
+        function transitionToEmailChat(initialPrompt) {
+            const wrap = document.getElementById('email-viewport-wrap');
+            const chatInterface = document.getElementById('email-chat-interface');
+
+            // Fade out wrap, show chat interface
+            wrap.style.transition = 'opacity 0.4s ease';
+            wrap.style.opacity = '0';
+
+            setTimeout(() => {
+                wrap.style.display = 'none';
+                chatInterface.style.display = 'flex';
+                chatInterface.style.opacity = '0';
+                chatInterface.style.animation = 'fade-up 0.4s ease forwards';
+
+                if (initialPrompt) {
+                    document.getElementById('email-input').value = initialPrompt;
+                    updateEmailSendBtn();
+                    handleEmailSend();
+                }
+            }, 350);
         }
 
         async function loadEmailSuggestions() {
-            const sugArea = document.getElementById('email-suggestions-area');
-            sugArea.innerHTML = '<div class="flex justify-center py-4"><div class="loading-dots flex items-center gap-1"><span></span><span></span><span></span></div></div>';
+            // Show loading state on AI cards
+            const defaultCards = [
+                { icon: 'pen-line', color: 'text-blue-400', label: 'WRITING', labelColor: 'text-blue-400', text: 'Loading suggestions...' },
+                { icon: 'lightbulb', color: 'text-purple-400', label: 'ANALYSIS', labelColor: 'text-purple-400', text: 'Reading your inbox...' },
+                { icon: 'clock', color: 'text-green-400', label: 'PLANNING', labelColor: 'text-green-400', text: 'Checking recent emails...' },
+                { icon: 'search', color: 'text-amber-400', label: 'RESEARCH', labelColor: 'text-amber-400', text: 'Finding insights...' }
+            ];
+            for (let i = 0; i < 4; i++) {
+                const card = document.getElementById('email-ai-card-' + (i + 1));
+                card.innerHTML = `
+                    <div class="eac-icon"><i data-lucide="${defaultCards[i].icon}" class="w-4.5 ${defaultCards[i].color}"></i></div>
+                    <div><div class="eac-label ${defaultCards[i].labelColor}">${defaultCards[i].label}</div><div class="eac-text">${defaultCards[i].text}</div></div>`;
+                card.onclick = null;
+            }
+            lucide.createIcons();
+
+            // Animate cards in
+            setTimeout(() => {
+                document.getElementById('email-ai-cards-grid').classList.add('cards-ready');
+            }, 100);
 
             try {
                 // Fetch recent emails
@@ -5335,10 +5647,17 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 cachedGmailEmails = emailsData.emails || [];
 
                 if (cachedGmailEmails.length === 0) {
-                    sugArea.innerHTML = `
-                        <div class="col-span-2 text-center py-6">
-                            <p class="text-gray-500 text-sm">No recent emails found. Try asking me to compose one!</p>
-                        </div>`;
+                    // Update cards with generic suggestions
+                    const genericSugs = [
+                        { icon: 'pen-line', color: 'text-blue-400', label: 'COMPOSE', labelColor: 'text-blue-400', text: 'Write a new email', prompt: 'Help me compose a professional email' },
+                        { icon: 'reply', color: 'text-purple-400', label: 'DRAFT', labelColor: 'text-purple-400', text: 'Draft a follow-up message', prompt: 'Draft a follow-up email' },
+                        { icon: 'file-text', color: 'text-green-400', label: 'TEMPLATE', labelColor: 'text-green-400', text: 'Create an email template', prompt: 'Create a professional email template' },
+                        { icon: 'send', color: 'text-amber-400', label: 'OUTREACH', labelColor: 'text-amber-400', text: 'Write a cold outreach email', prompt: 'Write a cold outreach email' }
+                    ];
+                    updateEmailAICards(genericSugs);
+                    emailWrapSuggestions = genericSugs;
+                    // Trigger wrap transition after cards load
+                    setTimeout(() => triggerEmailWrap(), 2500);
                     return;
                 }
 
@@ -5351,27 +5670,82 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 const sugData = await sugRes.json();
                 const suggestions = sugData.suggestions || [];
 
-                if (suggestions.length === 0) {
-                    sugArea.innerHTML = '';
-                    return;
-                }
+                const labelCategories = ['REPLY', 'COMPOSE', 'SUMMARIZE', 'ACTION'];
+                const labelColors = ['text-blue-400', 'text-purple-400', 'text-green-400', 'text-amber-400'];
+                const iconColors = ['text-blue-400', 'text-purple-400', 'text-green-400', 'text-amber-400'];
 
-                const iconColors = ['text-blue-400', 'text-green-400', 'text-yellow-400', 'text-purple-400'];
-                sugArea.innerHTML = suggestions.slice(0, 4).map((s, i) => `
+                const mappedSugs = suggestions.slice(0, 4).map((s, i) => ({
+                    icon: s.icon || 'mail',
+                    color: iconColors[i % 4],
+                    label: labelCategories[i % 4],
+                    labelColor: labelColors[i % 4],
+                    text: s.title,
+                    prompt: s.prompt
+                }));
+
+                emailWrapSuggestions = mappedSugs;
+                updateEmailAICards(mappedSugs);
+
+                // Also populate the chat mode suggestion cards
+                const sugArea = document.getElementById('email-suggestions-area');
+                sugArea.innerHTML = mappedSugs.map((s, i) => `
                     <button class="email-suggestion-card" onclick="fillEmailInput('${escapeHtml(s.prompt.replace(/'/g, "\\'"))}')">
                         <div class="esc-icon">
-                            <i data-lucide="${escapeHtml(s.icon || 'mail')}" class="w-4 ${iconColors[i % 4]}"></i>
+                            <i data-lucide="${escapeHtml(s.icon)}" class="w-4 ${s.color}"></i>
                         </div>
-                        <span class="esc-text">${escapeHtml(s.title)}</span>
+                        <span class="esc-text">${escapeHtml(s.text)}</span>
                     </button>
                 `).join('');
                 lucide.createIcons();
+
+                // Trigger wrap transition after cards are shown
+                setTimeout(() => triggerEmailWrap(), 2800);
+
             } catch (err) {
-                sugArea.innerHTML = `
-                    <div class="col-span-2 text-center py-4">
-                        <p class="text-gray-500 text-sm">Could not load suggestions. Try typing a prompt below.</p>
-                    </div>`;
+                const fallbackSugs = [
+                    { icon: 'pen-line', color: 'text-blue-400', label: 'COMPOSE', labelColor: 'text-blue-400', text: 'Write a new email', prompt: 'Help me compose a professional email' },
+                    { icon: 'reply', color: 'text-purple-400', label: 'REPLY', labelColor: 'text-purple-400', text: 'Draft a quick reply', prompt: 'Help me draft a reply' },
+                    { icon: 'file-text', color: 'text-green-400', label: 'TEMPLATE', labelColor: 'text-green-400', text: 'Create an email template', prompt: 'Create a professional email template' },
+                    { icon: 'send', color: 'text-amber-400', label: 'SEND', labelColor: 'text-amber-400', text: 'Send a message', prompt: 'Help me write and send an email' }
+                ];
+                updateEmailAICards(fallbackSugs);
+                emailWrapSuggestions = fallbackSugs;
+                setTimeout(() => triggerEmailWrap(), 2500);
             }
+        }
+
+        function updateEmailAICards(sugs) {
+            for (let i = 0; i < Math.min(sugs.length, 4); i++) {
+                const card = document.getElementById('email-ai-card-' + (i + 1));
+                const s = sugs[i];
+                card.innerHTML = `
+                    <div class="eac-icon"><i data-lucide="${escapeHtml(s.icon)}" class="w-4.5 ${s.color}"></i></div>
+                    <div><div class="eac-label ${s.labelColor}">${escapeHtml(s.label)}</div><div class="eac-text">${escapeHtml(s.text)}</div></div>`;
+                card.onclick = () => {
+                    transitionToEmailChat(s.prompt);
+                };
+            }
+            lucide.createIcons();
+        }
+
+        function triggerEmailWrap() {
+            if (!emailModeActive) return;
+            const wrap = document.getElementById('email-viewport-wrap');
+            wrap.classList.add('email-wrapped');
+
+            // Populate edge glow suggestion cards
+            const glowArea = document.getElementById('email-glow-suggestions');
+
+            glowArea.innerHTML = emailWrapSuggestions.map((s, i) => {
+                const gid = 'eeg-' + i;
+                return `
+                <div class="email-glow-card" style="--trace-delay:${i + 1}" onclick="transitionToEmailChat('${escapeHtml(s.prompt.replace(/'/g, "\\'"))}')">
+                    <svg class="svg-trace" viewBox="0 0 200 56"><defs><linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#7c3aed"/><stop offset="33%" style="stop-color:#a78bfa"/><stop offset="66%" style="stop-color:#c084fc"/><stop offset="100%" style="stop-color:#7c3aed"/></linearGradient></defs><rect class="trace-path" x="1.5" y="1.5" rx="15" ry="15" width="197" height="53" stroke="url(#${gid})"/></svg>
+                    <div class="egc-icon"><i data-lucide="${escapeHtml(s.icon)}" class="w-3.5 ${s.color}"></i></div>
+                    <span>${escapeHtml(s.text)}</span>
+                </div>`;
+            }).join('');
+            lucide.createIcons();
         }
 
         function fillEmailInput(text) {
@@ -5401,6 +5775,14 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             // Hide suggestions after first message
             document.getElementById('email-suggestions-area').style.display = 'none';
             document.getElementById('email-header-area').style.display = 'none';
+
+            // Ensure chat interface is visible (in case coming from wrap view)
+            const chatIf = document.getElementById('email-chat-interface');
+            if (chatIf.style.display === 'none' || chatIf.style.display === '') {
+                document.getElementById('email-viewport-wrap').style.display = 'none';
+                chatIf.style.display = 'flex';
+                chatIf.style.opacity = '1';
+            }
 
             // Ensure email conversation exists
             await ensureEmailConversation(val);
@@ -5710,12 +6092,17 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 if (!res.ok) return;
                 const data = await res.json();
 
-                // Enter email mode and load conversation
+                // Enter email mode and load conversation (skip wrap, go straight to chat)
                 if (!emailModeActive) {
                     emailModeActive = true;
                     const overlay = document.getElementById('email-overlay');
                     overlay.classList.add('email-active');
+                    document.getElementById('email-viewport-wrap').style.display = 'none';
+                    const chatIf = document.getElementById('email-chat-interface');
+                    chatIf.style.display = 'flex';
+                    chatIf.style.opacity = '1';
                     document.getElementById('email-connected-email').textContent = data.gmail_email || gmailEmail;
+                    document.getElementById('email-chat-connected-email').textContent = data.gmail_email || gmailEmail;
                     document.getElementById('email-from-field').value = data.gmail_email || gmailEmail;
                     lucide.createIcons();
                 }

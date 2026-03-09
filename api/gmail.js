@@ -378,8 +378,8 @@ module.exports = async function handler(req, res) {
                 body: JSON.stringify({
                     model: 'mistral-small-latest',
                     messages: [
-                        { role: 'system', content: 'You are an email assistant. Based on the user\'s recent emails, suggest 4 quick actions they might want to take. Return ONLY a JSON array of 4 objects with "icon" (one of: reply, forward, star, alert-circle, clock, check-circle, file-text, users), "title" (3-5 words), and "prompt" (the full prompt to use). No markdown, no explanation.' },
-                        { role: 'user', content: `Here are my recent emails:\n${emailSummary}\n\nSuggest 4 relevant quick actions.` }
+                        { role: 'system', content: 'You are an email assistant that carefully reads the user\'s recent emails and suggests highly specific, contextually relevant actions. Each suggestion must reference actual email content (sender names, subjects, or topics from the emails). Do NOT suggest generic actions. Return ONLY a JSON array of 4 objects with "icon" (one of: reply, forward, star, alert-circle, clock, check-circle, file-text, users, pen-line, search), "title" (3-6 words, specific to the email content), and "prompt" (a detailed, specific prompt referencing the actual email). No markdown, no code fences, no explanation.' },
+                        { role: 'user', content: `Here are my recent emails:\n${emailSummary}\n\nBased on these specific emails, suggest 4 highly relevant and specific actions I should take. Reference actual senders, subjects, or content from the emails above.` }
                     ],
                     temperature: 0.7, max_tokens: 600
                 })
