@@ -143,15 +143,18 @@ module.exports = async function handler(req, res) {
         //  GMAIL OAUTH & API ACTIONS
         // ════════════════════════════════════════════════════════════
 
+        // Build redirect URI — use env var for exact match with Google Console
+        const APP_URL = process.env.APP_URL || (req.headers['x-forwarded-proto'] || 'https') + '://' + req.headers.host;
+        const REDIRECT_URI = APP_URL + '/api/gmail?action=callback';
+
         // auth-url — generate Google OAuth URL
         if (action === 'auth-url') {
             if (!GOOGLE_CLIENT_ID) {
                 return res.status(503).json({ error: 'Google OAuth not configured' });
             }
-            const redirectUri = `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}/api/gmail?action=callback`;
             const scope = encodeURIComponent('https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email');
             const state = req.query.userId || '';
-            const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${encodeURIComponent(state)}`;
+            const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${encodeURIComponent(state)}`;
             return res.json({ url });
         }
 
@@ -159,14 +162,12 @@ module.exports = async function handler(req, res) {
         if (action === 'callback' && req.method === 'GET') {
             const { code, state: userId } = req.query;
             if (!code) return res.status(400).send('Missing authorization code');
-
-            const redirectUri = `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}/api/gmail?action=callback`;
             const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
                     code, client_id: GOOGLE_CLIENT_ID, client_secret: GOOGLE_CLIENT_SECRET,
-                    redirect_uri: redirectUri, grant_type: 'authorization_code'
+                    redirect_uri: REDIRECT_URI, grant_type: 'authorization_code'
                 })
             });
             const tokens = await tokenRes.json();
