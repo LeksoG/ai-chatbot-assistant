@@ -3799,7 +3799,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         async function generateAndUpdateTitle(firstMessage) {
             if (!activeConversationId) return;
             try {
-                const res = await fetch('/api/generate-title', {
+                const res = await fetch('/api/conversations?action=generate-title', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: firstMessage })
@@ -5613,7 +5613,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         async function ensureEmailConversation(firstMsg) {
             if (activeEmailConversationId) return;
             try {
-                const res = await fetch('/api/email-conversations', {
+                const res = await fetch('/api/gmail?action=conversations', {
                     method: 'POST',
                     headers: authHeaders(),
                     body: JSON.stringify({
@@ -5632,7 +5632,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         async function saveEmailMessage(role, content, recipient, subject) {
             if (!activeEmailConversationId) return;
             try {
-                await fetch('/api/email-messages', {
+                await fetch('/api/gmail?action=messages', {
                     method: 'POST',
                     headers: authHeaders(),
                     body: JSON.stringify({
@@ -5648,7 +5648,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
         async function loadEmailConversations() {
             try {
-                const res = await fetch(`/api/email-conversations?userId=${encodeURIComponent(currentUser.id || '')}`, { headers: authHeaders() });
+                const res = await fetch(`/api/gmail?action=conversations?userId=${encodeURIComponent(currentUser.id || '')}`, { headers: authHeaders() });
                 if (!res.ok) return;
                 const convs = await res.json();
                 allEmailConversations = convs || [];
@@ -5693,7 +5693,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         async function loadEmailConversation(id) {
             toggleSidebar(false);
             try {
-                const res = await fetch(`/api/email-conversations?id=${id}`, { headers: authHeaders() });
+                const res = await fetch(`/api/gmail?action=conversations?id=${id}`, { headers: authHeaders() });
                 if (!res.ok) return;
                 const data = await res.json();
 
@@ -5755,7 +5755,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         async function deleteEmailConversation(id) {
             if (!confirm('Delete this email conversation?')) return;
             try {
-                await fetch(`/api/email-conversations?id=${id}`, {
+                await fetch(`/api/gmail?action=conversations?id=${id}`, {
                     method: 'DELETE',
                     headers: authHeaders()
                 });
