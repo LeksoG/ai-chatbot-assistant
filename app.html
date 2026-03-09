@@ -5220,12 +5220,16 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         // ── Check Gmail connection on load ──
         async function checkGmailStatus() {
             try {
-                const res = await fetch(`/api/gmail?action=status&userId=${encodeURIComponent(currentUser.id || '')}`);
+                const uid = currentUser.id || '';
+                console.log('[Gmail] checkGmailStatus userId=', uid);
+                if (!uid) { console.warn('[Gmail] No userId, skipping status check'); return; }
+                const res = await fetch(`/api/gmail?action=status&userId=${encodeURIComponent(uid)}`);
                 const data = await res.json();
+                console.log('[Gmail] status response:', data);
                 gmailConnected = data.connected;
                 gmailEmail = data.email || '';
                 updateGmailUI();
-            } catch (_) {}
+            } catch (e) { console.error('[Gmail] checkGmailStatus error:', e); }
         }
 
         function updateGmailUI() {
