@@ -5268,7 +5268,8 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         }
 
         // Check for gmail=connected URL param on load
-        if (new URLSearchParams(window.location.search).get('gmail') === 'connected') {
+        const _gmailJustConnected = new URLSearchParams(window.location.search).get('gmail') === 'connected';
+        if (_gmailJustConnected) {
             window.history.replaceState({}, '', '/app');
             setTimeout(() => {
                 checkGmailStatus().then(() => {
@@ -5276,7 +5277,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                         showAppToast('Gmail connected successfully!', 'success');
                     }
                 });
-            }, 500);
+            }, 800);
         }
 
         // ── Email Mode ──────────────────────────────────────────
@@ -5770,8 +5771,8 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
         }
 
-        // ── Init Gmail check ────────────────────────────────────
-        checkGmailStatus();
+        // ── Init Gmail check (skip if returning from OAuth — handled above) ──
+        if (!_gmailJustConnected) checkGmailStatus();
     </script>
 </body>
 </html>
