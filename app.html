@@ -5784,7 +5784,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         }
 
         // ── Init Gmail check (skip if returning from OAuth — handled above) ──
-        if (!_gmailJustConnected) checkGmailStatus();
+        if (!_gmailParam) checkGmailStatus();
     </script>
 </body>
 </html>
