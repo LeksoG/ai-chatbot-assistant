@@ -1,6 +1,6 @@
 module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
@@ -23,7 +23,127 @@ module.exports = async function handler(req, res) {
     try {
         const action = req.query.action || req.body?.action;
 
-        // GET /api/gmail?action=auth-url — generate Google OAuth URL
+        // ════════════════════════════════════════════════════════════
+        //  EMAIL CONVERSATIONS  (action=conversations)
+        // ════════════════════════════════════════════════════════════
+
+        if (action === 'conversations') {
+            // GET — list or get single conversation with messages
+            if (req.method === 'GET') {
+                const { userId, id } = req.query;
+
+                if (id) {
+                    const convRes = await fetch(
+                        `${SUPABASE_URL}/rest/v1/email_conversations?id=eq.${id}&select=*`,
+                        { headers: sbHeaders }
+                    );
+                    const convData = await convRes.json();
+                    if (!Array.isArray(convData) || convData.length === 0) {
+                        return res.status(404).json({ error: 'Not found' });
+                    }
+                    const msgRes = await fetch(
+                        `${SUPABASE_URL}/rest/v1/email_messages?email_conversation_id=eq.${id}&order=created_at.asc`,
+                        { headers: sbHeaders }
+                    );
+                    const messages = await msgRes.json();
+                    return res.json({ ...convData[0], messages: Array.isArray(messages) ? messages : [] });
+                }
+
+                if (!userId) return res.status(400).json({ error: 'userId required' });
+                const r = await fetch(
+                    `${SUPABASE_URL}/rest/v1/email_conversations?user_id=eq.${encodeURIComponent(userId)}&order=updated_at.desc`,
+                    { headers: sbHeaders }
+                );
+                const data = await r.json();
+                return res.json(Array.isArray(data) ? data : []);
+            }
+
+            // POST — create
+            if (req.method === 'POST') {
+                const { userId, title, gmailEmail } = req.body || {};
+                if (!userId || !title) return res.status(400).json({ error: 'userId and title required' });
+                const r = await fetch(`${SUPABASE_URL}/rest/v1/email_conversations`, {
+                    method: 'POST',
+                    headers: { ...sbHeaders, 'Prefer': 'return=representation' },
+                    body: JSON.stringify({ user_id: userId, title: title.slice(0, 200), gmail_email: gmailEmail || '' })
+                });
+                const data = await r.json();
+                return res.status(201).json(Array.isArray(data) ? data[0] : data);
+            }
+
+            // PATCH — update
+            if (req.method === 'PATCH') {
+                const { id } = req.query;
+                if (!id) return res.status(400).json({ error: 'id required' });
+                const updates = { updated_at: new Date().toISOString() };
+                const { title } = req.body || {};
+                if (title !== undefined) updates.title = title.slice(0, 200);
+                await fetch(`${SUPABASE_URL}/rest/v1/email_conversations?id=eq.${id}`, {
+                    method: 'PATCH', headers: sbHeaders, body: JSON.stringify(updates)
+                });
+                return res.json({ success: true });
+            }
+
+            // DELETE
+            if (req.method === 'DELETE') {
+                const { id } = req.query;
+                if (!id) return res.status(400).json({ error: 'id required' });
+                await fetch(`${SUPABASE_URL}/rest/v1/email_conversations?id=eq.${id}`, {
+                    method: 'DELETE', headers: sbHeaders
+                });
+                return res.json({ success: true });
+            }
+
+            return res.status(405).json({ error: 'Method not allowed' });
+        }
+
+        // ════════════════════════════════════════════════════════════
+        //  EMAIL MESSAGES  (action=messages)
+        // ════════════════════════════════════════════════════════════
+
+        if (action === 'messages') {
+            // GET
+            if (req.method === 'GET') {
+                const { conversationId } = req.query;
+                if (!conversationId) return res.status(400).json({ error: 'conversationId required' });
+                const r = await fetch(
+                    `${SUPABASE_URL}/rest/v1/email_messages?email_conversation_id=eq.${conversationId}&order=created_at.asc`,
+                    { headers: sbHeaders }
+                );
+                const data = await r.json();
+                return res.json(Array.isArray(data) ? data : []);
+            }
+
+            // POST
+            if (req.method === 'POST') {
+                const { conversationId, role, content, recipient, subject, isSent } = req.body || {};
+                if (!conversationId || !role || !content) {
+                    return res.status(400).json({ error: 'conversationId, role, and content required' });
+                }
+                const r = await fetch(`${SUPABASE_URL}/rest/v1/email_messages`, {
+                    method: 'POST',
+                    headers: { ...sbHeaders, 'Prefer': 'return=representation' },
+                    body: JSON.stringify({
+                        email_conversation_id: conversationId, role, content,
+                        recipient: recipient || '', subject: subject || '', is_sent: isSent || false
+                    })
+                });
+                const data = await r.json();
+                await fetch(`${SUPABASE_URL}/rest/v1/email_conversations?id=eq.${conversationId}`, {
+                    method: 'PATCH', headers: sbHeaders,
+                    body: JSON.stringify({ updated_at: new Date().toISOString() })
+                });
+                return res.status(201).json(Array.isArray(data) ? data[0] : data);
+            }
+
+            return res.status(405).json({ error: 'Method not allowed' });
+        }
+
+        // ════════════════════════════════════════════════════════════
+        //  GMAIL OAUTH & API ACTIONS
+        // ════════════════════════════════════════════════════════════
+
+        // auth-url — generate Google OAuth URL
         if (action === 'auth-url') {
             if (!GOOGLE_CLIENT_ID) {
                 return res.status(503).json({ error: 'Google OAuth not configured' });
@@ -35,7 +155,7 @@ module.exports = async function handler(req, res) {
             return res.json({ url });
         }
 
-        // GET /api/gmail?action=callback — OAuth callback from Google
+        // callback — OAuth callback from Google
         if (action === 'callback' && req.method === 'GET') {
             const { code, state: userId } = req.query;
             if (!code) return res.status(400).send('Missing authorization code');
@@ -45,29 +165,20 @@ module.exports = async function handler(req, res) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
-                    code,
-                    client_id: GOOGLE_CLIENT_ID,
-                    client_secret: GOOGLE_CLIENT_SECRET,
-                    redirect_uri: redirectUri,
-                    grant_type: 'authorization_code'
+                    code, client_id: GOOGLE_CLIENT_ID, client_secret: GOOGLE_CLIENT_SECRET,
+                    redirect_uri: redirectUri, grant_type: 'authorization_code'
                 })
             });
             const tokens = await tokenRes.json();
-            if (!tokens.access_token) {
-                return res.status(400).send('Failed to get access token');
-            }
+            if (!tokens.access_token) return res.status(400).send('Failed to get access token');
 
-            // Get user email from Google
             const profileRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
                 headers: { 'Authorization': `Bearer ${tokens.access_token}` }
             });
             const profile = await profileRes.json();
             const gmailEmail = profile.email || '';
 
-            // Store connection in Supabase (upsert by user_id)
             const expiry = new Date(Date.now() + (tokens.expires_in || 3600) * 1000).toISOString();
-
-            // Check if connection exists
             const existCheck = await fetch(
                 `${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}&select=id`,
                 { headers: sbHeaders }
@@ -76,13 +187,10 @@ module.exports = async function handler(req, res) {
 
             if (Array.isArray(existing) && existing.length > 0) {
                 await fetch(`${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}`, {
-                    method: 'PATCH',
-                    headers: sbHeaders,
+                    method: 'PATCH', headers: sbHeaders,
                     body: JSON.stringify({
-                        email: gmailEmail,
-                        access_token: tokens.access_token,
-                        refresh_token: tokens.refresh_token || '',
-                        token_expiry: expiry,
+                        email: gmailEmail, access_token: tokens.access_token,
+                        refresh_token: tokens.refresh_token || '', token_expiry: expiry,
                         updated_at: new Date().toISOString()
                     })
                 });
@@ -91,26 +199,20 @@ module.exports = async function handler(req, res) {
                     method: 'POST',
                     headers: { ...sbHeaders, 'Prefer': 'return=representation' },
                     body: JSON.stringify({
-                        user_id: userId,
-                        email: gmailEmail,
+                        user_id: userId, email: gmailEmail,
                         access_token: tokens.access_token,
-                        refresh_token: tokens.refresh_token || '',
-                        token_expiry: expiry
+                        refresh_token: tokens.refresh_token || '', token_expiry: expiry
                     })
                 });
             }
 
-            // Redirect back to app with success indicator
-            return res.writeHead(302, {
-                'Location': '/app?gmail=connected'
-            }).end();
+            return res.writeHead(302, { 'Location': '/app?gmail=connected' }).end();
         }
 
-        // GET /api/gmail?action=status&userId=xxx — check connection status
+        // status — check connection
         if (action === 'status') {
             const { userId } = req.query;
             if (!userId) return res.status(400).json({ error: 'userId required' });
-
             const r = await fetch(
                 `${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}&select=email,token_expiry`,
                 { headers: sbHeaders }
@@ -122,47 +224,36 @@ module.exports = async function handler(req, res) {
             return res.json({ connected: false });
         }
 
-        // POST /api/gmail?action=disconnect — remove Gmail connection
+        // disconnect
         if (action === 'disconnect') {
             const { userId } = req.body || {};
             if (!userId) return res.status(400).json({ error: 'userId required' });
-
             await fetch(`${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}`, {
-                method: 'DELETE',
-                headers: sbHeaders
+                method: 'DELETE', headers: sbHeaders
             });
             return res.json({ success: true });
         }
 
-        // GET /api/gmail?action=emails&userId=xxx — fetch recent emails
-        if (action === 'emails') {
-            const { userId } = req.query;
-            if (!userId) return res.status(400).json({ error: 'userId required' });
-
-            // Get stored tokens
+        // Helper: get valid access token for a user (with refresh)
+        async function getAccessToken(userId) {
             const connRes = await fetch(
                 `${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}&select=*`,
                 { headers: sbHeaders }
             );
             const connData = await connRes.json();
-            if (!Array.isArray(connData) || connData.length === 0) {
-                return res.status(401).json({ error: 'Gmail not connected' });
-            }
+            if (!Array.isArray(connData) || connData.length === 0) return null;
 
             let accessToken = connData[0].access_token;
             const refreshToken = connData[0].refresh_token;
             const tokenExpiry = new Date(connData[0].token_expiry);
 
-            // Refresh token if expired
             if (tokenExpiry < new Date() && refreshToken && GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
                 const refreshRes = await fetch('https://oauth2.googleapis.com/token', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: new URLSearchParams({
-                        client_id: GOOGLE_CLIENT_ID,
-                        client_secret: GOOGLE_CLIENT_SECRET,
-                        refresh_token: refreshToken,
-                        grant_type: 'refresh_token'
+                        client_id: GOOGLE_CLIENT_ID, client_secret: GOOGLE_CLIENT_SECRET,
+                        refresh_token: refreshToken, grant_type: 'refresh_token'
                     })
                 });
                 const newTokens = await refreshRes.json();
@@ -170,17 +261,26 @@ module.exports = async function handler(req, res) {
                     accessToken = newTokens.access_token;
                     const newExpiry = new Date(Date.now() + (newTokens.expires_in || 3600) * 1000).toISOString();
                     await fetch(`${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}`, {
-                        method: 'PATCH',
-                        headers: sbHeaders,
+                        method: 'PATCH', headers: sbHeaders,
                         body: JSON.stringify({ access_token: accessToken, token_expiry: newExpiry, updated_at: new Date().toISOString() })
                     });
                 }
             }
 
-            // Fetch recent emails from Gmail API
+            return { accessToken, email: connData[0].email };
+        }
+
+        // emails — fetch recent inbox
+        if (action === 'emails') {
+            const { userId } = req.query;
+            if (!userId) return res.status(400).json({ error: 'userId required' });
+
+            const creds = await getAccessToken(userId);
+            if (!creds) return res.status(401).json({ error: 'Gmail not connected' });
+
             const gmailRes = await fetch(
                 'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=15&q=in:inbox',
-                { headers: { 'Authorization': `Bearer ${accessToken}` } }
+                { headers: { 'Authorization': `Bearer ${creds.accessToken}` } }
             );
             const gmailData = await gmailRes.json();
 
@@ -188,68 +288,45 @@ module.exports = async function handler(req, res) {
                 return res.json({ emails: [] });
             }
 
-            // Fetch details for each message
             const emails = [];
-            const toFetch = gmailData.messages.slice(0, 10);
-            for (const msg of toFetch) {
+            for (const msg of gmailData.messages.slice(0, 10)) {
                 const detailRes = await fetch(
                     `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
-                    { headers: { 'Authorization': `Bearer ${accessToken}` } }
+                    { headers: { 'Authorization': `Bearer ${creds.accessToken}` } }
                 );
                 const detail = await detailRes.json();
                 const headers = detail.payload?.headers || [];
-                const from = headers.find(h => h.name === 'From')?.value || '';
-                const subject = headers.find(h => h.name === 'Subject')?.value || '(no subject)';
-                const date = headers.find(h => h.name === 'Date')?.value || '';
                 emails.push({
                     id: msg.id,
-                    from,
-                    subject,
-                    date,
+                    from: headers.find(h => h.name === 'From')?.value || '',
+                    subject: headers.find(h => h.name === 'Subject')?.value || '(no subject)',
+                    date: headers.find(h => h.name === 'Date')?.value || '',
                     snippet: detail.snippet || ''
                 });
             }
-
             return res.json({ emails });
         }
 
-        // POST /api/gmail?action=send — send an email via Gmail API
+        // send — send email via Gmail API
         if (action === 'send') {
             const { userId, to, subject, body: emailBody } = req.body || {};
             if (!userId || !to || !emailBody) {
                 return res.status(400).json({ error: 'userId, to, and body are required' });
             }
 
-            // Get stored tokens
-            const connRes = await fetch(
-                `${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}&select=*`,
-                { headers: sbHeaders }
-            );
-            const connData = await connRes.json();
-            if (!Array.isArray(connData) || connData.length === 0) {
-                return res.status(401).json({ error: 'Gmail not connected' });
-            }
+            const creds = await getAccessToken(userId);
+            if (!creds) return res.status(401).json({ error: 'Gmail not connected' });
 
-            let accessToken = connData[0].access_token;
-            const senderEmail = connData[0].email;
-
-            // Compose RFC 2822 email
             const emailLines = [
-                `From: ${senderEmail}`,
-                `To: ${to}`,
+                `From: ${creds.email}`, `To: ${to}`,
                 `Subject: ${subject || '(no subject)'}`,
-                'Content-Type: text/html; charset=utf-8',
-                '',
-                emailBody
+                'Content-Type: text/html; charset=utf-8', '', emailBody
             ];
             const rawEmail = Buffer.from(emailLines.join('\r\n')).toString('base64url');
 
             const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Authorization': `Bearer ${creds.accessToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ raw: rawEmail })
             });
             const sendData = await sendRes.json();
@@ -259,7 +336,7 @@ module.exports = async function handler(req, res) {
             return res.json({ success: true, messageId: sendData.id });
         }
 
-        // POST /api/gmail?action=suggestions — AI-generated suggestions from emails
+        // suggestions — AI suggestions from inbox
         if (action === 'suggestions') {
             const { userId, emails } = req.body || {};
             if (!userId || !emails) return res.status(400).json({ error: 'userId and emails required' });
@@ -273,21 +350,16 @@ module.exports = async function handler(req, res) {
 
             const mistralRes = await fetch('https://api.mistral.ai/v1/chat/completions', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
                 body: JSON.stringify({
                     model: 'mistral-small-latest',
                     messages: [
                         { role: 'system', content: 'You are an email assistant. Based on the user\'s recent emails, suggest 4 quick actions they might want to take. Return ONLY a JSON array of 4 objects with "icon" (one of: reply, forward, star, alert-circle, clock, check-circle, file-text, users), "title" (3-5 words), and "prompt" (the full prompt to use). No markdown, no explanation.' },
                         { role: 'user', content: `Here are my recent emails:\n${emailSummary}\n\nSuggest 4 relevant quick actions.` }
                     ],
-                    temperature: 0.7,
-                    max_tokens: 600
+                    temperature: 0.7, max_tokens: 600
                 })
             });
-
             const data = await mistralRes.json();
             let suggestions = [];
             try {
@@ -301,11 +373,10 @@ module.exports = async function handler(req, res) {
                     { icon: 'check-circle', title: 'Draft a thank you', prompt: 'Write a thank you email for the most recent conversation' }
                 ];
             }
-
             return res.json({ suggestions });
         }
 
-        // POST /api/gmail?action=compose — AI compose email based on prompt
+        // compose — AI email drafting
         if (action === 'compose') {
             const { prompt, history = [], emails = [] } = req.body || {};
             if (!prompt) return res.status(400).json({ error: 'prompt required' });
@@ -319,32 +390,17 @@ module.exports = async function handler(req, res) {
 
             const mistralRes = await fetch('https://api.mistral.ai/v1/chat/completions', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
                 body: JSON.stringify({
                     model: 'mistral-large-latest',
                     messages: [
-                        { role: 'system', content: `You are an AI email assistant for Clarity AI. When the user asks you to draft, reply, or compose an email, produce a well-structured email response. Format your response as follows:
-
-**Subject:** [suggested subject line]
-
----
-
-[Full email body with proper greeting, content, and sign-off]
-
----
-
-Keep the email professional, clear, and concise. If the user wants to reply to a specific email, reference the context provided.${emailContext}` },
+                        { role: 'system', content: `You are an AI email assistant for Clarity AI. When the user asks you to draft, reply, or compose an email, produce a well-structured email response. Format your response as follows:\n\n**Subject:** [suggested subject line]\n\n---\n\n[Full email body with proper greeting, content, and sign-off]\n\n---\n\nKeep the email professional, clear, and concise. If the user wants to reply to a specific email, reference the context provided.${emailContext}` },
                         ...history,
                         { role: 'user', content: prompt }
                     ],
-                    temperature: 0.7,
-                    max_tokens: 3000
+                    temperature: 0.7, max_tokens: 3000
                 })
             });
-
             const data = await mistralRes.json();
             if (!mistralRes.ok) {
                 return res.status(mistralRes.status).json({ error: data.message || 'AI error' });
@@ -358,4 +414,3 @@ Keep the email professional, clear, and concise. If the user wants to reply to a
         return res.status(500).json({ error: err.message });
     }
 };
-
