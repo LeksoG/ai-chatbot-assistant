@@ -186,8 +186,11 @@ module.exports = async function handler(req, res) {
             );
             const existing = await existCheck.json();
 
+            console.log('[Gmail callback] userId:', userId, 'email:', gmailEmail, 'existing:', existing);
+
+            let dbRes;
             if (Array.isArray(existing) && existing.length > 0) {
-                await fetch(`${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}`, {
+                dbRes = await fetch(`${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}`, {
                     method: 'PATCH', headers: sbHeaders,
                     body: JSON.stringify({
                         email: gmailEmail, access_token: tokens.access_token,
@@ -196,7 +199,7 @@ module.exports = async function handler(req, res) {
                     })
                 });
             } else {
-                await fetch(`${SUPABASE_URL}/rest/v1/gmail_connections`, {
+                dbRes = await fetch(`${SUPABASE_URL}/rest/v1/gmail_connections`, {
                     method: 'POST',
                     headers: { ...sbHeaders, 'Prefer': 'return=representation' },
                     body: JSON.stringify({
@@ -206,6 +209,8 @@ module.exports = async function handler(req, res) {
                     })
                 });
             }
+            const dbBody = await dbRes.text();
+            console.log('[Gmail callback] DB response:', dbRes.status, dbBody);
 
             return res.writeHead(302, { 'Location': '/app?gmail=connected' }).end();
         }
@@ -213,12 +218,14 @@ module.exports = async function handler(req, res) {
         // status — check connection
         if (action === 'status') {
             const { userId } = req.query;
+            console.log('[Gmail status] userId:', userId);
             if (!userId) return res.status(400).json({ error: 'userId required' });
             const r = await fetch(
                 `${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}&select=email,token_expiry`,
                 { headers: sbHeaders }
             );
             const data = await r.json();
+            console.log('[Gmail status] DB result:', JSON.stringify(data));
             if (Array.isArray(data) && data.length > 0) {
                 return res.json({ connected: true, email: data[0].email });
             }
