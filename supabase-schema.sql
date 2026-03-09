@@ -87,8 +87,75 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- Gmail connections table (stores OAuth tokens per user)
+CREATE TABLE IF NOT EXISTS gmail_connections (
+    id          UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id     TEXT        NOT NULL UNIQUE,
+    email       TEXT        NOT NULL,
+    access_token  TEXT      NOT NULL,
+    refresh_token TEXT      NOT NULL,
+    token_expiry  TIMESTAMPTZ NOT NULL,
+    created_at  TIMESTAMPTZ DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_gmail_connections_user_id ON gmail_connections(user_id);
+
+ALTER TABLE gmail_connections ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='gmail_connections' AND policyname='service_all_gmail_connections') THEN
+    CREATE POLICY "service_all_gmail_connections" ON gmail_connections FOR ALL USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+
+-- Email conversations table (stores email sessions)
+CREATE TABLE IF NOT EXISTS email_conversations (
+    id          UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id     TEXT        NOT NULL,
+    title       TEXT        NOT NULL,
+    gmail_email TEXT        DEFAULT '',
+    created_at  TIMESTAMPTZ DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_conversations_user_id    ON email_conversations(user_id);
+CREATE INDEX IF NOT EXISTS idx_email_conversations_updated_at ON email_conversations(updated_at DESC);
+
+ALTER TABLE email_conversations ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='email_conversations' AND policyname='service_all_email_conversations') THEN
+    CREATE POLICY "service_all_email_conversations" ON email_conversations FOR ALL USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+
+-- Email messages table (stores individual email thread messages)
+CREATE TABLE IF NOT EXISTS email_messages (
+    id                  UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+    email_conversation_id UUID      NOT NULL REFERENCES email_conversations(id) ON DELETE CASCADE,
+    role                TEXT        NOT NULL CHECK (role IN ('user', 'assistant')),
+    content             TEXT        NOT NULL,
+    recipient           TEXT        DEFAULT '',
+    subject             TEXT        DEFAULT '',
+    is_sent             BOOLEAN     DEFAULT false,
+    created_at          TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_messages_conversation_id ON email_messages(email_conversation_id);
+
+ALTER TABLE email_messages ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='email_messages' AND policyname='service_all_email_messages') THEN
+    CREATE POLICY "service_all_email_messages" ON email_messages FOR ALL USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+
 -- ============================================================
 -- After running this SQL, add these to your Vercel env vars:
 --   SUPABASE_URL          → Project Settings → API → Project URL
 --   SUPABASE_SERVICE_KEY  → Project Settings → API → service_role secret
+--   GOOGLE_CLIENT_ID      → Google Cloud Console → Credentials → OAuth 2.0 Client ID
+--   GOOGLE_CLIENT_SECRET  → Google Cloud Console → Credentials → OAuth 2.0 Client Secret
 -- ============================================================

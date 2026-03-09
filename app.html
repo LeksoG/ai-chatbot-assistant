@@ -98,6 +98,42 @@
         /* ── Greeting typing cursor ── */
         .greeting-cursor { display:inline-block; width:2px; height:1.1em; background:#a78bfa; margin-left:1px; vertical-align:text-bottom; border-radius:1px; animation:blink 0.65s step-end infinite; }
 
+        /* ── Email Mode ── */
+        #email-overlay { position:fixed; inset:0; z-index:60; background:var(--bg); display:none; flex-direction:column; align-items:center; }
+        #email-overlay.email-active { display:flex; animation:fade-up 0.4s ease forwards; }
+        #email-exit-btn { position:absolute; top:1.25rem; left:50%; transform:translateX(-50%); z-index:65; }
+        .email-suggestions { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; width:100%; max-width:42rem; padding:0 1rem; }
+        .email-suggestion-card { display:flex; align-items:center; gap:0.75rem; padding:1rem 1.15rem; background:#121212; border:1px solid rgba(255,255,255,0.05); border-radius:1rem; cursor:pointer; transition:all 0.2s; text-align:left; }
+        .email-suggestion-card:hover { background:#181818; border-color:rgba(255,255,255,0.15); transform:translateY(-1px); }
+        .email-suggestion-card .esc-icon { width:36px; height:36px; border-radius:0.65rem; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); flex-shrink:0; }
+        .email-suggestion-card .esc-text { font-size:0.82rem; color:#d1d5db; font-weight:500; line-height:1.35; }
+        /* Email chat area */
+        #email-chat-area { flex:1; width:100%; max-width:42rem; overflow-y:auto; padding:0 1rem 1rem; display:flex; flex-direction:column; gap:1.25rem; }
+        /* Email response container */
+        .email-response-container { background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:1rem; overflow:hidden; animation:msg-in 0.35s ease forwards; }
+        .email-response-header { display:flex; align-items:center; justify-content:space-between; padding:0.65rem 1rem; border-bottom:1px solid rgba(255,255,255,0.05); }
+        .email-response-body { padding:1rem 1.25rem; color:#d1d5db; font-size:0.9rem; line-height:1.75; }
+        .email-response-body.editable { background:#0d0d0d; outline:none; min-height:120px; }
+        .email-response-actions { display:flex; gap:0.5rem; padding:0.65rem 1rem; border-top:1px solid rgba(255,255,255,0.05); justify-content:flex-end; }
+        /* Recipient bar */
+        .email-recipient-bar { display:none; width:100%; max-width:42rem; padding:0 1rem; margin-bottom:0.5rem; }
+        .email-recipient-bar.visible { display:flex; gap:0.5rem; align-items:center; animation:fade-up 0.3s ease; }
+        .email-recipient-bar label { font-size:0.75rem; color:#6b7280; font-weight:500; white-space:nowrap; }
+        .email-recipient-bar input { flex:1; background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:0.6rem; padding:0.5rem 0.75rem; color:white; font-size:0.82rem; outline:none; transition:border-color 0.2s; }
+        .email-recipient-bar input:focus { border-color:rgba(124,58,237,0.5); }
+        /* Email input bar */
+        .email-input-bar { width:100%; max-width:42rem; padding:0 1rem 1.5rem; flex-shrink:0; }
+        .email-input-inner { display:flex; align-items:center; gap:0.5rem; background:#111; border:1px solid rgba(255,255,255,0.1); border-radius:9999px; padding:0.6rem 0.75rem 0.6rem 1.25rem; }
+        .email-input-inner input { flex:1; background:transparent; border:none; outline:none; color:white; font-size:0.9rem; }
+        .email-input-inner input::placeholder { color:#4b5563; }
+        .email-input-inner button { padding:0.5rem; border-radius:9999px; background:white; color:black; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+        .email-input-inner button:disabled { opacity:0.3; cursor:not-allowed; }
+        .email-input-inner button:not(:disabled):hover { box-shadow:0 0 20px rgba(255,255,255,0.5); }
+        /* Gmail connected pill in version popup */
+        .gmail-status-pill { display:flex; align-items:center; gap:0.4rem; font-size:0.65rem; font-weight:500; padding:0.2rem 0.5rem; border-radius:9999px; }
+        .gmail-status-pill.connected { background:rgba(34,197,94,0.15); color:#4ade80; }
+        .gmail-status-pill.disconnected { background:rgba(255,255,255,0.06); color:#9ca3af; }
+
         /* ── 2FA toggle ── */
         .toggle-track { width:44px; height:24px; background:rgba(255,255,255,0.1); border-radius:12px; position:relative; transition:background 0.2s; cursor:pointer; }
         .toggle-track.on { background:#7c3aed; }
@@ -587,9 +623,10 @@
             </button>
         </div>
 
-        <!-- Sidebar tabs: Chat / Presentations -->
+        <!-- Sidebar tabs: Chat / Emails / Presentations -->
         <div class="sidebar-tabs px-3">
             <button id="sidebar-tab-chat" class="sidebar-tab active" onclick="switchSidebarTab('chat')">Chat</button>
+            <button id="sidebar-tab-emails" class="sidebar-tab" onclick="switchSidebarTab('emails')">Emails</button>
             <button id="sidebar-tab-pres" class="sidebar-tab" onclick="switchSidebarTab('presentations')">Slides</button>
         </div>
 
@@ -619,6 +656,16 @@
             </div>
             <div id="presentations-list">
                 <div class="p-3 text-gray-600 text-sm text-center">No presentations yet</div>
+            </div>
+        </div>
+
+        <!-- Email conversations list (Emails tab — hidden by default) -->
+        <div id="sidebar-emails-panel" class="px-3 flex-1 overflow-y-auto min-h-0 hidden">
+            <div class="flex items-center justify-between px-1 mb-2">
+                <p class="text-[10px] text-gray-600 uppercase tracking-widest">Email Conversations</p>
+            </div>
+            <div id="email-conversations-list">
+                <div class="p-3 text-gray-600 text-sm text-center">No email conversations yet</div>
             </div>
         </div>
 
@@ -769,6 +816,19 @@
                 <div class="toggle-thumb"></div>
             </button>
         </div>
+        <!-- Gmail Connection -->
+        <div id="gmail-popup-section" class="border-t border-white/5 pt-3 mt-3 px-1 flex items-center justify-between">
+            <div>
+                <div class="flex items-center gap-2">
+                    <p class="text-xs font-medium text-white">Gmail</p>
+                    <span id="gmail-status-badge" class="gmail-status-pill disconnected">Not connected</span>
+                </div>
+                <p class="text-[10px] text-gray-500 mt-0.5">Connect your Gmail account</p>
+            </div>
+            <button id="gmail-popup-btn" onclick="handleGmailPopupAction()" class="text-[10px] font-medium text-violet-400 hover:text-violet-300 bg-violet-950/40 hover:bg-violet-950/60 border border-violet-800/30 px-2.5 py-1 rounded-lg transition-all cursor-pointer">
+                Connect
+            </button>
+        </div>
         <!-- Presentation toggle -->
         <div class="border-t border-white/5 pt-3 mt-3 px-1 flex items-center justify-between">
             <div>
@@ -818,6 +878,55 @@
         <i data-lucide="arrow-down" class="w-3.5"></i>
         <span>New response</span>
     </button>
+
+    <!-- ═══════════════════════════════════════════════════════
+         EMAIL MODE OVERLAY
+    ═══════════════════════════════════════════════════════ -->
+    <div id="email-overlay">
+        <!-- Exit button -->
+        <div id="email-exit-btn">
+            <button onclick="exitEmailMode()" class="flex items-center gap-2 px-4 py-2 bg-[#1a1a1a] border border-white/10 rounded-full text-xs text-gray-300 hover:text-white hover:bg-[#222] hover:border-white/20 shadow-xl transition-all">
+                <i data-lucide="log-out" class="w-3.5"></i>
+                <span>Exit Email Mode</span>
+            </button>
+        </div>
+
+        <!-- Email header -->
+        <div class="pt-16 pb-4 text-center w-full max-w-42rem px-4" id="email-header-area">
+            <div class="flex items-center justify-center gap-2 mb-2">
+                <i data-lucide="mail" class="w-6 h-6 text-violet-400"></i>
+                <h2 class="text-xl font-bold text-white">Email Assistant</h2>
+            </div>
+            <p class="text-gray-500 text-sm" id="email-connected-label">Connected as: <span id="email-connected-email" class="text-gray-400"></span></p>
+        </div>
+
+        <!-- Email suggestions (shown initially) -->
+        <div id="email-suggestions-area" class="email-suggestions mb-4"></div>
+
+        <!-- Email chat messages -->
+        <div id="email-chat-area"></div>
+
+        <!-- Recipient bar (shown when sending) -->
+        <div id="email-recipient-bar" class="email-recipient-bar">
+            <label>From:</label>
+            <input type="text" id="email-from-field" disabled class="opacity-60 cursor-not-allowed">
+            <label class="ml-2">To:</label>
+            <input type="email" id="email-to-field" placeholder="recipient@email.com">
+        </div>
+
+        <!-- Email input bar -->
+        <div class="email-input-bar">
+            <div class="email-input-inner">
+                <input id="email-input" type="text" placeholder="Ask me to draft, reply, or manage your emails..."
+                    autocomplete="off" autocorrect="off" spellcheck="false"
+                    oninput="updateEmailSendBtn()" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();handleEmailSend()}">
+                <button id="email-send-btn" onclick="handleEmailSend()" disabled>
+                    <i data-lucide="arrow-up" class="w-4 stroke-[3]"></i>
+                </button>
+            </div>
+            <p class="text-center text-xs text-gray-700 mt-2">Clarity AI · Email Mode · Powered by Gmail</p>
+        </div>
+    </div>
 
     <!-- ═══════════════════════════════════════════════════════
          CANVAS SIDEBAR (slides in from right)
@@ -2601,12 +2710,15 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             activeSidebarTab = tab;
             document.getElementById('sidebar-tab-chat').classList.toggle('active', tab === 'chat');
             document.getElementById('sidebar-tab-pres').classList.toggle('active', tab === 'presentations');
+            document.getElementById('sidebar-tab-emails').classList.toggle('active', tab === 'emails');
             document.getElementById('sidebar-chat-panel').classList.toggle('hidden', tab !== 'chat');
             document.getElementById('sidebar-pres-panel').classList.toggle('hidden', tab !== 'presentations');
+            document.getElementById('sidebar-emails-panel').classList.toggle('hidden', tab !== 'emails');
             const searchInput = document.getElementById('sidebar-search');
-            searchInput.placeholder = tab === 'chat' ? 'Search conversations\u2026' : 'Search presentations\u2026';
+            searchInput.placeholder = tab === 'chat' ? 'Search conversations\u2026' : tab === 'emails' ? 'Search emails\u2026' : 'Search presentations\u2026';
             searchInput.value = '';
             if (tab === 'presentations') loadPresentations();
+            if (tab === 'emails') loadEmailConversations();
         }
 
         function filterSidebarContent(query) {
@@ -2614,6 +2726,8 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 filterConversations(query);
             } else if (activeSidebarTab === 'presentations') {
                 filterPresentations(query);
+            } else if (activeSidebarTab === 'emails') {
+                filterEmailConversations(query);
             } else {
                 filterArtifactsSidebar(query);
             }
@@ -5089,6 +5203,575 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 }, 2000);
             });
         }
+
+        // ═══════════════════════════════════════════════════════════
+        //  GMAIL / EMAIL MODE
+        // ═══════════════════════════════════════════════════════════
+
+        let gmailConnected = false;
+        let gmailEmail = '';
+        let emailModeActive = false;
+        let emailConversationHistory = [];
+        let activeEmailConversationId = null;
+        let allEmailConversations = [];
+        let cachedGmailEmails = [];
+        let emailTyping = false;
+
+        // ── Check Gmail connection on load ──
+        async function checkGmailStatus() {
+            try {
+                const res = await fetch(`/api/gmail?action=status&userId=${encodeURIComponent(currentUser.id || '')}`);
+                const data = await res.json();
+                gmailConnected = data.connected;
+                gmailEmail = data.email || '';
+                updateGmailUI();
+            } catch (_) {}
+        }
+
+        function updateGmailUI() {
+            const badge = document.getElementById('gmail-status-badge');
+            const btn = document.getElementById('gmail-popup-btn');
+            if (gmailConnected) {
+                badge.className = 'gmail-status-pill connected';
+                badge.textContent = gmailEmail;
+                btn.textContent = 'Open';
+                btn.onclick = () => { closeVersionPopup(); enterEmailMode(); };
+            } else {
+                badge.className = 'gmail-status-pill disconnected';
+                badge.textContent = 'Not connected';
+                btn.textContent = 'Connect';
+                btn.onclick = () => { handleGmailConnect(); };
+            }
+        }
+
+        async function handleGmailPopupAction() {
+            if (gmailConnected) {
+                closeVersionPopup();
+                enterEmailMode();
+            } else {
+                handleGmailConnect();
+            }
+        }
+
+        async function handleGmailConnect() {
+            try {
+                const res = await fetch(`/api/gmail?action=auth-url&userId=${encodeURIComponent(currentUser.id || '')}`);
+                const data = await res.json();
+                if (data.url) {
+                    window.location.href = data.url;
+                } else if (data.error) {
+                    showAppToast(data.error, 'error');
+                }
+            } catch (_) {
+                showAppToast('Failed to initiate Gmail connection', 'error');
+            }
+        }
+
+        // Check for gmail=connected URL param on load
+        if (new URLSearchParams(window.location.search).get('gmail') === 'connected') {
+            window.history.replaceState({}, '', '/app');
+            setTimeout(() => {
+                checkGmailStatus().then(() => {
+                    if (gmailConnected) {
+                        showAppToast('Gmail connected successfully!', 'success');
+                    }
+                });
+            }, 500);
+        }
+
+        // ── Email Mode ──────────────────────────────────────────
+
+        async function enterEmailMode() {
+            emailModeActive = true;
+            const overlay = document.getElementById('email-overlay');
+            overlay.classList.add('email-active');
+
+            // Set connected email labels
+            document.getElementById('email-connected-email').textContent = gmailEmail;
+            document.getElementById('email-from-field').value = gmailEmail;
+
+            // Clear previous state
+            emailConversationHistory = [];
+            activeEmailConversationId = null;
+            document.getElementById('email-chat-area').innerHTML = '';
+            document.getElementById('email-recipient-bar').classList.remove('visible');
+            document.getElementById('email-suggestions-area').innerHTML = '';
+            document.getElementById('email-header-area').style.display = '';
+
+            lucide.createIcons();
+
+            // Load emails and generate suggestions
+            await loadEmailSuggestions();
+        }
+
+        function exitEmailMode() {
+            emailModeActive = false;
+            document.getElementById('email-overlay').classList.remove('email-active');
+            emailConversationHistory = [];
+            activeEmailConversationId = null;
+        }
+
+        async function loadEmailSuggestions() {
+            const sugArea = document.getElementById('email-suggestions-area');
+            sugArea.innerHTML = '<div class="flex justify-center py-4"><div class="loading-dots flex items-center gap-1"><span></span><span></span><span></span></div></div>';
+
+            try {
+                // Fetch recent emails
+                const emailsRes = await fetch(`/api/gmail?action=emails&userId=${encodeURIComponent(currentUser.id || '')}`);
+                const emailsData = await emailsRes.json();
+                cachedGmailEmails = emailsData.emails || [];
+
+                if (cachedGmailEmails.length === 0) {
+                    sugArea.innerHTML = `
+                        <div class="col-span-2 text-center py-6">
+                            <p class="text-gray-500 text-sm">No recent emails found. Try asking me to compose one!</p>
+                        </div>`;
+                    return;
+                }
+
+                // Get AI suggestions based on emails
+                const sugRes = await fetch('/api/gmail?action=suggestions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentUser.id, emails: cachedGmailEmails })
+                });
+                const sugData = await sugRes.json();
+                const suggestions = sugData.suggestions || [];
+
+                if (suggestions.length === 0) {
+                    sugArea.innerHTML = '';
+                    return;
+                }
+
+                const iconColors = ['text-blue-400', 'text-green-400', 'text-yellow-400', 'text-purple-400'];
+                sugArea.innerHTML = suggestions.slice(0, 4).map((s, i) => `
+                    <button class="email-suggestion-card" onclick="fillEmailInput('${escapeHtml(s.prompt.replace(/'/g, "\\'"))}')">
+                        <div class="esc-icon">
+                            <i data-lucide="${escapeHtml(s.icon || 'mail')}" class="w-4 ${iconColors[i % 4]}"></i>
+                        </div>
+                        <span class="esc-text">${escapeHtml(s.title)}</span>
+                    </button>
+                `).join('');
+                lucide.createIcons();
+            } catch (err) {
+                sugArea.innerHTML = `
+                    <div class="col-span-2 text-center py-4">
+                        <p class="text-gray-500 text-sm">Could not load suggestions. Try typing a prompt below.</p>
+                    </div>`;
+            }
+        }
+
+        function fillEmailInput(text) {
+            const inp = document.getElementById('email-input');
+            inp.value = text;
+            updateEmailSendBtn();
+            inp.focus();
+        }
+
+        function updateEmailSendBtn() {
+            const btn = document.getElementById('email-send-btn');
+            const val = document.getElementById('email-input').value.trim();
+            btn.disabled = !val || emailTyping;
+        }
+
+        // ── Email Send Handler ──────────────────────────────────
+
+        async function handleEmailSend() {
+            const inp = document.getElementById('email-input');
+            const val = inp.value.trim();
+            if (!val || emailTyping) return;
+
+            emailTyping = true;
+            inp.value = '';
+            updateEmailSendBtn();
+
+            // Hide suggestions after first message
+            document.getElementById('email-suggestions-area').style.display = 'none';
+            document.getElementById('email-header-area').style.display = 'none';
+
+            // Ensure email conversation exists
+            await ensureEmailConversation(val);
+
+            // Append user message
+            appendEmailUserMessage(val);
+
+            // Save user message
+            saveEmailMessage('user', val);
+
+            // Create AI response shell
+            const chatArea = document.getElementById('email-chat-area');
+            const shellEl = document.createElement('div');
+            shellEl.className = 'email-response-container';
+            shellEl.innerHTML = `
+                <div class="email-response-header">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="sparkles" class="w-3.5 text-violet-400"></i>
+                        <span class="text-xs text-gray-400 font-medium">Clarity AI</span>
+                    </div>
+                    <div class="loading-dots flex items-center gap-1"><span></span><span></span><span></span></div>
+                </div>
+                <div class="email-response-body ai-response"></div>
+            `;
+            chatArea.appendChild(shellEl);
+            const bodyEl = shellEl.querySelector('.email-response-body');
+            chatArea.scrollTop = chatArea.scrollHeight;
+            lucide.createIcons();
+
+            try {
+                const res = await fetch('/api/gmail?action=compose', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: val,
+                        history: emailConversationHistory,
+                        emails: cachedGmailEmails
+                    })
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    bodyEl.innerHTML = `<span class="text-red-400">${escapeHtml(data.error || 'Something went wrong.')}</span>`;
+                } else {
+                    emailConversationHistory.push({ role: 'user', content: val }, { role: 'assistant', content: data.reply });
+                    saveEmailMessage('assistant', data.reply);
+
+                    // Typewriter effect for email
+                    await emailTypeWriter(bodyEl, data.reply);
+
+                    // Add action buttons after typing
+                    const headerEl = shellEl.querySelector('.email-response-header');
+                    headerEl.querySelector('.loading-dots')?.remove();
+
+                    const actionsHtml = `
+                        <div class="email-response-actions">
+                            <button onclick="copyEmailContent(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
+                                <i data-lucide="copy" class="w-3"></i> Copy
+                            </button>
+                            <button onclick="prepareEmailSend(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-white bg-violet-600 hover:bg-violet-500 rounded-lg transition-colors">
+                                <i data-lucide="send" class="w-3"></i> Send
+                            </button>
+                        </div>`;
+                    shellEl.insertAdjacentHTML('beforeend', actionsHtml);
+                    lucide.createIcons();
+                }
+            } catch (err) {
+                bodyEl.innerHTML = `<span class="text-red-400">Network error. Please try again.</span>`;
+            }
+
+            emailTyping = false;
+            updateEmailSendBtn();
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function appendEmailUserMessage(text) {
+            const chatArea = document.getElementById('email-chat-area');
+            const el = document.createElement('div');
+            el.className = 'flex justify-end msg-enter pr-2';
+            el.innerHTML = `<div class="bg-[#1a1a1a] border border-white/8 py-2 px-3.5 rounded-2xl rounded-tr-sm max-w-[72%] text-sm text-gray-200 leading-relaxed break-words whitespace-pre-wrap ml-auto">${escapeHtml(text)}</div>`;
+            chatArea.appendChild(el);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        async function emailTypeWriter(el, text) {
+            let built = '';
+            for (let i = 0; i < text.length; i += 3) {
+                built += text.slice(i, i + 3);
+                el.innerHTML = marked.parse(built) + '<span class="typing-cursor"></span>';
+                const chatArea = document.getElementById('email-chat-area');
+                chatArea.scrollTop = chatArea.scrollHeight;
+                await sleep(14);
+            }
+            el.innerHTML = marked.parse(text);
+        }
+
+        // ── Copy email content ──────────────────────────────────
+
+        function copyEmailContent(btn) {
+            const container = btn.closest('.email-response-container');
+            const body = container.querySelector('.email-response-body');
+            const text = body.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                btn.innerHTML = '<i data-lucide="check" class="w-3"></i> Copied!';
+                lucide.createIcons();
+                setTimeout(() => {
+                    btn.innerHTML = '<i data-lucide="copy" class="w-3"></i> Copy';
+                    lucide.createIcons();
+                }, 2000);
+            });
+        }
+
+        // ── Send email flow ─────────────────────────────────────
+
+        function prepareEmailSend(btn) {
+            const container = btn.closest('.email-response-container');
+            const body = container.querySelector('.email-response-body');
+            const actionsDiv = container.querySelector('.email-response-actions');
+
+            // Make body editable
+            body.setAttribute('contenteditable', 'true');
+            body.classList.add('editable');
+            body.focus();
+
+            // Show recipient bar
+            const recipientBar = document.getElementById('email-recipient-bar');
+            recipientBar.classList.add('visible');
+
+            // Replace actions with send/cancel
+            actionsDiv.innerHTML = `
+                <button onclick="cancelEmailSend(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
+                    Cancel
+                </button>
+                <button onclick="confirmEmailSend(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-white bg-green-600 hover:bg-green-500 rounded-lg transition-colors">
+                    <i data-lucide="send" class="w-3"></i> Send Email
+                </button>`;
+            lucide.createIcons();
+        }
+
+        function cancelEmailSend(btn) {
+            const container = btn.closest('.email-response-container');
+            const body = container.querySelector('.email-response-body');
+            const actionsDiv = container.querySelector('.email-response-actions');
+
+            body.removeAttribute('contenteditable');
+            body.classList.remove('editable');
+            document.getElementById('email-recipient-bar').classList.remove('visible');
+
+            actionsDiv.innerHTML = `
+                <button onclick="copyEmailContent(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
+                    <i data-lucide="copy" class="w-3"></i> Copy
+                </button>
+                <button onclick="prepareEmailSend(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-white bg-violet-600 hover:bg-violet-500 rounded-lg transition-colors">
+                    <i data-lucide="send" class="w-3"></i> Send
+                </button>`;
+            lucide.createIcons();
+        }
+
+        async function confirmEmailSend(btn) {
+            const toField = document.getElementById('email-to-field');
+            const to = toField.value.trim();
+            if (!to) {
+                toField.style.borderColor = 'rgba(239,68,68,0.7)';
+                toField.focus();
+                setTimeout(() => { toField.style.borderColor = ''; }, 2000);
+                return;
+            }
+
+            const container = btn.closest('.email-response-container');
+            const body = container.querySelector('.email-response-body');
+            const emailContent = body.innerHTML;
+
+            // Extract subject from content if possible
+            let subject = '';
+            const subjectMatch = body.innerText.match(/\*?\*?Subject:\*?\*?\s*(.+)/i);
+            if (subjectMatch) subject = subjectMatch[1].trim();
+
+            btn.textContent = 'Sending\u2026';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/gmail?action=send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: currentUser.id,
+                        to,
+                        subject: subject || 'No Subject',
+                        body: emailContent
+                    })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    body.removeAttribute('contenteditable');
+                    body.classList.remove('editable');
+                    document.getElementById('email-recipient-bar').classList.remove('visible');
+
+                    const actionsDiv = container.querySelector('.email-response-actions');
+                    actionsDiv.innerHTML = `
+                        <div class="flex items-center gap-2 text-green-400 text-xs">
+                            <i data-lucide="check-circle" class="w-3.5"></i>
+                            <span>Email sent to ${escapeHtml(to)}</span>
+                        </div>`;
+                    lucide.createIcons();
+
+                    // Save sent status
+                    saveEmailMessage('assistant', `[SENT to ${to}] ${body.innerText}`, to, subject);
+                } else {
+                    showAppToast(data.error || 'Failed to send email', 'error');
+                    btn.textContent = 'Send Email';
+                    btn.disabled = false;
+                }
+            } catch (_) {
+                showAppToast('Network error. Could not send email.', 'error');
+                btn.textContent = 'Send Email';
+                btn.disabled = false;
+            }
+        }
+
+        // ── Email conversation persistence ──────────────────────
+
+        async function ensureEmailConversation(firstMsg) {
+            if (activeEmailConversationId) return;
+            try {
+                const res = await fetch('/api/email-conversations', {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: JSON.stringify({
+                        userId: currentUser.id,
+                        title: firstMsg.slice(0, 60).trim(),
+                        gmailEmail: gmailEmail
+                    })
+                });
+                if (!res.ok) return;
+                const conv = await res.json();
+                activeEmailConversationId = conv.id;
+                loadEmailConversations();
+            } catch (_) {}
+        }
+
+        async function saveEmailMessage(role, content, recipient, subject) {
+            if (!activeEmailConversationId) return;
+            try {
+                await fetch('/api/email-messages', {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: JSON.stringify({
+                        conversationId: activeEmailConversationId,
+                        role,
+                        content,
+                        recipient: recipient || '',
+                        subject: subject || ''
+                    })
+                });
+            } catch (_) {}
+        }
+
+        async function loadEmailConversations() {
+            try {
+                const res = await fetch(`/api/email-conversations?userId=${encodeURIComponent(currentUser.id || '')}`, { headers: authHeaders() });
+                if (!res.ok) return;
+                const convs = await res.json();
+                allEmailConversations = convs || [];
+                renderEmailConversationList(allEmailConversations);
+            } catch (_) {}
+        }
+
+        function renderEmailConversationList(list) {
+            const container = document.getElementById('email-conversations-list');
+            if (!list.length) {
+                container.innerHTML = '<div class="p-3 text-gray-600 text-sm text-center">No email conversations yet</div>';
+                return;
+            }
+            container.innerHTML = list.map(c => {
+                const d = new Date(c.updated_at || c.created_at);
+                const timeStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                return `
+                    <div class="flex items-center gap-2 p-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition-colors group mb-1" onclick="loadEmailConversation('${c.id}')">
+                        <i data-lucide="mail" class="w-3.5 text-gray-600 shrink-0"></i>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm text-gray-300 truncate">${escapeHtml(c.title)}</p>
+                            <p class="text-[10px] text-gray-600">${timeStr}${c.gmail_email ? ' \u00B7 ' + escapeHtml(c.gmail_email) : ''}</p>
+                        </div>
+                        <button onclick="event.stopPropagation(); deleteEmailConversation('${c.id}')" class="p-1 opacity-0 group-hover:opacity-100 hover:bg-white/10 rounded-lg transition-all">
+                            <i data-lucide="trash-2" class="w-3 text-gray-600 hover:text-red-400"></i>
+                        </button>
+                    </div>`;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function filterEmailConversations(query) {
+            const q = query.trim().toLowerCase();
+            if (!q) {
+                renderEmailConversationList(allEmailConversations);
+                return;
+            }
+            const filtered = allEmailConversations.filter(c => c.title.toLowerCase().includes(q));
+            renderEmailConversationList(filtered);
+        }
+
+        async function loadEmailConversation(id) {
+            toggleSidebar(false);
+            try {
+                const res = await fetch(`/api/email-conversations?id=${id}`, { headers: authHeaders() });
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // Enter email mode and load conversation
+                if (!emailModeActive) {
+                    emailModeActive = true;
+                    const overlay = document.getElementById('email-overlay');
+                    overlay.classList.add('email-active');
+                    document.getElementById('email-connected-email').textContent = data.gmail_email || gmailEmail;
+                    document.getElementById('email-from-field').value = data.gmail_email || gmailEmail;
+                    lucide.createIcons();
+                }
+
+                activeEmailConversationId = id;
+                emailConversationHistory = [];
+                document.getElementById('email-chat-area').innerHTML = '';
+                document.getElementById('email-suggestions-area').style.display = 'none';
+                document.getElementById('email-header-area').style.display = 'none';
+
+                // Render messages
+                const messages = data.messages || [];
+                for (const msg of messages) {
+                    if (msg.role === 'user') {
+                        appendEmailUserMessage(msg.content);
+                        emailConversationHistory.push({ role: 'user', content: msg.content });
+                    } else {
+                        const chatArea = document.getElementById('email-chat-area');
+                        const shellEl = document.createElement('div');
+                        shellEl.className = 'email-response-container';
+
+                        const isSent = msg.is_sent || msg.content.startsWith('[SENT');
+                        shellEl.innerHTML = `
+                            <div class="email-response-header">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="sparkles" class="w-3.5 text-violet-400"></i>
+                                    <span class="text-xs text-gray-400 font-medium">Clarity AI</span>
+                                </div>
+                                ${isSent ? '<span class="text-[10px] text-green-400 flex items-center gap-1"><i data-lucide="check-circle" class="w-3"></i> Sent</span>' : ''}
+                            </div>
+                            <div class="email-response-body ai-response">${marked.parse(msg.content)}</div>
+                            ${!isSent ? `<div class="email-response-actions">
+                                <button onclick="copyEmailContent(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
+                                    <i data-lucide="copy" class="w-3"></i> Copy
+                                </button>
+                                <button onclick="prepareEmailSend(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-white bg-violet-600 hover:bg-violet-500 rounded-lg transition-colors">
+                                    <i data-lucide="send" class="w-3"></i> Send
+                                </button>
+                            </div>` : ''}`;
+                        chatArea.appendChild(shellEl);
+                        emailConversationHistory.push({ role: 'assistant', content: msg.content });
+                    }
+                }
+                lucide.createIcons();
+            } catch (_) {
+                showAppToast('Failed to load email conversation', 'error');
+            }
+        }
+
+        async function deleteEmailConversation(id) {
+            if (!confirm('Delete this email conversation?')) return;
+            try {
+                await fetch(`/api/email-conversations?id=${id}`, {
+                    method: 'DELETE',
+                    headers: authHeaders()
+                });
+                allEmailConversations = allEmailConversations.filter(c => c.id !== id);
+                renderEmailConversationList(allEmailConversations);
+                if (activeEmailConversationId === id) {
+                    activeEmailConversationId = null;
+                    emailConversationHistory = [];
+                }
+            } catch (_) {
+                showAppToast('Failed to delete', 'error');
+            }
+        }
+
+        // ── Init Gmail check ────────────────────────────────────
+        checkGmailStatus();
     </script>
 </body>
 </html>
