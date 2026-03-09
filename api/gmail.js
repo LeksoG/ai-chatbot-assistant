@@ -160,59 +160,75 @@ module.exports = async function handler(req, res) {
 
         // callback — OAuth callback from Google
         if (action === 'callback' && req.method === 'GET') {
-            const { code, state: userId } = req.query;
-            if (!code) return res.status(400).send('Missing authorization code');
-            const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                    code, client_id: GOOGLE_CLIENT_ID, client_secret: GOOGLE_CLIENT_SECRET,
-                    redirect_uri: REDIRECT_URI, grant_type: 'authorization_code'
-                })
-            });
-            const tokens = await tokenRes.json();
-            if (!tokens.access_token) return res.status(400).send('Failed to get access token');
+            try {
+                const { code, state: userId } = req.query;
+                console.log('[Gmail callback] code:', code ? 'present' : 'MISSING', 'userId:', userId);
+                if (!code) return res.status(400).send('Missing authorization code');
+                if (!userId) return res.status(400).send('Missing userId in state parameter');
 
-            const profileRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-                headers: { 'Authorization': `Bearer ${tokens.access_token}` }
-            });
-            const profile = await profileRes.json();
-            const gmailEmail = profile.email || '';
-
-            const expiry = new Date(Date.now() + (tokens.expires_in || 3600) * 1000).toISOString();
-            const existCheck = await fetch(
-                `${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}&select=id`,
-                { headers: sbHeaders }
-            );
-            const existing = await existCheck.json();
-
-            console.log('[Gmail callback] userId:', userId, 'email:', gmailEmail, 'existing:', existing);
-
-            let dbRes;
-            if (Array.isArray(existing) && existing.length > 0) {
-                dbRes = await fetch(`${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}`, {
-                    method: 'PATCH', headers: sbHeaders,
-                    body: JSON.stringify({
-                        email: gmailEmail, access_token: tokens.access_token,
-                        refresh_token: tokens.refresh_token || '', token_expiry: expiry,
-                        updated_at: new Date().toISOString()
-                    })
-                });
-            } else {
-                dbRes = await fetch(`${SUPABASE_URL}/rest/v1/gmail_connections`, {
+                const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
                     method: 'POST',
-                    headers: { ...sbHeaders, 'Prefer': 'return=representation' },
-                    body: JSON.stringify({
-                        user_id: userId, email: gmailEmail,
-                        access_token: tokens.access_token,
-                        refresh_token: tokens.refresh_token || '', token_expiry: expiry
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        code, client_id: GOOGLE_CLIENT_ID, client_secret: GOOGLE_CLIENT_SECRET,
+                        redirect_uri: REDIRECT_URI, grant_type: 'authorization_code'
                     })
                 });
-            }
-            const dbBody = await dbRes.text();
-            console.log('[Gmail callback] DB response:', dbRes.status, dbBody);
+                const tokens = await tokenRes.json();
+                console.log('[Gmail callback] token exchange status:', tokenRes.status, 'has access_token:', !!tokens.access_token, 'has refresh_token:', !!tokens.refresh_token);
+                if (!tokens.access_token) {
+                    console.error('[Gmail callback] Token error:', JSON.stringify(tokens));
+                    return res.writeHead(302, { 'Location': `/app?gmail=error&reason=${encodeURIComponent(tokens.error_description || tokens.error || 'no_access_token')}` }).end();
+                }
 
-            return res.writeHead(302, { 'Location': '/app?gmail=connected' }).end();
+                const profileRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                    headers: { 'Authorization': `Bearer ${tokens.access_token}` }
+                });
+                const profile = await profileRes.json();
+                const gmailEmail = profile.email || '';
+                console.log('[Gmail callback] profile email:', gmailEmail);
+
+                const expiry = new Date(Date.now() + (tokens.expires_in || 3600) * 1000).toISOString();
+                const existCheck = await fetch(
+                    `${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}&select=id`,
+                    { headers: sbHeaders }
+                );
+                const existing = await existCheck.json();
+                console.log('[Gmail callback] existing check:', existCheck.status, JSON.stringify(existing));
+
+                let dbRes;
+                if (Array.isArray(existing) && existing.length > 0) {
+                    dbRes = await fetch(`${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}`, {
+                        method: 'PATCH', headers: sbHeaders,
+                        body: JSON.stringify({
+                            email: gmailEmail, access_token: tokens.access_token,
+                            refresh_token: tokens.refresh_token || '', token_expiry: expiry,
+                            updated_at: new Date().toISOString()
+                        })
+                    });
+                } else {
+                    dbRes = await fetch(`${SUPABASE_URL}/rest/v1/gmail_connections`, {
+                        method: 'POST',
+                        headers: { ...sbHeaders, 'Prefer': 'return=representation' },
+                        body: JSON.stringify({
+                            user_id: userId, email: gmailEmail,
+                            access_token: tokens.access_token,
+                            refresh_token: tokens.refresh_token || '', token_expiry: expiry
+                        })
+                    });
+                }
+                const dbBody = await dbRes.text();
+                console.log('[Gmail callback] DB write:', dbRes.status, dbBody);
+
+                if (dbRes.status >= 400) {
+                    return res.writeHead(302, { 'Location': `/app?gmail=error&reason=${encodeURIComponent('db_write_failed_' + dbRes.status + '_' + dbBody)}` }).end();
+                }
+
+                return res.writeHead(302, { 'Location': '/app?gmail=connected' }).end();
+            } catch (err) {
+                console.error('[Gmail callback] Unhandled error:', err);
+                return res.writeHead(302, { 'Location': `/app?gmail=error&reason=${encodeURIComponent(err.message)}` }).end();
+            }
         }
 
         // status — check connection

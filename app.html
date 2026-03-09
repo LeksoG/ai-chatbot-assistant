@@ -5271,14 +5271,22 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
         }
 
-        // Check for gmail=connected URL param on load
-        const _gmailJustConnected = new URLSearchParams(window.location.search).get('gmail') === 'connected';
-        if (_gmailJustConnected) {
+        // Check for gmail URL params on load
+        const _gmailParam = new URLSearchParams(window.location.search).get('gmail');
+        const _gmailReason = new URLSearchParams(window.location.search).get('reason');
+        if (_gmailParam === 'error') {
+            window.history.replaceState({}, '', '/app');
+            console.error('[Gmail] OAuth callback error:', _gmailReason);
+            showAppToast('Gmail connection failed: ' + (_gmailReason || 'unknown error'), 'error');
+        } else if (_gmailParam === 'connected') {
             window.history.replaceState({}, '', '/app');
             setTimeout(() => {
                 checkGmailStatus().then(() => {
                     if (gmailConnected) {
                         showAppToast('Gmail connected successfully!', 'success');
+                    } else {
+                        console.error('[Gmail] Status still shows not connected after callback redirect');
+                        showAppToast('Gmail OAuth completed but connection not found - check Supabase table', 'error');
                     }
                 });
             }, 800);
