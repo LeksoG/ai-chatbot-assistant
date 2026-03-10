@@ -414,12 +414,13 @@
 
         /* Email prompt output area */
         #epo-output-area {
-            display:none; width:100%; max-width:48rem;
-            border-radius:2.5rem; background:rgba(13,13,18,0.85);
-            border:1px solid rgba(255,255,255,0.1);
-            backdrop-filter:blur(30px); padding:2.5rem;
+            display:none; width:100%; max-width:44rem;
+            border-radius:1.5rem; background:rgba(13,13,18,0.92);
+            border:1px solid rgba(255,255,255,0.08);
+            backdrop-filter:blur(30px); padding:0;
             box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);
-            z-index:10;
+            z-index:10; margin:0 auto;
+            max-height:calc(100vh - 12rem); overflow-y:auto;
         }
         #epo-output-area.epo-out-visible {
             display:block;
@@ -441,12 +442,101 @@
             animation:blink 0.8s infinite;
         }
 
-        /* Email prompt exit button */
+        /* Email output toolbar */
+        .epo-toolbar {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:0.875rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.06);
+            background:rgba(255,255,255,0.02);
+            border-radius:1.5rem 1.5rem 0 0;
+        }
+        .epo-toolbar-btn {
+            display:flex; align-items:center; gap:0.4rem;
+            padding:0.45rem 0.85rem; border-radius:0.6rem;
+            font-size:0.7rem; font-weight:600; cursor:pointer;
+            transition:all 0.2s; border:1px solid transparent;
+        }
+        .epo-copy-btn {
+            background:rgba(255,255,255,0.05); color:#9ca3af;
+            border-color:rgba(255,255,255,0.08);
+        }
+        .epo-copy-btn:hover { background:rgba(255,255,255,0.1); color:#e2e8f0; }
+        .epo-send-action-btn {
+            background:rgba(124,58,237,0.15); color:#c4b5fd;
+            border-color:rgba(124,58,237,0.3);
+        }
+        .epo-send-action-btn:hover { background:rgba(124,58,237,0.25); color:#ddd6fe; }
+
+        /* Email content area */
+        .epo-content-body {
+            padding:1.5rem 1.75rem 1.75rem;
+        }
+
+        /* Recipient container */
+        #epo-recipient-container {
+            overflow:hidden; max-height:0; opacity:0;
+            transition:max-height 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease, padding 0.4s ease;
+            padding:0 1.25rem; border-top:1px solid transparent;
+        }
+        #epo-recipient-container.epo-recipient-visible {
+            max-height:10rem; opacity:1; padding:1rem 1.25rem;
+            border-top-color:rgba(255,255,255,0.06);
+        }
+        .epo-recipient-field {
+            flex:1; display:flex; flex-direction:column; gap:0.35rem;
+        }
+        .epo-recipient-label {
+            font-size:0.65rem; font-weight:600; text-transform:uppercase;
+            letter-spacing:0.1em; color:#6b7280;
+        }
+        .epo-recipient-input {
+            background:#111118; border:1px solid rgba(255,255,255,0.08);
+            border-radius:0.6rem; padding:0.55rem 0.75rem;
+            color:white; font-size:0.8rem; outline:none;
+            transition:border-color 0.2s;
+        }
+        .epo-recipient-input:focus { border-color:rgba(124,58,237,0.5); }
+        .epo-recipient-input:disabled { opacity:0.5; cursor:not-allowed; }
+        .epo-recipient-send-btn {
+            margin-top:0.75rem; width:100%; padding:0.65rem;
+            background:white; color:#050505; border-radius:0.75rem;
+            font-size:0.75rem; font-weight:700; cursor:pointer;
+            transition:all 0.2s; letter-spacing:0.05em;
+        }
+        .epo-recipient-send-btn:hover { background:#e2e8f0; }
+        .epo-recipient-send-btn:active { transform:scale(0.98); }
+
+        /* Smart suggestions after generation */
+        #epo-smart-suggestions {
+            display:flex; gap:0.5rem; padding:0 1.25rem 1rem;
+            opacity:0; transform:translateY(8px);
+            transition:opacity 0.5s ease, transform 0.5s ease;
+        }
+        #epo-smart-suggestions.epo-smart-visible {
+            opacity:1; transform:translateY(0);
+        }
+        .epo-smart-chip {
+            padding:0.4rem 0.85rem; border-radius:9999px;
+            background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+            color:#9ca3af; font-size:0.7rem; font-weight:500;
+            cursor:pointer; transition:all 0.2s; white-space:nowrap;
+        }
+        .epo-smart-chip:hover { background:rgba(124,58,237,0.15); border-color:rgba(124,58,237,0.3); color:#c4b5fd; }
+
+        /* Email prompt exit button & user prompt */
         #epo-exit-btn {
             position:fixed; top:1.25rem; left:50%; transform:translateX(-50%);
             z-index:75; opacity:0; transition:opacity 0.5s ease 0.6s;
+            display:flex; flex-direction:column; align-items:center; gap:0.5rem;
         }
         #email-prompt-overlay.epo-active #epo-exit-btn { opacity:1; }
+        #epo-user-prompt-display {
+            display:none; max-width:28rem; padding:0.4rem 1rem;
+            background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06);
+            border-radius:9999px; font-size:0.7rem; color:#6b7280;
+            text-align:center; line-height:1.4;
+            overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+        }
+        #epo-user-prompt-display.epo-prompt-shown { display:block; }
 
         /* Suggestion grid & footer fade on submit */
         #epo-suggestions-grid, #epo-footer {
@@ -1314,15 +1404,16 @@
             <div class="epo-orb" style="bottom:20%;left:20%;width:45%;height:45%;background:#06b6d4;animation:epoFloat 22s infinite alternate ease-in-out"></div>
         </div>
 
-        <!-- Exit button -->
+        <!-- Exit button + user prompt -->
         <div id="epo-exit-btn">
             <button onclick="exitEmailPromptMode()" class="flex items-center gap-2 px-4 py-2 bg-[#1a1a1a]/80 backdrop-blur-md border border-white/10 rounded-full text-xs text-gray-300 hover:text-white hover:bg-[#222] hover:border-white/20 shadow-xl transition-all">
                 <i data-lucide="arrow-left" class="w-3.5"></i>
                 <span>Back to AI</span>
             </button>
+            <div id="epo-user-prompt-display"></div>
         </div>
 
-        <div class="w-full max-w-3xl z-10 px-4 flex flex-col items-center justify-center flex-1">
+        <div class="w-full max-w-3xl z-10 px-4 flex flex-col items-center justify-center flex-1" style="padding-top:4rem; padding-bottom:5rem;">
             <!-- Suggestion cards grid -->
             <div id="epo-suggestions-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 w-full">
                 <!-- Populated by JS -->
@@ -1349,31 +1440,45 @@
 
             <!-- Output area (shown after prompt) -->
             <div id="epo-output-area">
-                <div class="flex flex-col mb-8 border-b border-white/5 pb-6">
+                <!-- Top toolbar: status + copy/send buttons -->
+                <div class="epo-toolbar">
                     <div id="epo-status-header">
-                        <span class="text-xl font-medium epo-writing-gradient">Writing a draft...</span>
+                        <span class="text-sm font-medium epo-writing-gradient">Writing a draft...</span>
                     </div>
-                    <div class="flex justify-between items-center mt-4">
-                        <div class="w-full h-[1px] bg-white/10"></div>
-                        <div id="epo-action-buttons" class="hidden flex gap-4 ml-6">
-                            <button onclick="copyEpoContent()" class="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-colors text-slate-300 border border-white/5">
-                                <i data-lucide="copy" class="w-5 h-5"></i>
+                    <div id="epo-action-buttons" class="hidden" style="display:none;">
+                        <div class="flex items-center gap-2">
+                            <button onclick="copyEpoContent()" class="epo-toolbar-btn epo-copy-btn">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
                             </button>
-                            <button onclick="retryEpoGeneration()" class="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-colors text-slate-300 border border-white/5">
-                                <i data-lucide="rotate-cw" class="w-5 h-5"></i>
+                            <button onclick="epoShowRecipient()" class="epo-toolbar-btn epo-send-action-btn">
+                                <i data-lucide="send" class="w-3.5 h-3.5"></i> Send
                             </button>
                         </div>
                     </div>
                 </div>
-                <div id="epo-email-content" class="whitespace-pre-wrap leading-[1.8] text-slate-200 font-light text-xl tracking-wide min-h-[100px]"></div>
-                <div id="epo-footer-buttons" class="hidden mt-12 flex gap-5">
-                    <button onclick="epoSendEmail()" class="flex-1 py-5 px-8 rounded-3xl bg-white text-black hover:bg-slate-200 font-black transition-all shadow-2xl active:scale-[0.98] tracking-widest uppercase text-xs">
-                        Send Email
-                    </button>
-                    <button onclick="epoManualEdit()" class="flex-1 py-5 px-8 rounded-3xl bg-white/5 hover:bg-white/10 font-bold transition-all border border-white/10 active:scale-[0.98] backdrop-blur-md text-white text-xs tracking-widest uppercase">
-                        Manual Edit
-                    </button>
+
+                <!-- Recipient container (hidden, slides in) -->
+                <div id="epo-recipient-container">
+                    <div class="flex gap-3">
+                        <div class="epo-recipient-field">
+                            <span class="epo-recipient-label">From</span>
+                            <input id="epo-from-field" class="epo-recipient-input" type="email" disabled>
+                        </div>
+                        <div class="epo-recipient-field">
+                            <span class="epo-recipient-label">To</span>
+                            <input id="epo-to-field" class="epo-recipient-input" type="email" placeholder="recipient@gmail.com">
+                        </div>
+                    </div>
+                    <button onclick="epoFinalSend()" class="epo-recipient-send-btn">Send Email</button>
                 </div>
+
+                <!-- Email content -->
+                <div class="epo-content-body">
+                    <div id="epo-email-content" class="whitespace-pre-wrap leading-[1.85] text-slate-200 text-[0.9rem] tracking-wide min-h-[80px]"></div>
+                </div>
+
+                <!-- Smart suggestions (appear after generation) -->
+                <div id="epo-smart-suggestions"></div>
             </div>
         </div>
 
@@ -6495,11 +6600,18 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 document.getElementById('epo-send-btn').disabled = true;
                 document.getElementById('epo-output-area').classList.remove('epo-out-visible');
                 document.getElementById('epo-output-area').style.display = 'none';
-                document.getElementById('epo-action-buttons').classList.add('hidden');
-                document.getElementById('epo-footer-buttons').classList.add('hidden');
+                const actionBtns = document.getElementById('epo-action-buttons');
+                actionBtns.classList.add('hidden');
+                actionBtns.style.display = 'none';
                 document.getElementById('epo-suggestions-grid').classList.remove('epo-hidden');
                 document.getElementById('epo-footer').classList.remove('epo-hidden');
                 document.getElementById('epo-email-content').innerHTML = '';
+                document.getElementById('epo-user-prompt-display').classList.remove('epo-prompt-shown');
+                document.getElementById('epo-user-prompt-display').textContent = '';
+                document.getElementById('epo-recipient-container').classList.remove('epo-recipient-visible');
+                document.getElementById('epo-to-field').value = '';
+                document.getElementById('epo-smart-suggestions').classList.remove('epo-smart-visible');
+                document.getElementById('epo-smart-suggestions').innerHTML = '';
 
                 renderEpoSuggestionCards();
 
@@ -6557,6 +6669,11 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             epoDrafting = true;
             epoLastPrompt = val;
 
+            // Show user prompt below back button
+            const promptDisplay = document.getElementById('epo-user-prompt-display');
+            promptDisplay.textContent = '"' + val + '"';
+            promptDisplay.classList.add('epo-prompt-shown');
+
             // Hide suggestion cards and footer
             document.getElementById('epo-suggestions-grid').classList.add('epo-hidden');
             document.getElementById('epo-footer').classList.add('epo-hidden');
@@ -6564,6 +6681,11 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             // Move oval to bottom
             const promptBar = document.getElementById('epo-prompt-bar');
             promptBar.classList.add('epo-at-bottom');
+
+            // Reset recipient container
+            document.getElementById('epo-recipient-container').classList.remove('epo-recipient-visible');
+            document.getElementById('epo-smart-suggestions').classList.remove('epo-smart-visible');
+            document.getElementById('epo-smart-suggestions').innerHTML = '';
 
             // Show output area after transition
             setTimeout(() => {
@@ -6573,9 +6695,10 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 output.classList.add('epo-out-visible');
 
                 document.getElementById('epo-status-header').innerHTML =
-                    '<span class="text-xl font-medium epo-writing-gradient">Writing a draft...</span>';
-                document.getElementById('epo-action-buttons').classList.add('hidden');
-                document.getElementById('epo-footer-buttons').classList.add('hidden');
+                    '<span class="text-sm font-medium epo-writing-gradient">Writing a draft...</span>';
+                const actionBtns = document.getElementById('epo-action-buttons');
+                actionBtns.classList.add('hidden');
+                actionBtns.style.display = 'none';
 
                 const contentEl = document.getElementById('epo-email-content');
                 contentEl.innerHTML = '<span class="epo-cursor"></span>';
@@ -6628,25 +6751,113 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         function finishEpoGeneration(text) {
             epoDrafting = false;
             const contentEl = document.getElementById('epo-email-content');
-            contentEl.innerHTML = text.replace(/\n/g, '<br>');
+            // Format text with better structure
+            contentEl.innerHTML = formatEpoEmail(text);
 
             document.getElementById('epo-status-header').innerHTML = `
-                <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm tracking-[0.2em] uppercase">
-                    <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" style="box-shadow:0 0 12px rgba(16,185,129,0.8)"></div>
+                <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs tracking-[0.15em] uppercase">
+                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" style="box-shadow:0 0 10px rgba(16,185,129,0.8)"></div>
                     Draft Ready
                 </div>`;
-            document.getElementById('epo-action-buttons').classList.remove('hidden');
-            document.getElementById('epo-footer-buttons').classList.remove('hidden');
+            const actionBtns = document.getElementById('epo-action-buttons');
+            actionBtns.classList.remove('hidden');
+            actionBtns.style.display = '';
+
+            // Set From field
+            document.getElementById('epo-from-field').value = gmailEmail || 'you@gmail.com';
+
+            // Generate and show smart suggestions after a delay
+            setTimeout(() => {
+                renderEpoSmartSuggestions(text);
+            }, 400);
+
             lucide.createIcons();
+        }
+
+        function formatEpoEmail(text) {
+            // Clean up and structure the email text nicely
+            let html = text
+                .replace(/\n/g, '<br>')
+                .replace(/^(Subject:.*)$/gm, '<div style="font-weight:600;color:#c4b5fd;margin-bottom:0.5rem;font-size:0.8rem;letter-spacing:0.03em;">$1</div>')
+                .replace(/^(Dear |Hi |Hello |Hey )([^<]*)/gm, '<span style="color:#e2e8f0;font-weight:500;">$1$2</span>')
+                .replace(/(Best regards|Sincerely|Kind regards|Thanks|Thank you|Warm regards)(,?)/gi, '<span style="color:#9ca3af;font-style:italic;">$1$2</span>');
+            return html;
+        }
+
+        function renderEpoSmartSuggestions(emailText) {
+            // Generate contextual 3-4 word suggestions based on email content
+            const suggestions = generateSmartSuggestions(emailText);
+            const container = document.getElementById('epo-smart-suggestions');
+            container.innerHTML = suggestions.map(s =>
+                `<button class="epo-smart-chip" onclick="epoSmartAction('${s.action}')">${s.label}</button>`
+            ).join('');
+            lucide.createIcons();
+            setTimeout(() => container.classList.add('epo-smart-visible'), 50);
+        }
+
+        function generateSmartSuggestions(text) {
+            const lower = text.toLowerCase();
+            const suggestions = [];
+
+            if (lower.includes('meeting') || lower.includes('schedule') || lower.includes('call')) {
+                suggestions.push({ label: 'Add calendar link', action: 'add_calendar' });
+                suggestions.push({ label: 'Make it shorter', action: 'shorter' });
+            } else if (lower.includes('follow') || lower.includes('check in') || lower.includes('update')) {
+                suggestions.push({ label: 'Add urgency tone', action: 'urgent' });
+                suggestions.push({ label: 'Make more casual', action: 'casual' });
+            } else if (lower.includes('thank') || lower.includes('appreciate') || lower.includes('grateful')) {
+                suggestions.push({ label: 'Add specific details', action: 'details' });
+                suggestions.push({ label: 'Keep it brief', action: 'shorter' });
+            } else if (lower.includes('project') || lower.includes('proposal') || lower.includes('pitch')) {
+                suggestions.push({ label: 'Add key metrics', action: 'metrics' });
+                suggestions.push({ label: 'More professional tone', action: 'formal' });
+            } else if (lower.includes('sorry') || lower.includes('apologize') || lower.includes('apology')) {
+                suggestions.push({ label: 'Soften the tone', action: 'soften' });
+                suggestions.push({ label: 'Add resolution steps', action: 'resolution' });
+            } else {
+                suggestions.push({ label: 'Make it formal', action: 'formal' });
+                suggestions.push({ label: 'Make it shorter', action: 'shorter' });
+            }
+
+            return suggestions;
+        }
+
+        function epoSmartAction(action) {
+            if (epoDrafting || !epoLastPrompt) return;
+            const modifiers = {
+                'add_calendar': 'Add a calendar/meeting link placeholder',
+                'shorter': 'Make it more concise and shorter',
+                'urgent': 'Add a sense of urgency',
+                'casual': 'Make the tone more casual and friendly',
+                'details': 'Add more specific details',
+                'metrics': 'Include key metrics or data points',
+                'formal': 'Make the tone more professional and formal',
+                'soften': 'Soften the tone to be more empathetic',
+                'resolution': 'Add clear resolution steps'
+            };
+            const modifier = modifiers[action] || action;
+            epoDrafting = true;
+            document.getElementById('epo-smart-suggestions').classList.remove('epo-smart-visible');
+            const actionBtns = document.getElementById('epo-action-buttons');
+            actionBtns.classList.add('hidden');
+            actionBtns.style.display = 'none';
+            document.getElementById('epo-status-header').innerHTML =
+                '<span class="text-sm font-medium epo-writing-gradient">Refining draft...</span>';
+            const contentEl = document.getElementById('epo-email-content');
+            contentEl.innerHTML = '<span class="epo-cursor"></span>';
+            generateEpoEmail(epoLastPrompt + '. ' + modifier, contentEl);
         }
 
         function retryEpoGeneration() {
             if (epoDrafting || !epoLastPrompt) return;
             epoDrafting = true;
-            document.getElementById('epo-action-buttons').classList.add('hidden');
-            document.getElementById('epo-footer-buttons').classList.add('hidden');
+            const actionBtns = document.getElementById('epo-action-buttons');
+            actionBtns.classList.add('hidden');
+            actionBtns.style.display = 'none';
+            document.getElementById('epo-recipient-container').classList.remove('epo-recipient-visible');
+            document.getElementById('epo-smart-suggestions').classList.remove('epo-smart-visible');
             document.getElementById('epo-status-header').innerHTML =
-                '<span class="text-xl font-medium epo-writing-gradient">Writing a draft...</span>';
+                '<span class="text-sm font-medium epo-writing-gradient">Writing a draft...</span>';
             const contentEl = document.getElementById('epo-email-content');
             contentEl.innerHTML = '<span class="epo-cursor"></span>';
             generateEpoEmail(epoLastPrompt, contentEl);
@@ -6659,20 +6870,50 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             });
         }
 
-        function epoSendEmail() {
-            // Transition to the full email mode with the drafted content
+        function epoShowRecipient() {
+            document.getElementById('epo-recipient-container').classList.add('epo-recipient-visible');
+            document.getElementById('epo-from-field').value = gmailEmail || 'you@gmail.com';
+            setTimeout(() => document.getElementById('epo-to-field').focus(), 400);
+        }
+
+        function epoFinalSend() {
+            const toEmail = document.getElementById('epo-to-field').value.trim();
+            if (!toEmail) {
+                showAppToast('Please enter a recipient email', 'error');
+                return;
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(toEmail)) {
+                showAppToast('Please enter a valid email address', 'error');
+                return;
+            }
+            if (!gmailConnected) {
+                showAppToast('Connect Gmail first to send emails', 'error');
+                return;
+            }
+
             const content = document.getElementById('epo-email-content').innerText;
-            exitEmailPromptMode();
-            setTimeout(() => {
-                if (gmailConnected) {
-                    enterEmailMode();
-                    setTimeout(() => {
-                        transitionToEmailChat('Send this email: ' + content);
-                    }, 800);
+            // Extract subject if present
+            let subject = '';
+            const subjectMatch = content.match(/^Subject:\s*(.+)/m);
+            if (subjectMatch) subject = subjectMatch[1].trim();
+
+            // Send via API
+            fetch('/api/gmail?action=send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ to: toEmail, subject: subject || 'Email from Clarity', body: content })
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    showAppToast('Email sent successfully!', 'success');
+                    document.getElementById('epo-recipient-container').classList.remove('epo-recipient-visible');
                 } else {
-                    showAppToast('Connect Gmail first to send emails', 'error');
+                    showAppToast(data.error || 'Failed to send email', 'error');
                 }
-            }, 1200);
+            }).catch(() => showAppToast('Network error sending email', 'error'));
+        }
+
+        function epoSendEmail() {
+            epoShowRecipient();
         }
 
         function epoManualEdit() {
