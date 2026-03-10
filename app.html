@@ -280,6 +280,182 @@
         .gmail-status-pill.connected { background:rgba(34,197,94,0.15); color:#4ade80; }
         .gmail-status-pill.disconnected { background:rgba(255,255,255,0.06); color:#9ca3af; }
 
+        /* ── Mode Fade Wave Transition ── */
+        #mode-fade-wave {
+            position:fixed; inset:0; z-index:999; pointer-events:none;
+            background:#020205;
+            transform:translateY(100%);
+            transition:none;
+        }
+        #mode-fade-wave.wave-up {
+            animation:modeFadeWaveUp 0.55s cubic-bezier(0.4,0,0.2,1) forwards;
+        }
+        #mode-fade-wave.wave-down {
+            animation:modeFadeWaveDown 0.55s cubic-bezier(0.4,0,0.2,1) forwards;
+        }
+        @keyframes modeFadeWaveUp {
+            0% { transform:translateY(100%); border-radius:50% 50% 0 0; }
+            40% { border-radius:20% 20% 0 0; }
+            100% { transform:translateY(0%); border-radius:0; }
+        }
+        @keyframes modeFadeWaveDown {
+            0% { transform:translateY(0%); border-radius:0; }
+            60% { border-radius:0 0 20% 20%; }
+            100% { transform:translateY(-100%); border-radius:0 0 50% 50%; }
+        }
+
+        /* ── Email Prompt Interface (from version switcher) ── */
+        #email-prompt-overlay {
+            position:fixed; inset:0; z-index:70;
+            background:#020205;
+            display:none; flex-direction:column; align-items:center; justify-content:center;
+            overflow:hidden;
+        }
+        #email-prompt-overlay.epo-active { display:flex; }
+
+        /* Animated background orbs */
+        #email-prompt-overlay .epo-orb {
+            position:absolute; border-radius:50%; filter:blur(150px);
+            pointer-events:none; z-index:0; opacity:0.25;
+        }
+        @keyframes epoFloat {
+            0% { transform:translate(0,0) scale(1); }
+            33% { transform:translate(15%,10%) scale(1.1); }
+            66% { transform:translate(-10%,20%) scale(0.9); }
+            100% { transform:translate(5%,-15%) scale(1.05); }
+        }
+
+        /* Email prompt suggestion cards */
+        .epo-card-container {
+            position:relative; padding:1.5px; border-radius:1.25rem; overflow:hidden;
+            background:rgba(255,255,255,0.05);
+        }
+        .epo-rainbow-trace {
+            position:absolute; top:-100%; left:-100%; width:300%; height:300%;
+            background:conic-gradient(from 0deg, transparent 0deg, transparent 260deg, #d946ef 280deg, #a855f7 310deg, #3b82f6 340deg, transparent 360deg);
+            animation:epoTraceAnim 2s cubic-bezier(0.2,0,0.2,1) forwards;
+            z-index:0;
+        }
+        @keyframes epoTraceAnim {
+            0% { opacity:0; transform:rotate(0deg); }
+            5% { opacity:1; }
+            95% { opacity:1; }
+            100% { opacity:0; transform:rotate(360deg); }
+        }
+        .epo-card-inner {
+            position:relative; z-index:1; height:100%; width:100%;
+            background:rgba(10,10,15,0.85); backdrop-filter:blur(25px);
+            border-radius:calc(1.25rem - 1.5px); padding:1.25rem;
+            display:flex; flex-direction:column; text-align:left;
+            border:1px solid rgba(255,255,255,0.05);
+            cursor:pointer; transition:all 0.3s ease;
+        }
+        .epo-card-inner:hover { background:rgba(255,255,255,0.12); }
+        .epo-card-icon {
+            margin-bottom:1rem; padding:0.625rem; width:fit-content;
+            border-radius:0.75rem; background:rgba(255,255,255,0.05);
+            transition:transform 0.3s ease;
+        }
+        .epo-card-inner:hover .epo-card-icon { transform:scale(1.1); }
+        .epo-card-title { font-weight:700; font-size:0.875rem; margin-bottom:0.375rem; color:rgba(255,255,255,0.9); }
+        .epo-card-desc { font-size:0.75rem; color:#9ca3af; line-height:1.5; font-weight:500; transition:color 0.3s ease; }
+        .epo-card-inner:hover .epo-card-desc { color:#e2e8f0; }
+
+        /* Central oval prompt container */
+        #epo-prompt-bar {
+            position:relative; width:100%; max-width:48rem; z-index:10;
+            transition:all 0.7s cubic-bezier(0.4,0,0.2,1);
+        }
+        #epo-prompt-bar.epo-at-bottom {
+            position:fixed; bottom:2rem; left:50%; transform:translateX(-50%);
+            max-width:42rem;
+        }
+        .epo-prompt-glow {
+            position:absolute; inset:-1.5px; border-radius:9999px;
+            overflow:hidden; filter:blur(8px); opacity:0;
+            transition:opacity 1s ease;
+        }
+        #epo-prompt-bar:focus-within .epo-prompt-glow,
+        #epo-prompt-bar:hover .epo-prompt-glow { opacity:0.6; }
+        .epo-prompt-glow-inner {
+            position:absolute; inset:-150%; border-radius:50%;
+            background:conic-gradient(from 0deg, transparent 0deg, #ff00c8 40deg, #7000ff 100deg, #00c2ff 160deg, #00ff85 220deg, #ffea00 280deg, transparent 360deg);
+            animation:rainbow-trace 2.5s ease-out forwards;
+        }
+        .epo-prompt-inner {
+            position:relative; display:flex; align-items:center;
+            background:#0d0d12; border:1px solid rgba(255,255,255,0.1);
+            border-radius:9999px; padding:0.75rem 0.75rem 0.75rem 1.25rem;
+            shadow:0 25px 50px -12px rgba(0,0,0,0.5);
+            backdrop-filter:blur(30px); z-index:10;
+        }
+        .epo-logo-box {
+            display:flex; align-items:center; justify-content:center;
+            width:3rem; height:3rem; border-radius:1rem;
+            background:#1a1a24; border:1px solid rgba(255,255,255,0.1);
+            margin-right:1rem; flex-shrink:0;
+        }
+        .epo-prompt-inner input {
+            flex:1; background:transparent; border:none; outline:none;
+            font-size:1.125rem; color:white; font-weight:500;
+            min-width:0;
+        }
+        .epo-prompt-inner input::placeholder { color:#4b5563; }
+        .epo-send-btn {
+            margin-left:1rem; padding:0.875rem;
+            background:white; color:#050505; border-radius:9999px;
+            display:flex; align-items:center; justify-content:center;
+            transition:all 0.2s; flex-shrink:0;
+            box-shadow:0 0 20px rgba(255,255,255,0.1);
+        }
+        .epo-send-btn:hover { background:#e2e8f0; }
+        .epo-send-btn:active { transform:scale(0.9); }
+        .epo-send-btn:disabled { opacity:0.3; cursor:not-allowed; }
+
+        /* Email prompt output area */
+        #epo-output-area {
+            display:none; width:100%; max-width:48rem;
+            border-radius:2.5rem; background:rgba(13,13,18,0.85);
+            border:1px solid rgba(255,255,255,0.1);
+            backdrop-filter:blur(30px); padding:2.5rem;
+            box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);
+            z-index:10;
+        }
+        #epo-output-area.epo-out-visible {
+            display:block;
+            animation:fadeInUp 0.8s ease forwards;
+        }
+        @keyframes fadeInUp {
+            from { opacity:0; transform:translateY(20px); }
+            to { opacity:1; transform:translateY(0); }
+        }
+        .epo-writing-gradient {
+            background:linear-gradient(to right, #60a5fa, #c084fc, #f472b6);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+        }
+        .epo-cursor {
+            display:inline-block; width:3px; height:1.5rem;
+            background:#a855f7; margin-left:4px; border-radius:99px;
+            vertical-align:middle;
+            box-shadow:0 0 15px rgba(168,85,247,0.7);
+            animation:blink 0.8s infinite;
+        }
+
+        /* Email prompt exit button */
+        #epo-exit-btn {
+            position:fixed; top:1.25rem; left:50%; transform:translateX(-50%);
+            z-index:75; opacity:0; transition:opacity 0.5s ease 0.6s;
+        }
+        #email-prompt-overlay.epo-active #epo-exit-btn { opacity:1; }
+
+        /* Suggestion grid & footer fade on submit */
+        #epo-suggestions-grid, #epo-footer {
+            transition:opacity 0.5s ease, transform 0.5s ease;
+        }
+        #epo-suggestions-grid.epo-hidden, #epo-footer.epo-hidden {
+            opacity:0; transform:translateY(-20px); pointer-events:none;
+        }
+
         /* ── 2FA toggle ── */
         .toggle-track { width:44px; height:24px; background:rgba(255,255,255,0.1); border-radius:12px; position:relative; transition:background 0.2s; cursor:pointer; }
         .toggle-track.on { background:#7c3aed; }
@@ -975,6 +1151,16 @@
                 Connect
             </button>
         </div>
+        <!-- Email AI toggle -->
+        <div class="border-t border-white/5 pt-3 mt-3 px-1 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-medium text-white">Email AI</p>
+                <p class="text-[10px] text-gray-500 mt-0.5">AI-powered email drafting assistant</p>
+            </div>
+            <button onclick="closeVersionPopup(); openEmailPromptMode();" class="text-[10px] font-medium text-violet-400 hover:text-violet-300 bg-violet-950/40 hover:bg-violet-950/60 border border-violet-800/30 px-2.5 py-1 rounded-lg transition-all cursor-pointer">
+                Open
+            </button>
+        </div>
         <!-- Presentation toggle -->
         <div class="border-t border-white/5 pt-3 mt-3 px-1 flex items-center justify-between">
             <div>
@@ -1118,6 +1304,93 @@
                 </div>
                 <p class="text-center text-xs text-gray-700 mt-2">Clarity AI · Email Mode · Powered by Gmail</p>
             </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         MODE FADE WAVE (black wave transition between modes)
+    ═══════════════════════════════════════════════════════ -->
+    <div id="mode-fade-wave"></div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         EMAIL PROMPT OVERLAY (opened from version switcher)
+    ═══════════════════════════════════════════════════════ -->
+    <div id="email-prompt-overlay">
+        <!-- Animated background orbs -->
+        <div class="fixed inset-0 overflow-hidden pointer-events-none">
+            <div class="epo-orb" style="top:-10%;left:-10%;width:70%;height:70%;background:#7c3aed;animation:epoFloat 20s infinite alternate ease-in-out"></div>
+            <div class="epo-orb" style="bottom:-15%;right:-5%;width:65%;height:65%;background:#3b82f6;animation:epoFloat 25s infinite alternate-reverse ease-in-out"></div>
+            <div class="epo-orb" style="top:15%;right:10%;width:50%;height:50%;background:#d946ef;animation:epoFloat 18s infinite linear"></div>
+            <div class="epo-orb" style="bottom:20%;left:20%;width:45%;height:45%;background:#06b6d4;animation:epoFloat 22s infinite alternate ease-in-out"></div>
+        </div>
+
+        <!-- Exit button -->
+        <div id="epo-exit-btn">
+            <button onclick="exitEmailPromptMode()" class="flex items-center gap-2 px-4 py-2 bg-[#1a1a1a]/80 backdrop-blur-md border border-white/10 rounded-full text-xs text-gray-300 hover:text-white hover:bg-[#222] hover:border-white/20 shadow-xl transition-all">
+                <i data-lucide="arrow-left" class="w-3.5"></i>
+                <span>Back to AI</span>
+            </button>
+        </div>
+
+        <div class="w-full max-w-3xl z-10 px-4 flex flex-col items-center justify-center flex-1">
+            <!-- Suggestion cards grid -->
+            <div id="epo-suggestions-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 w-full">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Central oval prompt container -->
+            <div id="epo-prompt-bar" class="mb-12 px-4">
+                <div class="epo-prompt-glow"><div class="epo-prompt-glow-inner"></div></div>
+                <div class="epo-prompt-inner">
+                    <div class="epo-logo-box">
+                        <svg class="w-7 h-7" viewBox="-15 -15 130 130">
+                            <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
+                            <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
+                            <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
+                        </svg>
+                    </div>
+                    <input id="epo-input" type="text" placeholder="Ask Clarity to write email drafts"
+                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    <button id="epo-send-btn" class="epo-send-btn" onclick="handleEpoSend()" disabled>
+                        <i data-lucide="send" class="w-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Output area (shown after prompt) -->
+            <div id="epo-output-area">
+                <div class="flex flex-col mb-8 border-b border-white/5 pb-6">
+                    <div id="epo-status-header">
+                        <span class="text-xl font-medium epo-writing-gradient">Writing a draft...</span>
+                    </div>
+                    <div class="flex justify-between items-center mt-4">
+                        <div class="w-full h-[1px] bg-white/10"></div>
+                        <div id="epo-action-buttons" class="hidden flex gap-4 ml-6">
+                            <button onclick="copyEpoContent()" class="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-colors text-slate-300 border border-white/5">
+                                <i data-lucide="copy" class="w-5 h-5"></i>
+                            </button>
+                            <button onclick="retryEpoGeneration()" class="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-colors text-slate-300 border border-white/5">
+                                <i data-lucide="rotate-cw" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="epo-email-content" class="whitespace-pre-wrap leading-[1.8] text-slate-200 font-light text-xl tracking-wide min-h-[100px]"></div>
+                <div id="epo-footer-buttons" class="hidden mt-12 flex gap-5">
+                    <button onclick="epoSendEmail()" class="flex-1 py-5 px-8 rounded-3xl bg-white text-black hover:bg-slate-200 font-black transition-all shadow-2xl active:scale-[0.98] tracking-widest uppercase text-xs">
+                        Send Email
+                    </button>
+                    <button onclick="epoManualEdit()" class="flex-1 py-5 px-8 rounded-3xl bg-white/5 hover:bg-white/10 font-bold transition-all border border-white/10 active:scale-[0.98] backdrop-blur-md text-white text-xs tracking-widest uppercase">
+                        Manual Edit
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div id="epo-footer" class="text-center pb-6 opacity-30 flex items-center justify-center gap-4 text-xs tracking-[0.4em] uppercase font-bold z-10">
+            <i data-lucide="pen-line" class="w-4"></i>
+            <span>Clarity AI · Email Writer</span>
         </div>
     </div>
 
@@ -6172,6 +6445,252 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
         // ── Init Gmail check (skip if returning from OAuth — handled above) ──
         if (!_gmailParam) checkGmailStatus();
+
+        // ═══════════════════════════════════════════════════════════
+        //  EMAIL PROMPT MODE (from version switcher — new interface)
+        // ═══════════════════════════════════════════════════════════
+
+        let epoActive = false;
+        let epoDrafting = false;
+        let epoLastPrompt = '';
+
+        const epoSuggestions = [
+            { icon: 'mail', title: 'Follow-up', desc: 'Gentle nudge for a reply', color: 'text-blue-400' },
+            { icon: 'briefcase', title: 'Pitch Idea', desc: 'Professional project intro', color: 'text-purple-400' },
+            { icon: 'zap', title: 'Launch Day', desc: 'Announce new product', color: 'text-fuchsia-400' },
+            { icon: 'message-circle', title: 'Feedback', desc: 'Ask for user thoughts', color: 'text-cyan-400' }
+        ];
+
+        function renderEpoSuggestionCards() {
+            const grid = document.getElementById('epo-suggestions-grid');
+            grid.innerHTML = epoSuggestions.map((item, idx) => `
+                <div class="epo-card-container shadow-2xl">
+                    <div class="epo-rainbow-trace" style="animation-delay:${idx * 0.15}s"></div>
+                    <button class="epo-card-inner" onclick="epoFillInput('${item.desc}')">
+                        <div class="epo-card-icon ${item.color}">
+                            <i data-lucide="${item.icon}" class="w-5"></i>
+                        </div>
+                        <h3 class="epo-card-title">${item.title}</h3>
+                        <p class="epo-card-desc">${item.desc}</p>
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function epoFillInput(text) {
+            const inp = document.getElementById('epo-input');
+            inp.value = text;
+            document.getElementById('epo-send-btn').disabled = false;
+            handleEpoSend();
+        }
+
+        function openEmailPromptMode() {
+            if (epoActive) return;
+
+            const wave = document.getElementById('mode-fade-wave');
+            wave.className = '';
+            void wave.offsetWidth;
+            wave.classList.add('wave-up');
+
+            setTimeout(() => {
+                epoActive = true;
+                const overlay = document.getElementById('email-prompt-overlay');
+                overlay.classList.add('epo-active');
+
+                // Reset state
+                const promptBar = document.getElementById('epo-prompt-bar');
+                promptBar.classList.remove('epo-at-bottom');
+                document.getElementById('epo-input').value = '';
+                document.getElementById('epo-send-btn').disabled = true;
+                document.getElementById('epo-output-area').classList.remove('epo-out-visible');
+                document.getElementById('epo-output-area').style.display = 'none';
+                document.getElementById('epo-action-buttons').classList.add('hidden');
+                document.getElementById('epo-footer-buttons').classList.add('hidden');
+                document.getElementById('epo-suggestions-grid').classList.remove('epo-hidden');
+                document.getElementById('epo-footer').classList.remove('epo-hidden');
+                document.getElementById('epo-email-content').innerHTML = '';
+
+                renderEpoSuggestionCards();
+
+                // Enable input tracking
+                const inp = document.getElementById('epo-input');
+                inp.oninput = () => {
+                    document.getElementById('epo-send-btn').disabled = !inp.value.trim();
+                };
+                inp.onkeydown = (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleEpoSend(); }
+                };
+
+                lucide.createIcons();
+
+                // Wave down to reveal
+                setTimeout(() => {
+                    wave.classList.remove('wave-up');
+                    void wave.offsetWidth;
+                    wave.classList.add('wave-down');
+                    setTimeout(() => { wave.className = ''; wave.style.transform = 'translateY(100%)'; }, 600);
+                }, 80);
+            }, 500);
+        }
+
+        function exitEmailPromptMode() {
+            if (!epoActive) return;
+
+            const wave = document.getElementById('mode-fade-wave');
+            wave.className = '';
+            wave.style.transform = '';
+            void wave.offsetWidth;
+            wave.classList.add('wave-up');
+
+            setTimeout(() => {
+                epoActive = false;
+                epoDrafting = false;
+                const overlay = document.getElementById('email-prompt-overlay');
+                overlay.classList.remove('epo-active');
+
+                // Wave down to reveal main AI
+                setTimeout(() => {
+                    wave.classList.remove('wave-up');
+                    void wave.offsetWidth;
+                    wave.classList.add('wave-down');
+                    setTimeout(() => { wave.className = ''; wave.style.transform = 'translateY(100%)'; }, 600);
+                }, 80);
+            }, 500);
+        }
+
+        async function handleEpoSend() {
+            const inp = document.getElementById('epo-input');
+            const val = inp.value.trim();
+            if (!val || epoDrafting) return;
+
+            epoDrafting = true;
+            epoLastPrompt = val;
+
+            // Hide suggestion cards and footer
+            document.getElementById('epo-suggestions-grid').classList.add('epo-hidden');
+            document.getElementById('epo-footer').classList.add('epo-hidden');
+
+            // Move oval to bottom
+            const promptBar = document.getElementById('epo-prompt-bar');
+            promptBar.classList.add('epo-at-bottom');
+
+            // Show output area after transition
+            setTimeout(() => {
+                const output = document.getElementById('epo-output-area');
+                output.style.display = 'block';
+                void output.offsetWidth;
+                output.classList.add('epo-out-visible');
+
+                document.getElementById('epo-status-header').innerHTML =
+                    '<span class="text-xl font-medium epo-writing-gradient">Writing a draft...</span>';
+                document.getElementById('epo-action-buttons').classList.add('hidden');
+                document.getElementById('epo-footer-buttons').classList.add('hidden');
+
+                const contentEl = document.getElementById('epo-email-content');
+                contentEl.innerHTML = '<span class="epo-cursor"></span>';
+
+                // Generate email via API
+                generateEpoEmail(val, contentEl);
+            }, 600);
+        }
+
+        async function generateEpoEmail(prompt, contentEl) {
+            try {
+                const res = await fetch('/api/gmail?action=compose', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        history: [],
+                        emails: cachedGmailEmails || []
+                    })
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    contentEl.innerHTML = `<span class="text-red-400">${escapeHtml(data.error || 'Something went wrong.')}</span>`;
+                    epoDrafting = false;
+                    return;
+                }
+
+                // Typewriter effect
+                const fullText = data.reply || '';
+                let charIndex = 0;
+                const typeText = () => {
+                    if (charIndex < fullText.length) {
+                        const text = fullText.slice(0, charIndex + 3);
+                        contentEl.innerHTML = text.replace(/\n/g, '<br>') + '<span class="epo-cursor"></span>';
+                        charIndex += 3;
+                        setTimeout(typeText, 15);
+                    } else {
+                        finishEpoGeneration(fullText);
+                    }
+                };
+                setTimeout(typeText, 300);
+
+            } catch (err) {
+                contentEl.innerHTML = '<span class="text-red-400">Network error. Please try again.</span>';
+                epoDrafting = false;
+            }
+        }
+
+        function finishEpoGeneration(text) {
+            epoDrafting = false;
+            const contentEl = document.getElementById('epo-email-content');
+            contentEl.innerHTML = text.replace(/\n/g, '<br>');
+
+            document.getElementById('epo-status-header').innerHTML = `
+                <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm tracking-[0.2em] uppercase">
+                    <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" style="box-shadow:0 0 12px rgba(16,185,129,0.8)"></div>
+                    Draft Ready
+                </div>`;
+            document.getElementById('epo-action-buttons').classList.remove('hidden');
+            document.getElementById('epo-footer-buttons').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function retryEpoGeneration() {
+            if (epoDrafting || !epoLastPrompt) return;
+            epoDrafting = true;
+            document.getElementById('epo-action-buttons').classList.add('hidden');
+            document.getElementById('epo-footer-buttons').classList.add('hidden');
+            document.getElementById('epo-status-header').innerHTML =
+                '<span class="text-xl font-medium epo-writing-gradient">Writing a draft...</span>';
+            const contentEl = document.getElementById('epo-email-content');
+            contentEl.innerHTML = '<span class="epo-cursor"></span>';
+            generateEpoEmail(epoLastPrompt, contentEl);
+        }
+
+        function copyEpoContent() {
+            const text = document.getElementById('epo-email-content').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                showAppToast('Copied to clipboard', 'success');
+            });
+        }
+
+        function epoSendEmail() {
+            // Transition to the full email mode with the drafted content
+            const content = document.getElementById('epo-email-content').innerText;
+            exitEmailPromptMode();
+            setTimeout(() => {
+                if (gmailConnected) {
+                    enterEmailMode();
+                    setTimeout(() => {
+                        transitionToEmailChat('Send this email: ' + content);
+                    }, 800);
+                } else {
+                    showAppToast('Connect Gmail first to send emails', 'error');
+                }
+            }, 1200);
+        }
+
+        function epoManualEdit() {
+            const content = document.getElementById('epo-email-content').innerText;
+            navigator.clipboard.writeText(content).then(() => {
+                showAppToast('Draft copied! Paste it into your email client.', 'success');
+            });
+        }
     </script>
 </body>
 </html>
