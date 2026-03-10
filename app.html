@@ -416,8 +416,8 @@
         #epo-output-area {
             display:none; width:100%; max-width:44rem;
             z-index:10; margin:0 auto;
-            max-height:calc(100vh - 12rem); overflow-y:auto;
-            padding:0 1rem;
+            max-height:calc(100vh - 14rem); overflow-y:auto;
+            padding:0 1rem 6rem;
         }
         #epo-output-area::-webkit-scrollbar { width:4px; }
         #epo-output-area::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:4px; }
@@ -568,21 +568,12 @@
             background:#7c3aed; animation:dot-bounce 1.4s infinite ease-in-out;
         }
 
-        /* Email prompt exit button & user prompt */
+        /* Email prompt exit button */
         #epo-exit-btn {
             position:fixed; top:1.25rem; left:50%; transform:translateX(-50%);
             z-index:75; opacity:0; transition:opacity 0.5s ease 0.6s;
-            display:flex; flex-direction:column; align-items:center; gap:0.5rem;
         }
         #email-prompt-overlay.epo-active #epo-exit-btn { opacity:1; }
-        #epo-user-prompt-display {
-            display:none; max-width:28rem; padding:0.4rem 1rem;
-            background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06);
-            border-radius:9999px; font-size:0.7rem; color:#6b7280;
-            text-align:center; line-height:1.4;
-            overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-        }
-        #epo-user-prompt-display.epo-prompt-shown { display:block; }
 
         /* Suggestion grid & footer fade on submit */
         #epo-suggestions-grid, #epo-footer {
@@ -1450,16 +1441,15 @@
             <div class="epo-orb" style="bottom:20%;left:20%;width:45%;height:45%;background:#06b6d4;animation:epoFloat 22s infinite alternate ease-in-out"></div>
         </div>
 
-        <!-- Exit button + user prompt -->
+        <!-- Exit button -->
         <div id="epo-exit-btn">
             <button onclick="exitEmailPromptMode()" class="flex items-center gap-2 px-4 py-2 bg-[#1a1a1a]/80 backdrop-blur-md border border-white/10 rounded-full text-xs text-gray-300 hover:text-white hover:bg-[#222] hover:border-white/20 shadow-xl transition-all">
                 <i data-lucide="arrow-left" class="w-3.5"></i>
                 <span>Back to AI</span>
             </button>
-            <div id="epo-user-prompt-display"></div>
         </div>
 
-        <div class="w-full max-w-3xl z-10 px-4 flex flex-col items-center justify-center flex-1" style="padding-top:4rem; padding-bottom:5rem;">
+        <div class="w-full max-w-3xl z-10 px-4 flex flex-col items-center justify-center flex-1" style="padding-top:4rem; padding-bottom:7rem;">
             <!-- Suggestion cards grid -->
             <div id="epo-suggestions-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 w-full">
                 <!-- Populated by JS -->
@@ -6474,7 +6464,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
         async function loadEmailConversations() {
             try {
-                const res = await fetch(`/api/gmail?action=conversations?userId=${encodeURIComponent(currentUser.id || '')}`, { headers: authHeaders() });
+                const res = await fetch(`/api/gmail?action=conversations&userId=${encodeURIComponent(currentUser.id || '')}`, { headers: authHeaders() });
                 if (!res.ok) return;
                 const convs = await res.json();
                 allEmailConversations = convs || [];
@@ -6519,7 +6509,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         async function loadEmailConversation(id) {
             toggleSidebar(false);
             try {
-                const res = await fetch(`/api/gmail?action=conversations?id=${id}`, { headers: authHeaders() });
+                const res = await fetch(`/api/gmail?action=conversations&id=${id}`, { headers: authHeaders() });
                 if (!res.ok) return;
                 const data = await res.json();
 
@@ -6586,7 +6576,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         async function deleteEmailConversation(id) {
             if (!confirm('Delete this email conversation?')) return;
             try {
-                await fetch(`/api/gmail?action=conversations?id=${id}`, {
+                await fetch(`/api/gmail?action=conversations&id=${id}`, {
                     method: 'DELETE',
                     headers: authHeaders()
                 });
@@ -6668,8 +6658,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 document.getElementById('epo-footer').classList.remove('epo-hidden');
                 document.getElementById('epo-email-content').innerHTML = '';
                 document.getElementById('epo-user-bubble').innerHTML = '';
-                document.getElementById('epo-user-prompt-display').classList.remove('epo-prompt-shown');
-                document.getElementById('epo-user-prompt-display').textContent = '';
                 document.getElementById('epo-recipient-container').classList.remove('epo-recipient-visible');
                 document.getElementById('epo-to-field').value = '';
                 document.getElementById('epo-smart-suggestions').classList.remove('epo-smart-visible');
@@ -6732,11 +6720,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             epoDrafting = true;
             epoLastPrompt = val;
 
-            // Show user prompt below back button
-            const promptDisplay = document.getElementById('epo-user-prompt-display');
-            promptDisplay.textContent = '"' + val + '"';
-            promptDisplay.classList.add('epo-prompt-shown');
-
             // Hide suggestion cards and footer
             document.getElementById('epo-suggestions-grid').classList.add('epo-hidden');
             document.getElementById('epo-footer').classList.add('epo-hidden');
@@ -6794,14 +6777,14 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     return;
                 }
 
-                // Typewriter effect
+                // Typewriter effect with markdown rendering
                 const fullText = data.reply || '';
                 let charIndex = 0;
                 const typeText = () => {
                     if (charIndex < fullText.length) {
-                        const text = fullText.slice(0, charIndex + 3);
-                        contentEl.innerHTML = text.replace(/\n/g, '<br>') + '<span class="epo-cursor"></span>';
-                        charIndex += 3;
+                        charIndex = Math.min(charIndex + 3, fullText.length);
+                        const partial = fullText.slice(0, charIndex);
+                        contentEl.innerHTML = marked.parse(partial) + '<span class="epo-cursor"></span>';
                         setTimeout(typeText, 15);
                     } else {
                         finishEpoGeneration(fullText);
@@ -6848,13 +6831,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         }
 
         function formatEpoEmail(text) {
-            // Clean up and structure the email text nicely
-            let html = text
-                .replace(/\n/g, '<br>')
-                .replace(/^(Subject:.*)$/gm, '<div style="font-weight:600;color:#c4b5fd;margin-bottom:0.5rem;font-size:0.8rem;letter-spacing:0.03em;">$1</div>')
-                .replace(/^(Dear |Hi |Hello |Hey )([^<]*)/gm, '<span style="color:#e2e8f0;font-weight:500;">$1$2</span>')
-                .replace(/(Best regards|Sincerely|Kind regards|Thanks|Thank you|Warm regards)(,?)/gi, '<span style="color:#9ca3af;font-style:italic;">$1$2</span>');
-            return html;
+            return marked.parse(text);
         }
 
         function renderEpoSmartSuggestions(emailText) {
