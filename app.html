@@ -361,14 +361,18 @@
         .epo-card-desc { font-size:0.75rem; color:#9ca3af; line-height:1.5; font-weight:500; transition:color 0.3s ease; }
         .epo-card-inner:hover .epo-card-desc { color:#e2e8f0; }
 
+        /* Main content area states */
+        #epo-main-content { justify-content:center; }
+        #epo-main-content.epo-output-mode { justify-content:flex-start; }
+
         /* Central oval prompt container */
         #epo-prompt-bar {
             position:relative; width:100%; max-width:48rem; z-index:10;
             transition:all 0.7s cubic-bezier(0.4,0,0.2,1);
         }
         #epo-prompt-bar.epo-at-bottom {
-            position:fixed; bottom:2rem; left:50%; transform:translateX(-50%);
-            max-width:42rem;
+            position:fixed; bottom:1.25rem; left:50%; transform:translateX(-50%);
+            max-width:38rem; z-index:20;
         }
         .epo-prompt-glow {
             position:absolute; inset:-1.5px; border-radius:9999px;
@@ -416,8 +420,8 @@
         #epo-output-area {
             display:none; width:100%; max-width:44rem;
             z-index:10; margin:0 auto;
-            max-height:calc(100vh - 14rem); overflow-y:auto;
-            padding:0 1rem 6rem;
+            overflow-y:auto; flex:1; min-height:0;
+            padding:0 1rem 8rem;
         }
         #epo-output-area::-webkit-scrollbar { width:4px; }
         #epo-output-area::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:4px; }
@@ -1449,7 +1453,7 @@
             </button>
         </div>
 
-        <div class="w-full max-w-3xl z-10 px-4 flex flex-col items-center justify-center flex-1" style="padding-top:4rem; padding-bottom:7rem;">
+        <div id="epo-main-content" class="w-full max-w-3xl z-10 px-4 flex flex-col items-center flex-1 overflow-hidden" style="padding-top:4rem;">
             <!-- Suggestion cards grid -->
             <div id="epo-suggestions-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 w-full">
                 <!-- Populated by JS -->
@@ -6653,6 +6657,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 document.getElementById('epo-send-btn').disabled = true;
                 document.getElementById('epo-output-area').classList.remove('epo-out-visible');
                 document.getElementById('epo-output-area').style.display = 'none';
+                document.getElementById('epo-main-content').classList.remove('epo-output-mode');
                 document.getElementById('epo-action-buttons').classList.remove('epo-actions-visible');
                 document.getElementById('epo-suggestions-grid').classList.remove('epo-hidden');
                 document.getElementById('epo-footer').classList.remove('epo-hidden');
@@ -6737,6 +6742,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
             // Show output area after transition
             setTimeout(() => {
+                document.getElementById('epo-main-content').classList.add('epo-output-mode');
                 const output = document.getElementById('epo-output-area');
                 output.style.display = '';
                 void output.offsetWidth;
@@ -6779,12 +6785,15 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
                 // Typewriter effect with markdown rendering
                 const fullText = data.reply || '';
+                const outputScroller = document.getElementById('epo-output-area');
                 let charIndex = 0;
                 const typeText = () => {
                     if (charIndex < fullText.length) {
                         charIndex = Math.min(charIndex + 3, fullText.length);
                         const partial = fullText.slice(0, charIndex);
                         contentEl.innerHTML = marked.parse(partial) + '<span class="epo-cursor"></span>';
+                        // Auto-scroll to follow the text
+                        outputScroller.scrollTop = outputScroller.scrollHeight;
                         setTimeout(typeText, 15);
                     } else {
                         finishEpoGeneration(fullText);
