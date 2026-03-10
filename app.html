@@ -1151,16 +1151,6 @@
                 Connect
             </button>
         </div>
-        <!-- Email AI toggle -->
-        <div class="border-t border-white/5 pt-3 mt-3 px-1 flex items-center justify-between">
-            <div>
-                <p class="text-xs font-medium text-white">Email AI</p>
-                <p class="text-[10px] text-gray-500 mt-0.5">AI-powered email drafting assistant</p>
-            </div>
-            <button onclick="closeVersionPopup(); openEmailPromptMode();" class="text-[10px] font-medium text-violet-400 hover:text-violet-300 bg-violet-950/40 hover:bg-violet-950/60 border border-violet-800/30 px-2.5 py-1 rounded-lg transition-all cursor-pointer">
-                Open
-            </button>
-        </div>
         <!-- Presentation toggle -->
         <div class="border-t border-white/5 pt-3 mt-3 px-1 flex items-center justify-between">
             <div>
@@ -5717,7 +5707,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         async function handleGmailPopupAction() {
             if (gmailConnected) {
                 closeVersionPopup();
-                enterEmailMode();
+                openEmailPromptMode();
             } else {
                 handleGmailConnect();
             }
