@@ -5695,7 +5695,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 badge.className = 'gmail-status-pill connected';
                 badge.textContent = gmailEmail;
                 btn.textContent = 'Open';
-                btn.onclick = () => { closeVersionPopup(); enterEmailMode(); };
+                btn.onclick = () => { closeVersionPopup(); openEmailPromptMode(); };
             } else {
                 badge.className = 'gmail-status-pill disconnected';
                 badge.textContent = 'Not connected';
