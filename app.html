@@ -6336,7 +6336,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 return;
             }
             if (gmailConnected) {
-                enterEmailMode();
+                openEmailPromptMode();
             } else {
                 showAppToast('Connect Gmail first to compose emails', 'error');
             }
