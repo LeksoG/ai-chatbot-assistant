@@ -137,16 +137,7 @@
         })();
 
         function getTrustedDevice(email) {
-            try {
-                const key  = 'clarity_trusted_dev_' + email;
-                const data = JSON.parse(localStorage.getItem(key) || 'null');
-                if (!data) return null;
-                // Check: same location AND within 12 hours
-                const twelveHrs = 12 * 60 * 60 * 1000;
-                if (data.locationKey === currentLocationKey && (Date.now() - data.lastVerified) < twelveHrs) {
-                    return data.deviceTrustKey;
-                }
-            } catch (_) {}
+            // 2FA is always required on login — no more 12hr trusted device skip
             return null;
         }
 
