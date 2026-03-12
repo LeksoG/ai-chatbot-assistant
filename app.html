@@ -987,6 +987,18 @@
         .av-action-btn.danger { background:rgba(153,27,27,0.15); border-color:rgba(239,68,68,0.25); color:#fca5a5; }
         .av-action-btn.danger:hover{ background:rgba(153,27,27,0.3); border-color:rgba(239,68,68,0.5); }
 
+        /* ── Update Clarity Banner ── */
+        .update-banner {
+            position:fixed; top:1rem; left:50%; transform:translateX(-50%);
+            z-index:25; display:none; align-items:center; gap:0.6rem;
+            padding:0.5rem 1rem; background:rgba(124,58,237,0.12);
+            border:1px solid rgba(124,58,237,0.3); border-radius:9999px;
+            cursor:pointer; transition:all 0.2s; box-shadow:0 4px 20px rgba(124,58,237,0.15);
+            backdrop-filter:blur(8px);
+        }
+        .update-banner:hover { background:rgba(124,58,237,0.22); border-color:rgba(124,58,237,0.5); transform:translateX(-50%) translateY(-1px); box-shadow:0 6px 28px rgba(124,58,237,0.25); }
+        .update-banner.visible { display:flex; }
+
         /* ── Code logo ── */
         .cl-seg { stroke:none; transform-origin:center; fill:url(#codeRainbow); }
         .cl-seg-top { animation:clMorphTop 5s infinite cubic-bezier(0.6,0.05,0.01,1); }
@@ -1114,6 +1126,10 @@
 
         <!-- Email conversations list (Emails tab — hidden by default) -->
         <div id="sidebar-emails-panel" class="px-3 flex-1 overflow-y-auto min-h-0 hidden">
+            <button onclick="openComposeEmail()" class="w-full flex items-center gap-2.5 p-3 bg-violet-600/15 hover:bg-violet-600/25 rounded-xl text-sm text-violet-300 transition-colors border border-violet-500/20 group mb-3">
+                <i data-lucide="pen-line" class="w-4 group-hover:text-violet-200 transition-colors"></i>
+                <span class="font-medium">Compose Email</span>
+            </button>
             <div class="flex items-center justify-between px-1 mb-2">
                 <p class="text-[10px] text-gray-600 uppercase tracking-widest">Email Conversations</p>
             </div>
@@ -1166,6 +1182,17 @@
             <span class="font-bold text-white text-sm tracking-tight">Clarity AI</span>
         </div>
     </header>
+
+    <!-- Update Clarity Banner -->
+    <div id="update-clarity-banner" class="update-banner" onclick="openUpdateSplash()">
+        <svg class="w-5 h-5 shrink-0" viewBox="-15 -15 130 130">
+            <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
+            <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
+            <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
+        </svg>
+        <span class="font-semibold text-sm text-white">Update Clarity</span>
+        <span class="text-[10px] text-violet-300 bg-violet-600/30 px-2 py-0.5 rounded-full font-medium">v3.5</span>
+    </div>
 
     <!-- Main UI -->
     <main id="main-ui" class="min-h-screen flex flex-col items-center justify-center p-4">
@@ -1232,7 +1259,7 @@
                         <button id="version-pill" onclick="toggleVersionPopup()"
                             class="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/8 rounded-full text-xs transition-all whitespace-nowrap">
                             <div class="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-sm shadow-violet-400/60 shrink-0"></div>
-                            <span class="font-medium text-white">Clarity <span id="pill-model-label">3.0</span></span>
+                            <span class="font-medium text-white">Clarity <span id="pill-model-label">3.5</span></span>
                             <i data-lucide="chevrons-up-down" class="w-3 text-gray-500 shrink-0"></i>
                         </button>
 
@@ -2165,15 +2192,18 @@
                         <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
                     </svg>
                 </div>
-                <h2 id="splash-version-title" class="text-white text-xl font-bold">What's New in Clarity 3.2</h2>
+                <h2 id="splash-version-title" class="text-white text-xl font-bold">What's New in Clarity 3.5</h2>
                 <p class="text-gray-400 text-xs mt-1">Here's what we've been working on</p>
             </div>
             <div class="splash-body">
                 <div id="splash-features">
                     <!-- Features injected by JS -->
                 </div>
-                <button onclick="closeSplash()" class="w-full mt-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors">
-                    Got it
+                <button id="splash-update-btn" onclick="startClarityUpdate()" class="w-full mt-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors">
+                    Start Updating
+                </button>
+                <button id="splash-gotit-btn" onclick="closeSplash()" class="w-full mt-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl transition-colors" style="display:none">
+                    Got it — Enjoy Clarity 3.5
                 </button>
             </div>
         </div>
@@ -2401,7 +2431,7 @@
         let conversationHistory  = [];
         let isTyping             = false;
         let activeConversationId = null;
-        let selectedModel        = localStorage.getItem('clarity_model') || '3.0';
+        let selectedModel        = localStorage.getItem('clarity_model') || '3.5';
         let pendingRenameId      = null;
         let pendingDeleteId      = null;
         let canvasEnabled        = localStorage.getItem('clarity_canvas') === 'true';
@@ -2443,13 +2473,12 @@
                     }
                 }
             } catch (_) {}
-            // 2FA gate: skip if this device is trusted (within 12-hour sliding window)
-            if (currentUser.two_fa_enabled && !isDeviceTrusted(currentUser.id || currentUser.email)) {
-                initTwofaGate();
-            }
+            // 2FA is now handled exclusively during login (auth.html).
+            // No in-app 2FA gate — users who are already signed in are not prompted again.
             loadConversations();
             runGreeting();
-            // Show splash screen for new version
+            // Gate features behind update and show update banner if needed
+            initGatedFeatures();
             checkSplash();
             // Show artifacts splash once on page load
             maybeShowArtifactsSplash();
@@ -4266,25 +4295,43 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             ppGenerating = false;
         }
 
-        // ── Splash screen (What's New) ───────────────────────────
-        const CLARITY_VERSION = '3.3';
+        // ── Splash screen (What's New) & Update Flow ──────────────
+        const CLARITY_VERSION = '3.5';
         const SPLASH_FEATURES = [
-            { icon: 'presentation', color: 'bg-violet-500/20', iconColor: 'text-violet-400', title: 'AI Presentations', desc: 'Generate stunning slide decks from a prompt. Beautiful gradients, polished layouts, and smooth animations.' },
-            { icon: 'sparkles', color: 'bg-pink-500/20', iconColor: 'text-pink-400', title: 'Generation Animations', desc: 'Watch your presentation come to life with a mesmerizing orb animation that expands into your slides.' },
-            { icon: 'layout-grid', color: 'bg-blue-500/20', iconColor: 'text-blue-400', title: 'Presentation Manager', desc: 'Rename, delete, and organize presentations right from the sidebar — just like conversations.' },
-            { icon: 'zap', color: 'bg-amber-500/20', iconColor: 'text-amber-400', title: 'Higher Quality Slides', desc: 'Rich gradient backgrounds, visual hierarchy, and professional typography in every generated slide.' },
+            { icon: 'mail', color: 'bg-violet-500/20', iconColor: 'text-violet-400', title: 'Compose & Send Emails', desc: 'Draft, compose, and send emails directly with Clarity. AI-powered email assistant built right in.' },
+            { icon: 'sparkles', color: 'bg-pink-500/20', iconColor: 'text-pink-400', title: 'Smarter AI Models', desc: 'Updated models for smarter and better responses. Enhanced reasoning and superior output quality across all tasks.' },
+            { icon: 'presentation', color: 'bg-blue-500/20', iconColor: 'text-blue-400', title: 'AI Presentations', desc: 'Generate stunning slide decks from a prompt. Beautiful gradients, polished layouts, and smooth animations.' },
+            { icon: 'zap', color: 'bg-amber-500/20', iconColor: 'text-amber-400', title: 'Higher Quality Output', desc: 'Rich gradient backgrounds, visual hierarchy, and professional typography in every generated slide.' },
         ];
 
+        let clarityUpdated = localStorage.getItem('clarity_updated_version') === CLARITY_VERSION;
+
         function checkSplash() {
-            const seen = localStorage.getItem('clarity_splash_seen');
-            if (seen === CLARITY_VERSION) return;
-            showSplash();
+            // Don't auto-show splash on refresh. Show the update banner instead.
+            if (localStorage.getItem('clarity_updated_version') !== CLARITY_VERSION) {
+                showUpdateBanner();
+            }
         }
 
-        function showSplash() {
+        function showUpdateBanner() {
+            const banner = document.getElementById('update-clarity-banner');
+            if (banner) banner.classList.add('visible');
+        }
+
+        function hideUpdateBanner() {
+            const banner = document.getElementById('update-clarity-banner');
+            if (banner) banner.classList.remove('visible');
+        }
+
+        function openUpdateSplash() {
+            hideUpdateBanner();
             const modal = document.getElementById('splash-modal');
             const featuresEl = document.getElementById('splash-features');
             document.getElementById('splash-version-title').textContent = `What's New in Clarity ${CLARITY_VERSION}`;
+            const updateBtn = document.getElementById('splash-update-btn');
+            const gotItBtn = document.getElementById('splash-gotit-btn');
+            updateBtn.style.display = '';
+            gotItBtn.style.display = 'none';
             featuresEl.innerHTML = SPLASH_FEATURES.map(f => `
                 <div class="splash-feature">
                     <div class="splash-feature-icon ${f.color}">
@@ -4300,9 +4347,54 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             lucide.createIcons();
         }
 
+        async function startClarityUpdate() {
+            const btn = document.getElementById('splash-update-btn');
+            btn.textContent = 'Updating…';
+            btn.disabled = true;
+            // Simulate update progress
+            await new Promise(r => setTimeout(r, 2000));
+            btn.textContent = 'Finalizing…';
+            await new Promise(r => setTimeout(r, 1000));
+            // Mark as updated
+            localStorage.setItem('clarity_updated_version', CLARITY_VERSION);
+            clarityUpdated = true;
+            // Show success state
+            btn.style.display = 'none';
+            const gotItBtn = document.getElementById('splash-gotit-btn');
+            gotItBtn.style.display = '';
+            document.getElementById('splash-version-title').textContent = `Updated to Clarity ${CLARITY_VERSION}!`;
+            // Enable gated features now
+            enableGatedFeatures();
+        }
+
         function closeSplash() {
             document.getElementById('splash-modal').classList.remove('splash-open');
-            localStorage.setItem('clarity_splash_seen', CLARITY_VERSION);
+        }
+
+        // ── Gated features (only available after update) ─────────
+        function enableGatedFeatures() {
+            // Show emails tab and email-related UI
+            document.getElementById('sidebar-tab-emails').style.display = '';
+            document.getElementById('sidebar-emails-panel').classList.remove('gated-hidden');
+            // Show email mode trigger in version popup
+            const gmailSection = document.getElementById('gmail-popup-section');
+            if (gmailSection) gmailSection.style.display = '';
+        }
+
+        function disableGatedFeatures() {
+            // Hide emails tab and email-related UI until update
+            document.getElementById('sidebar-tab-emails').style.display = 'none';
+            // Hide email mode trigger in version popup
+            const gmailSection = document.getElementById('gmail-popup-section');
+            if (gmailSection) gmailSection.style.display = 'none';
+        }
+
+        function initGatedFeatures() {
+            if (clarityUpdated) {
+                enableGatedFeatures();
+            } else {
+                disableGatedFeatures();
+            }
         }
 
         function renderConversationList(convs) {
@@ -4716,10 +4808,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 }
                 currentUser.two_fa_enabled = enabled;
                 localStorage.setItem('clarity_user', JSON.stringify(currentUser));
-                // If 2FA was just enabled, clear the session gate flag so it
-                // triggers on the next page load even in the same browser session.
-                if (enabled) clearDeviceTrust(currentUser.id || currentUser.email);
-                showAccountToast(enabled ? '2FA enabled. You\'ll be asked to verify on next load.' : '2FA disabled.', 'success');
+                showAccountToast(enabled ? '2FA enabled. You\'ll be asked to verify on next login.' : '2FA disabled.', 'success');
             } catch {
                 track.classList.toggle('on', !enabled);
                 label.textContent = !enabled ? 'Enabled' : 'Disabled';
@@ -4727,29 +4816,8 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
         }
 
-        // ── 2FA device trust ─────────────────────────────────────
-        // Trusted for 12 hours sliding window. Key is per-user so
-        // switching accounts is handled correctly.
-        const TRUST_TTL = 12 * 60 * 60 * 1000; // 12 hours in ms
+        // ── 2FA device trust (legacy — kept for backward compat cleanup) ──
         function _trustKey(uid) { return 'clarity_dt_' + uid; }
-        function isDeviceTrusted(uid) {
-            if (!uid) return false;
-            try {
-                const raw = localStorage.getItem(_trustKey(uid));
-                if (!raw) return false;
-                const { verifiedAt } = JSON.parse(raw);
-                if (Date.now() - verifiedAt < TRUST_TTL) {
-                    // Refresh the sliding window on every trusted visit
-                    localStorage.setItem(_trustKey(uid), JSON.stringify({ verifiedAt: Date.now() }));
-                    return true;
-                }
-                return false;
-            } catch { return false; }
-        }
-        function trustDevice(uid) {
-            if (!uid) return;
-            localStorage.setItem(_trustKey(uid), JSON.stringify({ verifiedAt: Date.now() }));
-        }
         function clearDeviceTrust(uid) {
             if (!uid) return;
             localStorage.removeItem(_trustKey(uid));
@@ -4858,6 +4926,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             localStorage.removeItem('clarity_token');
             localStorage.removeItem('clarity_user');
             clearDeviceTrust(currentUser.id || currentUser.email);
+            sessionStorage.removeItem('clarity_2fa_ok');
             window.location.href = '/';
         }
 
@@ -5998,6 +6067,19 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             emailTypingEffect();
         }
 
+        function openComposeEmail() {
+            toggleSidebar(false);
+            if (!clarityUpdated) {
+                openUpdateSplash();
+                return;
+            }
+            if (gmailConnected) {
+                enterEmailMode();
+            } else {
+                showAppToast('Connect Gmail first to compose emails', 'error');
+            }
+        }
+
         function exitEmailMode() {
             emailModeActive = false;
             const overlay = document.getElementById('email-overlay');
@@ -6958,7 +7040,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             fetch('/api/gmail?action=send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ to: toEmail, subject: subject || 'Email from Clarity', body: content })
+                body: JSON.stringify({ userId: currentUser.id, to: toEmail, subject: subject || 'Email from Clarity', body: content })
             }).then(r => r.json()).then(data => {
                 if (data.success) {
                     showAppToast('Email sent successfully!', 'success');
