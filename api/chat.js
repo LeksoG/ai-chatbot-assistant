@@ -14,7 +14,7 @@ module.exports = async function handler(req, res) {
             return res.status(405).json({ error: 'Method not allowed' });
         }
 
-        const { message, history = [], modelVersion = '3.0' } = req.body || {};
+        const { message, history = [], modelVersion = '3.6' } = req.body || {};
 
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
@@ -28,9 +28,9 @@ module.exports = async function handler(req, res) {
             });
         }
 
-        // Model routing: 3.0 = fast/small, 3.5 = large/advanced
-        const model     = modelVersion === '3.5' ? 'mistral-large-latest' : 'mistral-small-latest';
-        const maxTokens = modelVersion === '3.5' ? 8000 : 5000;
+        // Model routing: 3.5 = fast/small, 3.6 = large/advanced
+        const model     = modelVersion === '3.6' ? 'mistral-large-latest' : 'mistral-small-latest';
+        const maxTokens = modelVersion === '3.6' ? 8000 : 5000;
 
         const systemPrompt = `You are Clarity AI, a helpful AI assistant. Rules:
 - Be extremely concise. No filler, no preamble, no repeating the question.
@@ -90,6 +90,7 @@ HTML/website generation rules (CRITICAL — always follow these):
         });
     }
 };
+
 
 
 
