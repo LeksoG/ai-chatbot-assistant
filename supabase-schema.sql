@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS conversations (
     id            UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id       TEXT        NOT NULL,
     title         TEXT        NOT NULL,
-    model_version TEXT        DEFAULT '3.0',
+    model_version TEXT        DEFAULT '3.6',
     created_at    TIMESTAMPTZ DEFAULT NOW(),
     updated_at    TIMESTAMPTZ DEFAULT NOW()
 );

@@ -999,6 +999,51 @@
         .update-banner:hover { background:rgba(124,58,237,0.22); border-color:rgba(124,58,237,0.5); transform:translateX(-50%) translateY(-1px); box-shadow:0 6px 28px rgba(124,58,237,0.25); }
         .update-banner.visible { display:flex; }
 
+        /* ── Update Overlay (animated) ── */
+        #update-overlay { position:fixed; inset:0; z-index:9999; background:#000201; display:none; align-items:center; justify-content:center; }
+        #update-overlay.uo-open { display:flex; }
+        .uo-glass-panel {
+            background:rgba(255,255,255,0.01); backdrop-filter:blur(80px);
+            border:1px solid rgba(255,255,255,0.08); border-radius:52px;
+            box-shadow:0 40px 120px rgba(0,0,0,0.9);
+            transition:transform 1.2s cubic-bezier(0.16,1,0.3,1);
+        }
+        .uo-stage {
+            width:380px; height:340px; position:relative;
+            display:flex; align-items:center; justify-content:center;
+            overflow:hidden; perspective:2000px;
+        }
+        .uo-version-badge {
+            font-size:6.5rem; font-weight:800;
+            background:linear-gradient(to bottom,#ffffff 40%,rgba(255,255,255,0.05));
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+            letter-spacing:-0.06em; filter:drop-shadow(0 0 30px rgba(255,255,255,0.1));
+            transition:all 0.8s cubic-bezier(0.16,1,0.3,1);
+        }
+        .uo-wrap {
+            position:relative; width:300px; height:220px;
+            display:none; opacity:0; transition:opacity 1.5s ease;
+        }
+        .uo-point {
+            width:5px; height:5px; position:absolute; top:0; left:0; border-radius:50%;
+            background:#0d1612; box-shadow:0 0 2px rgba(255,255,255,0.03);
+            will-change:transform,background,box-shadow;
+            transition:background 0.1s ease,box-shadow 0.1s ease;
+        }
+        .uo-point.elevated { z-index:100; }
+        .uo-fade-out { opacity:0; transform:scale(0.85); pointer-events:none; }
+        .uo-fade-in { animation:uoFadeIn 1.2s cubic-bezier(0.2,0,0,1) forwards; }
+        @keyframes uoFadeIn { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
+        .uo-progress-white {
+            background:#ffffff; box-shadow:0 0 25px rgba(255,255,255,0.5);
+            transition:width 0.5s cubic-bezier(0.1,0.8,0.2,1);
+        }
+        .uo-success-tick {
+            width:100px; height:100px; background:white; border-radius:35px;
+            display:flex; align-items:center; justify-content:center;
+            box-shadow:0 0 80px rgba(255,255,255,0.3);
+        }
+
         /* ── Code logo ── */
         .cl-seg { stroke:none; transform-origin:center; fill:url(#codeRainbow); }
         .cl-seg-top { animation:clMorphTop 5s infinite cubic-bezier(0.6,0.05,0.01,1); }
@@ -1191,7 +1236,7 @@
             <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
         </svg>
         <span class="font-semibold text-sm text-white">Update Clarity</span>
-        <span class="text-[10px] text-violet-300 bg-violet-600/30 px-2 py-0.5 rounded-full font-medium">v3.5</span>
+        <span class="text-[10px] text-violet-300 bg-violet-600/30 px-2 py-0.5 rounded-full font-medium">v3.6</span>
     </div>
 
     <!-- Main UI -->
@@ -1259,30 +1304,30 @@
                         <button id="version-pill" onclick="toggleVersionPopup()"
                             class="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/8 rounded-full text-xs transition-all whitespace-nowrap">
                             <div class="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-sm shadow-violet-400/60 shrink-0"></div>
-                            <span class="font-medium text-white">Clarity <span id="pill-model-label">3.5</span></span>
+                            <span class="font-medium text-white">Clarity <span id="pill-model-label">3.6</span></span>
                             <i data-lucide="chevrons-up-down" class="w-3 text-gray-500 shrink-0"></i>
                         </button>
 
                         <!-- Popup anchored above the pill -->
                         <div id="version-popup" class="vpop-hidden absolute bottom-[calc(100%+10px)] left-0 w-72 bg-[#111] border border-white/10 rounded-2xl p-3 shadow-2xl z-30">
         <p class="text-[10px] text-gray-500 uppercase tracking-widest px-1 mb-2">Model</p>
-        <button onclick="selectModel('3.0')" id="card-3-0" class="w-full text-left p-3 rounded-xl border mb-2 transition-all hover:border-violet-700/40">
-            <div class="flex items-center justify-between mb-1">
-                <div class="flex items-center gap-2">
-                    <span class="font-semibold text-sm text-white">Clarity 3.0</span>
-                    <span class="text-[10px] text-gray-500 font-mono">default</span>
-                </div>
-                <span id="badge-3-0" class="text-[10px] bg-violet-600/80 text-white px-2 py-0.5 rounded-full font-medium">Active</span>
-            </div>
-            <p class="text-xs text-gray-400 leading-relaxed">Fast and efficient for writing, chat, and general tasks. Can handle basic code but struggles with complex challenges.</p>
-        </button>
-        <button onclick="selectModel('3.5')" id="card-3-5" class="w-full text-left p-3 rounded-xl border mb-3 transition-all hover:border-violet-700/40">
+        <button onclick="selectModel('3.5')" id="card-3-5" class="w-full text-left p-3 rounded-xl border mb-2 transition-all hover:border-violet-700/40">
             <div class="flex items-center justify-between mb-1">
                 <div class="flex items-center gap-2">
                     <span class="font-semibold text-sm text-white">Clarity 3.5</span>
+                    <span class="text-[10px] text-gray-500 font-mono">default</span>
+                </div>
+                <span id="badge-3-5" class="text-[10px] bg-violet-600/80 text-white px-2 py-0.5 rounded-full font-medium">Active</span>
+            </div>
+            <p class="text-xs text-gray-400 leading-relaxed">Fast and efficient for writing, chat, and general tasks. Reliable for everyday use.</p>
+        </button>
+        <button onclick="selectModel('3.6')" id="card-3-6" class="w-full text-left p-3 rounded-xl border mb-3 transition-all hover:border-violet-700/40">
+            <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold text-sm text-white">Clarity 3.6</span>
                     <span class="text-[10px] text-violet-400 font-medium">enhanced</span>
                 </div>
-                <span id="badge-3-5" class="hidden text-[10px] bg-violet-600/80 text-white px-2 py-0.5 rounded-full font-medium">Active</span>
+                <span id="badge-3-6" class="hidden text-[10px] bg-violet-600/80 text-white px-2 py-0.5 rounded-full font-medium">Active</span>
             </div>
             <p class="text-xs text-gray-400 leading-relaxed">Advanced reasoning and superior coding. Best for complex engineering, deep research, and multi-step challenges.</p>
         </button>
@@ -2179,7 +2224,7 @@
     </div>
 
     <!-- ═══════════════════════════════════════════════════════
-         SPLASH SCREEN / WHAT'S NEW
+         SPLASH SCREEN / WHAT'S NEW  (features list)
     ═══════════════════════════════════════════════════════ -->
     <div id="splash-modal">
         <div class="absolute inset-0" onclick="closeSplash()"></div>
@@ -2192,21 +2237,52 @@
                         <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
                     </svg>
                 </div>
-                <h2 id="splash-version-title" class="text-white text-xl font-bold">What's New in Clarity 3.5</h2>
+                <h2 id="splash-version-title" class="text-white text-xl font-bold">What's New in Clarity 3.6</h2>
                 <p class="text-gray-400 text-xs mt-1">Here's what we've been working on</p>
             </div>
             <div class="splash-body">
                 <div id="splash-features">
                     <!-- Features injected by JS -->
                 </div>
-                <button id="splash-update-btn" onclick="startClarityUpdate()" class="w-full mt-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-xl transition-colors">
-                    Start Updating
-                </button>
-                <button id="splash-gotit-btn" onclick="closeSplash()" class="w-full mt-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl transition-colors" style="display:none">
-                    Got it — Enjoy Clarity 3.5
+                <button id="splash-update-btn" onclick="launchAnimatedUpdate()" class="w-full mt-4 py-2.5 bg-white text-black text-sm font-bold rounded-xl transition-colors hover:bg-gray-100">
+                    Update Clarity
                 </button>
             </div>
         </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         ANIMATED UPDATE OVERLAY
+    ═══════════════════════════════════════════════════════ -->
+    <div id="update-overlay">
+        <main class="relative z-10 w-full max-w-xl px-6">
+            <div id="uo-container" class="uo-glass-panel p-10 md:p-16 text-center uo-fade-in">
+                <div class="mb-4 flex justify-center items-center min-h-[340px]">
+                    <div id="uo-stage" class="uo-stage">
+                        <div id="uo-version-display" class="uo-version-badge">3.6</div>
+                        <div id="uo-grid-wrap" class="uo-wrap"></div>
+                    </div>
+                </div>
+                <div id="uo-text-content" class="space-y-1">
+                    <h1 id="uo-title" class="text-3xl font-medium tracking-tight transition-all duration-1000">Clarity Update</h1>
+                    <p id="uo-subtitle" class="text-gray-500 pb-8">Synchronizing new features</p>
+                </div>
+                <div id="uo-progress-section" class="hidden space-y-6">
+                    <div class="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div id="uo-progress-bar" class="h-full w-0 uo-progress-white"></div>
+                    </div>
+                    <div class="flex justify-between text-[11px] font-mono text-gray-400 uppercase tracking-[0.4em]">
+                        <span id="uo-status-text">Ready</span>
+                        <span id="uo-percent-text">0%</span>
+                    </div>
+                </div>
+                <div id="uo-action-section" class="mt-4">
+                    <button onclick="startAnimatedUpdate()" class="w-full bg-white text-black font-bold py-5 rounded-[28px] hover:scale-[1.02] transition-all active:scale-[0.98] transform duration-200 shadow-2xl">
+                        Install Now
+                    </button>
+                </div>
+            </div>
+        </main>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════
@@ -2431,7 +2507,7 @@
         let conversationHistory  = [];
         let isTyping             = false;
         let activeConversationId = null;
-        let selectedModel        = localStorage.getItem('clarity_model') || '3.5';
+        let selectedModel        = localStorage.getItem('clarity_model') || '3.6';
         let pendingRenameId      = null;
         let pendingDeleteId      = null;
         let canvasEnabled        = localStorage.getItem('clarity_canvas') === 'true';
@@ -2645,7 +2721,7 @@
             closeVersionPopup();
         }
         function updateModelCards() {
-            ['3.0','3.5'].forEach(v => {
+            ['3.5','3.6'].forEach(v => {
                 const k    = v.replace('.', '-');
                 const card = document.getElementById('card-' + k);
                 const badge= document.getElementById('badge-' + k);
@@ -4295,8 +4371,8 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             ppGenerating = false;
         }
 
-        // ── Splash screen (What's New) & Update Flow ──────────────
-        const CLARITY_VERSION = '3.5';
+        // ── Splash screen (What's New) & Animated Update Flow ─────
+        const CLARITY_VERSION = '3.6';
         const SPLASH_FEATURES = [
             { icon: 'mail', color: 'bg-violet-500/20', iconColor: 'text-violet-400', title: 'Compose & Send Emails', desc: 'Draft, compose, and send emails directly with Clarity. AI-powered email assistant built right in.' },
             { icon: 'sparkles', color: 'bg-pink-500/20', iconColor: 'text-pink-400', title: 'Smarter AI Models', desc: 'Updated models for smarter and better responses. Enhanced reasoning and superior output quality across all tasks.' },
@@ -4307,7 +4383,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         let clarityUpdated = localStorage.getItem('clarity_updated_version') === CLARITY_VERSION;
 
         function checkSplash() {
-            // Don't auto-show splash on refresh. Show the update banner instead.
             if (localStorage.getItem('clarity_updated_version') !== CLARITY_VERSION) {
                 showUpdateBanner();
             }
@@ -4317,21 +4392,20 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             const banner = document.getElementById('update-clarity-banner');
             if (banner) banner.classList.add('visible');
         }
-
         function hideUpdateBanner() {
             const banner = document.getElementById('update-clarity-banner');
             if (banner) banner.classList.remove('visible');
         }
 
+        // Show the features splash first (user clicks "Update Clarity" banner)
         function openUpdateSplash() {
             hideUpdateBanner();
             const modal = document.getElementById('splash-modal');
             const featuresEl = document.getElementById('splash-features');
             document.getElementById('splash-version-title').textContent = `What's New in Clarity ${CLARITY_VERSION}`;
-            const updateBtn = document.getElementById('splash-update-btn');
-            const gotItBtn = document.getElementById('splash-gotit-btn');
-            updateBtn.style.display = '';
-            gotItBtn.style.display = 'none';
+            document.getElementById('splash-update-btn').style.display = '';
+            document.getElementById('splash-update-btn').disabled = false;
+            document.getElementById('splash-update-btn').textContent = 'Update Clarity';
             featuresEl.innerHTML = SPLASH_FEATURES.map(f => `
                 <div class="splash-feature">
                     <div class="splash-feature-icon ${f.color}">
@@ -4347,28 +4421,216 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             lucide.createIcons();
         }
 
-        async function startClarityUpdate() {
-            const btn = document.getElementById('splash-update-btn');
-            btn.textContent = 'Updating…';
-            btn.disabled = true;
-            // Simulate update progress
-            await new Promise(r => setTimeout(r, 2000));
-            btn.textContent = 'Finalizing…';
-            await new Promise(r => setTimeout(r, 1000));
-            // Mark as updated
-            localStorage.setItem('clarity_updated_version', CLARITY_VERSION);
-            clarityUpdated = true;
-            // Show success state
-            btn.style.display = 'none';
-            const gotItBtn = document.getElementById('splash-gotit-btn');
-            gotItBtn.style.display = '';
-            document.getElementById('splash-version-title').textContent = `Updated to Clarity ${CLARITY_VERSION}!`;
-            // Enable gated features now
-            enableGatedFeatures();
+        // Close features splash, open the animated update overlay
+        function launchAnimatedUpdate() {
+            document.getElementById('splash-modal').classList.remove('splash-open');
+            const overlay = document.getElementById('update-overlay');
+            overlay.classList.add('uo-open');
+            // Reset the overlay state
+            const stage = document.getElementById('uo-stage');
+            const vd = document.getElementById('uo-version-display');
+            const wrap = document.getElementById('uo-grid-wrap');
+            const container = document.getElementById('uo-container');
+            vd.classList.remove('uo-fade-out', 'hidden');
+            vd.style.display = '';
+            wrap.style.display = 'none';
+            wrap.style.opacity = '0';
+            wrap.innerHTML = '';
+            stage.style.transform = '';
+            stage.style.opacity = '';
+            stage.style.transition = '';
+            container.style.transform = '';
+            document.getElementById('uo-title').innerText = 'Clarity Update';
+            document.getElementById('uo-subtitle').innerText = 'Synchronizing new features';
+            document.getElementById('uo-progress-section').classList.add('hidden');
+            document.getElementById('uo-progress-section').style.opacity = '';
+            document.getElementById('uo-progress-bar').style.width = '0';
+            document.getElementById('uo-percent-text').innerText = '0%';
+            document.getElementById('uo-status-text').innerText = 'Ready';
+            const actionSection = document.getElementById('uo-action-section');
+            actionSection.classList.remove('hidden');
+            actionSection.innerHTML = `
+                <button onclick="startAnimatedUpdate()" class="w-full bg-white text-black font-bold py-5 rounded-[28px] hover:scale-[1.02] transition-all active:scale-[0.98] transform duration-200 shadow-2xl">
+                    Install Now
+                </button>`;
         }
 
         function closeSplash() {
             document.getElementById('splash-modal').classList.remove('splash-open');
+        }
+
+        // ── Animated update: grid + morphing + progress ──────────
+        const uoPlanarX = 24, uoPlanarY = 20, uoPointSpacing = 11;
+        let uoPoints = [], uoCoords = [];
+
+        function uoCreateGrid() {
+            const wrap = document.getElementById('uo-grid-wrap');
+            wrap.innerHTML = '';
+            uoPoints = [];
+            uoCoords = [];
+            const totalW = (uoPlanarX - 1) * uoPointSpacing;
+            const totalH = (uoPlanarY - 1) * uoPointSpacing;
+            const cx = totalW / 2, cy = totalH / 2;
+            for (let i = 0; i < uoPlanarX * uoPlanarY; i++) {
+                const x = i % uoPlanarX, y = Math.floor(i / uoPlanarX);
+                const p = document.createElement('div');
+                p.className = 'uo-point';
+                const posX = x * uoPointSpacing, posY = y * uoPointSpacing;
+                p.style.transform = `translate(${posX}px, ${posY}px)`;
+                wrap.appendChild(p);
+                const angle = (i / (uoPlanarX * uoPlanarY)) * Math.PI * 2;
+                const radius = 70 + Math.random() * 10;
+                const orbX = cx + Math.cos(angle) * radius;
+                const orbY = cy + Math.sin(angle) * radius;
+                let codeX, codeY;
+                const segment = i % 3;
+                const t = ((i / 3) / ((uoPlanarX * uoPlanarY) / 3)) - 0.5;
+                const scaleH = 95, scaleW = 85;
+                const thickness = ((i % 8) - 4) * 1.8;
+                if (segment === 0) {
+                    const peak = 85, bendX = Math.abs(t) * scaleW;
+                    codeX = cx - peak + bendX + thickness;
+                    codeY = cy + t * (scaleH * 2.3);
+                } else if (segment === 1) {
+                    codeX = cx - (t * scaleW * 0.45) + (thickness * 0.5);
+                    codeY = cy + (t * scaleH * 3.0);
+                } else {
+                    const peak = 85, bendX = Math.abs(t) * scaleW;
+                    codeX = cx + peak - bendX + thickness;
+                    codeY = cy + t * (scaleH * 2.3);
+                }
+                uoPoints.push(p);
+                uoCoords.push({ origX: posX, origY: posY, orbX, orbY, codeX, codeY, gridX: x, gridY: y });
+            }
+        }
+
+        function uoTriggerMorphingWave() {
+            if (!window.uoUpdateActive) return;
+            const startTime = Date.now();
+            const container = document.getElementById('uo-container');
+            function animate() {
+                if (!window.uoUpdateActive) return;
+                const elapsed = (Date.now() - startTime) / 1000;
+                const waveSpeed = 25;
+                const wavePos = (elapsed * waveSpeed) % (uoPlanarX + uoPlanarY + 25);
+                const shapeCycle = (elapsed * 0.3) % 3;
+                let t1, t2, lerp;
+                if (shapeCycle < 1) { t1 = 'orig'; t2 = 'orb'; lerp = shapeCycle; }
+                else if (shapeCycle < 2) { t1 = 'orb'; t2 = 'code'; lerp = shapeCycle - 1; }
+                else { t1 = 'code'; t2 = 'orig'; lerp = shapeCycle - 2; }
+                const ease = t => t < 0.5 ? 8*t*t*t*t : 1 - Math.pow(-2*t+2, 4) / 2;
+                const m = ease(lerp);
+                const tiltX = Math.sin(elapsed * 0.6) * 3;
+                const tiltY = Math.cos(elapsed * 0.6) * 3;
+                container.style.transform = `perspective(2000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+                uoPoints.forEach((p, i) => {
+                    const coord = uoCoords[i];
+                    const baseX = coord[t1+'X'] * (1-m) + coord[t2+'X'] * m;
+                    const baseY = coord[t1+'Y'] * (1-m) + coord[t2+'Y'] * m;
+                    const distFromWave = Math.abs((coord.gridX + coord.gridY) - wavePos);
+                    if (distFromWave < 6.0) {
+                        const intensity = 1 - (distFromWave / 6.0);
+                        const hue = (wavePos * 30 + elapsed * 120) % 360;
+                        p.classList.add('elevated');
+                        const liftZ = intensity * 35;
+                        const scale = 1 + (intensity * 0.7);
+                        p.style.transform = `translate3d(${baseX}px, ${baseY}px, ${liftZ}px) scale(${scale})`;
+                        p.style.background = `hsl(${hue}, 95%, 75%)`;
+                        p.style.boxShadow = `0 0 20px hsla(${hue}, 90%, 60%, 0.8), 0 0 8px white`;
+                        p.style.opacity = '1';
+                    } else {
+                        p.classList.remove('elevated');
+                        p.style.transform = `translate3d(${baseX}px, ${baseY}px, 0px) scale(1)`;
+                        p.style.background = '#1a2b24';
+                        p.style.boxShadow = 'none';
+                        p.style.opacity = '0.3';
+                    }
+                    p.style.borderRadius = shapeCycle > 0.8 && shapeCycle < 2.2 ? '50%' : '1.5px';
+                });
+                requestAnimationFrame(animate);
+            }
+            requestAnimationFrame(animate);
+        }
+
+        function startAnimatedUpdate() {
+            window.uoUpdateActive = true;
+            const vd = document.getElementById('uo-version-display');
+            const wrap = document.getElementById('uo-grid-wrap');
+            const actionSection = document.getElementById('uo-action-section');
+            const progressSection = document.getElementById('uo-progress-section');
+            const progressBar = document.getElementById('uo-progress-bar');
+            const percentText = document.getElementById('uo-percent-text');
+            const statusText = document.getElementById('uo-status-text');
+            const title = document.getElementById('uo-title');
+
+            uoCreateGrid();
+            vd.classList.add('uo-fade-out');
+
+            setTimeout(() => {
+                vd.classList.add('hidden');
+                wrap.style.display = 'block';
+                setTimeout(() => { wrap.style.opacity = '1'; uoTriggerMorphingWave(); }, 100);
+            }, 800);
+
+            actionSection.classList.add('hidden');
+            progressSection.classList.remove('hidden');
+            progressSection.classList.add('uo-fade-in');
+            title.innerText = 'Synchronizing Assets';
+
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 0.5;
+                if (progress > 100) progress = 100;
+                progressBar.style.width = `${progress}%`;
+                percentText.innerText = `${Math.round(progress)}%`;
+                const phases = ['Mapping Assets...', 'Parsing Logic...', 'Applying Features...', 'Finalizing...'];
+                statusText.innerText = phases[Math.min(Math.floor(progress / 25), 3)];
+                if (progress === 100) {
+                    window.uoUpdateActive = false;
+                    clearInterval(progressInterval);
+                    uoShowComplete();
+                }
+            }, 50);
+        }
+
+        function uoShowComplete() {
+            const stage = document.getElementById('uo-stage');
+            const title = document.getElementById('uo-title');
+            const subtitle = document.getElementById('uo-subtitle');
+            const progressSection = document.getElementById('uo-progress-section');
+            const container = document.getElementById('uo-container');
+
+            // Mark as updated
+            localStorage.setItem('clarity_updated_version', CLARITY_VERSION);
+            clarityUpdated = true;
+            enableGatedFeatures();
+
+            setTimeout(() => {
+                container.style.transform = 'none';
+                stage.style.transition = 'all 1.5s cubic-bezier(0.16,1,0.3,1)';
+                stage.style.transform = 'scale(0) rotate(120deg)';
+                stage.style.opacity = '0';
+                progressSection.style.opacity = '0';
+                setTimeout(() => {
+                    stage.innerHTML = `
+                        <div class="uo-success-tick uo-fade-in">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-14 h-14 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>`;
+                    stage.style.transform = 'scale(1)';
+                    stage.style.opacity = '1';
+                    title.innerText = 'Update Successful';
+                    subtitle.innerText = `Clarity v${CLARITY_VERSION} is now active.`;
+                    const btn = document.createElement('button');
+                    btn.className = 'mt-10 w-full bg-white/5 border border-white/10 py-5 rounded-[28px] uo-fade-in hover:bg-white/10 transition-colors text-white font-semibold';
+                    btn.innerText = 'Finish';
+                    btn.onclick = () => {
+                        document.getElementById('update-overlay').classList.remove('uo-open');
+                    };
+                    container.appendChild(btn);
+                }, 1200);
+            }, 1000);
         }
 
         // ── Gated features (only available after update) ─────────
@@ -5077,10 +5339,10 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 }
             }
 
-            // ── Clarity 3.5: animated thinking phase text while awaiting response ──
+            // ── Clarity 3.6: animated thinking phase text while awaiting response ──
             let _thinkInterval = null;
             let _thinkStart = 0;
-            if (selectedModel === '3.5') {
+            if (selectedModel === '3.6') {
                 const isCodePrompt = /website|webpage|html|css|code|build|creat|mak|landing|page|app|component|fix|updat|slider|canvas|design|layout|button|navbar|feature/i.test(val);
                 const phases = isCodePrompt
                     ? ['Thinking\u2026', 'Creating website\u2026', 'Gathering components\u2026', 'Finishing\u2026']
