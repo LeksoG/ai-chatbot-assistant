@@ -152,7 +152,7 @@ module.exports = async function handler(req, res) {
             if (!GOOGLE_CLIENT_ID) {
                 return res.status(503).json({ error: 'Google OAuth not configured' });
             }
-            const scope = encodeURIComponent('https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/userinfo.email');
+            const scope = encodeURIComponent('https://mail.google.com/ https://www.googleapis.com/auth/userinfo.email');
             const state = req.query.userId || '';
             const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${encodeURIComponent(state)}`;
             return res.json({ url });
@@ -341,59 +341,51 @@ module.exports = async function handler(req, res) {
             }
 
             const creds = await getAccessToken(userId);
-            if (!creds) return res.status(401).json({ error: 'Gmail not connected' });
+            if (!creds) return res.status(401).json({ error: 'Gmail not connected. Please reconnect in Settings.' });
+
+            // Verify token scopes before sending
+            const tokenInfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(creds.accessToken)}`);
+            const tokenInfo = await tokenInfoRes.json();
+            console.log('[Gmail send] token scopes:', tokenInfo.scope || 'NONE', 'email:', tokenInfo.email || 'NONE');
+
+            if (tokenInfo.error || !tokenInfo.scope) {
+                console.error('[Gmail send] Token invalid:', JSON.stringify(tokenInfo));
+                return res.status(401).json({ error: 'Gmail token expired. Please disconnect and reconnect Gmail in Settings.', reconnect: true });
+            }
+
+            const hasFullAccess = tokenInfo.scope.includes('mail.google.com');
+            const hasSendScope = tokenInfo.scope.includes('gmail.send') || tokenInfo.scope.includes('gmail.modify') || tokenInfo.scope.includes('gmail.compose') || hasFullAccess;
+            if (!hasSendScope) {
+                console.error('[Gmail send] Missing send scope. Has:', tokenInfo.scope);
+                return res.status(403).json({ error: 'Gmail send permission not granted. Please disconnect and reconnect Gmail in Settings.', reconnect: true });
+            }
 
             const emailLines = [
+                `MIME-Version: 1.0`,
                 `From: ${creds.email}`, `To: ${to}`,
                 `Subject: ${subject || '(no subject)'}`,
                 'Content-Type: text/html; charset=utf-8', '', emailBody
             ];
             const rawEmail = Buffer.from(emailLines.join('\r\n')).toString('base64url');
 
-            let sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+            const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${creds.accessToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ raw: rawEmail })
             });
-
-            // If 401/403, force-refresh the token and retry once
-            if (sendRes.status === 401 || sendRes.status === 403) {
-                const connRes2 = await fetch(
-                    `${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}&select=refresh_token`,
-                    { headers: sbHeaders }
-                );
-                const connData2 = await connRes2.json();
-                const rt = connData2?.[0]?.refresh_token;
-                if (rt && GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
-                    const refreshRes = await fetch('https://oauth2.googleapis.com/token', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({
-                            client_id: GOOGLE_CLIENT_ID, client_secret: GOOGLE_CLIENT_SECRET,
-                            refresh_token: rt, grant_type: 'refresh_token'
-                        })
-                    });
-                    const newTokens = await refreshRes.json();
-                    if (newTokens.access_token) {
-                        const newExpiry = new Date(Date.now() + (newTokens.expires_in || 3600) * 1000).toISOString();
-                        await fetch(`${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}`, {
-                            method: 'PATCH', headers: sbHeaders,
-                            body: JSON.stringify({ access_token: newTokens.access_token, token_expiry: newExpiry, updated_at: new Date().toISOString() })
-                        });
-                        sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${newTokens.access_token}`, 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ raw: rawEmail })
-                        });
-                    }
-                }
-            }
-
             const sendData = await sendRes.json();
+            console.log('[Gmail send] Gmail API response:', sendRes.status, JSON.stringify(sendData));
+
             if (!sendRes.ok) {
                 const errMsg = sendData.error?.message || 'Failed to send email';
+                const errReason = sendData.error?.errors?.[0]?.reason || '';
+                console.error('[Gmail send] Error:', sendRes.status, errMsg, 'reason:', errReason);
                 if (sendRes.status === 403) {
-                    return res.status(403).json({ error: 'Gmail permission denied. Please disconnect and reconnect your Gmail account.', detail: errMsg });
+                    return res.status(403).json({
+                        error: `Gmail API denied: ${errMsg}. Go to Settings > Gmail > Disconnect, then reconnect.`,
+                        reason: errReason,
+                        reconnect: true
+                    });
                 }
                 return res.status(sendRes.status).json({ error: errMsg });
             }
