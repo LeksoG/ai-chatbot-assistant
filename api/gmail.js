@@ -350,14 +350,52 @@ module.exports = async function handler(req, res) {
             ];
             const rawEmail = Buffer.from(emailLines.join('\r\n')).toString('base64url');
 
-            const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+            let sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${creds.accessToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ raw: rawEmail })
             });
+
+            // If 401/403, force-refresh the token and retry once
+            if (sendRes.status === 401 || sendRes.status === 403) {
+                const connRes2 = await fetch(
+                    `${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}&select=refresh_token`,
+                    { headers: sbHeaders }
+                );
+                const connData2 = await connRes2.json();
+                const rt = connData2?.[0]?.refresh_token;
+                if (rt && GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
+                    const refreshRes = await fetch('https://oauth2.googleapis.com/token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({
+                            client_id: GOOGLE_CLIENT_ID, client_secret: GOOGLE_CLIENT_SECRET,
+                            refresh_token: rt, grant_type: 'refresh_token'
+                        })
+                    });
+                    const newTokens = await refreshRes.json();
+                    if (newTokens.access_token) {
+                        const newExpiry = new Date(Date.now() + (newTokens.expires_in || 3600) * 1000).toISOString();
+                        await fetch(`${SUPABASE_URL}/rest/v1/gmail_connections?user_id=eq.${encodeURIComponent(userId)}`, {
+                            method: 'PATCH', headers: sbHeaders,
+                            body: JSON.stringify({ access_token: newTokens.access_token, token_expiry: newExpiry, updated_at: new Date().toISOString() })
+                        });
+                        sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${newTokens.access_token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ raw: rawEmail })
+                        });
+                    }
+                }
+            }
+
             const sendData = await sendRes.json();
             if (!sendRes.ok) {
-                return res.status(sendRes.status).json({ error: sendData.error?.message || 'Failed to send email' });
+                const errMsg = sendData.error?.message || 'Failed to send email';
+                if (sendRes.status === 403) {
+                    return res.status(403).json({ error: 'Gmail permission denied. Please disconnect and reconnect your Gmail account.', detail: errMsg });
+                }
+                return res.status(sendRes.status).json({ error: errMsg });
             }
             return res.json({ success: true, messageId: sendData.id });
         }
