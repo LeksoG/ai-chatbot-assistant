@@ -6827,6 +6827,22 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
                     // Save sent status
                     saveEmailMessage('assistant', `[SENT to ${to}] ${body.innerText}`, to, subject);
+                } else if (res.status === 403) {
+                    // Permission denied — need to reconnect Gmail with updated scopes
+                    showAppToast('Gmail permissions expired. Reconnecting...', 'error');
+                    btn.textContent = 'Send Email';
+                    btn.disabled = false;
+                    // Auto-disconnect and redirect to re-auth
+                    try {
+                        await fetch('/api/gmail?action=disconnect', {
+                            method: 'POST', headers: authHeaders(),
+                            body: JSON.stringify({ userId: currentUser.id })
+                        });
+                        gmailConnected = false;
+                        gmailEmail = '';
+                        updateGmailUI();
+                    } catch(_) {}
+                    setTimeout(() => handleGmailConnect(), 1500);
                 } else {
                     showAppToast(data.error || 'Failed to send email', 'error');
                     btn.textContent = 'Send Email';
