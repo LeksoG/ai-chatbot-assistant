@@ -254,7 +254,7 @@
         .email-suggestion-card .esc-icon { width:36px; height:36px; border-radius:0.65rem; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); flex-shrink:0; }
         .email-suggestion-card .esc-text { font-size:0.82rem; color:#d1d5db; font-weight:500; line-height:1.35; }
         /* Email chat area */
-        #email-chat-area { flex:1; width:100%; max-width:42rem; overflow-y:auto; padding:1.5rem 1rem 1rem; display:flex; flex-direction:column; gap:1.25rem; margin:0 auto; }
+        #email-chat-area { flex:1; width:100%; max-width:42rem; overflow-y:auto; padding:1.5rem 1rem 6rem; display:flex; flex-direction:column; gap:1.25rem; margin:0 auto; }
         /* Email response container */
         .email-response-container { background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:1rem; overflow:hidden; animation:msg-in 0.35s ease forwards; }
         .email-response-header { display:flex; align-items:center; justify-content:space-between; padding:0.65rem 1rem; border-bottom:1px solid rgba(255,255,255,0.05); }
@@ -2390,6 +2390,28 @@
                 </div>
             </div>
 
+            <!-- Gmail Connection -->
+            <div class="account-section">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="account-section-icon bg-blue-500/10">
+                        <i data-lucide="mail" class="w-4 text-blue-400"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-white font-semibold text-sm">Gmail</h2>
+                        <p class="text-gray-600 text-[11px]">Connect your Gmail account for email features</p>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-white/3 rounded-xl border border-white/5">
+                    <div class="flex items-center gap-2">
+                        <span id="account-gmail-status-icon" class="w-2 h-2 rounded-full bg-gray-600"></span>
+                        <span id="account-gmail-label" class="text-sm text-gray-400">Not connected</span>
+                    </div>
+                    <button id="account-gmail-btn" onclick="handleAccountGmailAction()" class="account-btn">
+                        <i data-lucide="link" class="w-3.5"></i> Connect Gmail
+                    </button>
+                </div>
+            </div>
+
             <!-- Sign out -->
             <div class="account-section">
                 <div class="flex items-center gap-3 mb-4">
@@ -2520,7 +2542,7 @@
         let canvasPageIndex      = 0;    // current page (0-based)
         let canvasPagesSaving    = false;
         let canvasTitle          = '';   // persists across canvas edits in same conversation
-        let abortController      = null; // for pausing generation
+        let chatAbortCtrl      = null; // for pausing generation
 
         // ── Init ──────────────────────────────────────────────────
         window.addEventListener('load', async () => {
@@ -5293,7 +5315,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         function handleSendOrStop() {
             if (isTyping) {
                 // Stop / abort generation
-                if (abortController) abortController.abort();
+                if (chatAbortCtrl) chatAbortCtrl.abort();
                 typewriterAborted = true;
                 return;
             }
@@ -5365,7 +5387,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 }
             }
 
-            abortController = new AbortController();
+            chatAbortCtrl = new AbortController();
             // Let the browser paint the thinking text before starting the fetch
             await new Promise(r => requestAnimationFrame(r));
             try {
@@ -5373,7 +5395,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: messageToSend, history: conversationHistory, modelVersion: selectedModel }),
-                    signal: abortController.signal
+                    signal: chatAbortCtrl.signal
                 });
                 if (_thinkInterval) { clearInterval(_thinkInterval); _thinkInterval = null; }
                 // Ensure thinking text shows for at least 600ms so it's visible
@@ -5440,7 +5462,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 }
             }
 
-            abortController = null;
+            chatAbortCtrl = null;
             isTyping = false;
             setGeneratingState(false);
             updateButtonState(input.value.trim().length > 0);
@@ -6195,6 +6217,52 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 btn.textContent = 'Connect';
                 btn.onclick = () => { handleGmailConnect(); };
             }
+            // Update account settings page Gmail section
+            const accIcon = document.getElementById('account-gmail-status-icon');
+            const accLabel = document.getElementById('account-gmail-label');
+            const accBtn = document.getElementById('account-gmail-btn');
+            if (accIcon && accLabel && accBtn) {
+                if (gmailConnected) {
+                    accIcon.className = 'w-2 h-2 rounded-full bg-green-400';
+                    accLabel.textContent = gmailEmail;
+                    accLabel.className = 'text-sm text-green-400';
+                    accBtn.innerHTML = '<i data-lucide="unlink" class="w-3.5"></i> Disconnect';
+                    accBtn.className = 'account-btn danger';
+                    lucide.createIcons();
+                } else {
+                    accIcon.className = 'w-2 h-2 rounded-full bg-gray-600';
+                    accLabel.textContent = 'Not connected';
+                    accLabel.className = 'text-sm text-gray-400';
+                    accBtn.innerHTML = '<i data-lucide="link" class="w-3.5"></i> Connect Gmail';
+                    accBtn.className = 'account-btn';
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        async function handleAccountGmailAction() {
+            if (gmailConnected) {
+                // Disconnect
+                const btn = document.getElementById('account-gmail-btn');
+                btn.innerHTML = 'Disconnecting\u2026';
+                btn.disabled = true;
+                try {
+                    await fetch('/api/gmail?action=disconnect', {
+                        method: 'POST',
+                        headers: authHeaders(),
+                        body: JSON.stringify({ userId: currentUser.id })
+                    });
+                    gmailConnected = false;
+                    gmailEmail = '';
+                    updateGmailUI();
+                    showAppToast('Gmail disconnected', 'success');
+                } catch (_) {
+                    showAppToast('Failed to disconnect Gmail', 'error');
+                }
+                btn.disabled = false;
+            } else {
+                handleGmailConnect();
+            }
         }
 
         async function handleGmailPopupAction() {
@@ -6543,7 +6611,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
             // Hide suggestions after first message
             document.getElementById('email-suggestions-area').style.display = 'none';
-            document.getElementById('email-header-area').style.display = 'none';
 
             // Ensure chat interface is visible (in case coming from wrap view)
             const chatIf = document.getElementById('email-chat-interface');
@@ -6880,7 +6947,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 emailConversationHistory = [];
                 document.getElementById('email-chat-area').innerHTML = '';
                 document.getElementById('email-suggestions-area').style.display = 'none';
-                document.getElementById('email-header-area').style.display = 'none';
 
                 // Render messages
                 const messages = data.messages || [];
