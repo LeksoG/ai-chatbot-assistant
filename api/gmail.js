@@ -152,7 +152,7 @@ module.exports = async function handler(req, res) {
             if (!GOOGLE_CLIENT_ID) {
                 return res.status(503).json({ error: 'Google OAuth not configured' });
             }
-            const scope = encodeURIComponent('https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email');
+            const scope = encodeURIComponent('https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/userinfo.email');
             const state = req.query.userId || '';
             const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${encodeURIComponent(state)}`;
             return res.json({ url });
