@@ -288,6 +288,8 @@ module.exports = async function handler(req, res) {
                         method: 'PATCH', headers: sbHeaders,
                         body: JSON.stringify({ access_token: accessToken, token_expiry: newExpiry, updated_at: new Date().toISOString() })
                     });
+                } else {
+                    return null; // refresh failed, treat as disconnected
                 }
             }
 
