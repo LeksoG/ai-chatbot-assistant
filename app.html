@@ -655,6 +655,31 @@
         .vpop-hidden { opacity:0; transform:scale(0.92) translateY(8px); pointer-events:none; }
         .vpop-open   { opacity:1; transform:scale(1) translateY(0); pointer-events:auto; }
 
+        /* ── File upload / attachment ── */
+        #file-upload-input { display:none; }
+        #attachment-strip { display:none; flex-wrap:wrap; gap:8px; padding:12px 14px 6px; }
+        #attachment-strip.has-attachments { display:flex; }
+        #chat-input-bar-wrapper { transition:border-radius 0.2s ease; }
+        #chat-input-bar-wrapper.has-attachments { border-radius:1rem !important; }
+        .attach-chip { position:relative; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:3px; }
+        .attach-chip-img { width:60px; height:60px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,0.12); cursor:pointer; transition:opacity 0.15s, transform 0.15s; display:block; }
+        .attach-chip-img:hover { opacity:0.85; transform:scale(1.03); }
+        .attach-chip-file { width:60px; height:60px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; background:#1c1c1c; border:1px solid rgba(255,255,255,0.1); border-radius:10px; cursor:pointer; transition:background 0.15s; }
+        .attach-chip-file:hover { background:#242424; }
+        .attach-chip-file span { font-size:9px; color:#888; font-family:monospace; font-weight:600; }
+        .attach-chip-name { font-size:9px; color:#666; max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center; }
+        .attach-remove { position:absolute; top:-5px; right:-5px; width:17px; height:17px; background:#2a2a2a; border:1px solid rgba(255,255,255,0.18); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#999; font-size:11px; line-height:1; transition:background 0.15s, color 0.15s; z-index:2; }
+        .attach-remove:hover { background:#444; color:#fff; }
+        /* Drag overlay */
+        #drag-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:14px; pointer-events:none; }
+        #drag-overlay.drag-active { display:flex; }
+        #drag-overlay .drag-box { display:flex; flex-direction:column; align-items:center; gap:14px; padding:48px 64px; border:2px dashed rgba(139,92,246,0.55); border-radius:24px; background:rgba(139,92,246,0.07); }
+        #drag-overlay .drag-icon-wrap { width:64px; height:64px; background:rgba(139,92,246,0.18); border-radius:18px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(139,92,246,0.4); }
+        #drag-overlay .drag-title { color:#c4b5fd; font-size:18px; font-weight:600; letter-spacing:-0.01em; }
+        #drag-overlay .drag-sub { color:#7c3aed; font-size:12px; }
+        /* Upload row in version popup */
+        .vpop-upload-row { display:flex; align-items:center; justify-content:space-between; padding:12px 4px 0; margin-top:8px; border-top:1px solid rgba(255,255,255,0.05); }
+
         /* ── Top fade mask (ChatGPT-style content dissolve under header) ── */
         #top-fade { display:none; position:fixed; top:3.2rem; left:0; right:0; height:5rem; pointer-events:none; z-index:15; background:linear-gradient(to bottom, var(--bg) 0%, transparent 100%); }
         .conversation-started #top-fade { display:block; }
@@ -1293,11 +1318,18 @@
         <!-- Chat messages -->
         <div id="chat-results" class="w-full max-w-2xl flex flex-col gap-6 pb-36 px-4"></div>
 
+        <!-- Hidden file upload input -->
+        <input type="file" id="file-upload-input" multiple accept="image/*,.pdf,.txt,.csv,.doc,.docx,.js,.ts,.html,.css,.json,.md,.py,.java,.c,.cpp,.go,.rs,.rb,.php,.xml,.yaml,.yml,.sh">
+
         <!-- Input -->
         <div class="chat-input-wrapper w-full max-w-2xl px-4 relative">
             <div class="relative group">
                 <div id="rainbow-glow" class="glow-wrapper"><div class="glow-content"></div></div>
-                <div class="relative flex items-center bg-[#111] rounded-full pl-3 pr-3 py-3 shadow-2xl border border-white/10 z-10 gap-2">
+                <div id="chat-input-bar-wrapper" class="relative bg-[#111] rounded-full shadow-2xl border border-white/10 z-10">
+                <!-- Attachment strip (shown when files are attached) -->
+                <div id="attachment-strip"></div>
+                <!-- Input row -->
+                <div class="flex items-center pl-3 pr-3 py-3 gap-2">
 
                     <!-- ── Version pill (left, inside oval) ── -->
                     <div class="relative shrink-0">
@@ -1364,6 +1396,16 @@
                 Open
             </button>
         </div>
+        <!-- Upload File -->
+        <div class="vpop-upload-row">
+            <div>
+                <p class="text-xs font-medium text-white">Upload File</p>
+                <p class="text-[10px] text-gray-500 mt-0.5">Attach image or document</p>
+            </div>
+            <button onclick="triggerFileUpload(); closeVersionPopup();" class="text-[10px] font-medium text-violet-400 hover:text-violet-300 bg-violet-950/40 hover:bg-violet-950/60 border border-violet-800/30 px-2.5 py-1 rounded-lg transition-all cursor-pointer">
+                Upload
+            </button>
+        </div>
                         </div><!-- /version-popup -->
                     </div><!-- /pill wrapper -->
 
@@ -1383,10 +1425,22 @@
                         <div class="send-stop"></div>
                     </button>
                 </div><!-- /input flex row -->
+                </div><!-- /chat-input-bar-wrapper -->
             </div><!-- /relative group -->
             <p class="text-center text-xs text-gray-700 mt-3">Clarity AI · Powered by Mistral · May make mistakes</p>
         </div><!-- /chat-input-wrapper -->
     </main>
+
+    <!-- Drag-and-drop overlay -->
+    <div id="drag-overlay">
+        <div class="drag-box">
+            <div class="drag-icon-wrap">
+                <i data-lucide="upload-cloud" class="w-8 text-violet-400"></i>
+            </div>
+            <p class="drag-title">Drop to attach</p>
+            <p class="drag-sub">Drag in the container to add an image or file</p>
+        </div>
+    </div>
 
     <!-- Top fade mask — ChatGPT-style dissolve under header -->
     <div id="top-fade"></div>
@@ -2685,7 +2739,7 @@
         const chatResults = document.getElementById('chat-results');
         const topBrand    = document.getElementById('top-brand');
 
-        input.addEventListener('input', e => updateButtonState(e.target.value.trim().length > 0));
+        input.addEventListener('input', e => updateButtonState(e.target.value.trim().length > 0 || attachedFiles.length > 0));
         input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendOrStop(); } });
 
         function updateButtonState(active) {
@@ -2734,6 +2788,130 @@
             if (!e.target.closest('#version-pill') && !e.target.closest('#version-popup')) closeVersionPopup();
         });
         window.addEventListener('scroll', () => { if (versionPopupOpen) closeVersionPopup(); }, { passive: true });
+
+        // ── File upload / attachments ──────────────────────────────
+        let attachedFiles = [];
+
+        function triggerFileUpload() {
+            document.getElementById('file-upload-input').click();
+        }
+
+        document.getElementById('file-upload-input').addEventListener('change', function(e) {
+            handleFileSelect(Array.from(e.target.files));
+            this.value = '';
+        });
+
+        function handleFileSelect(files) {
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    attachedFiles.push({ name: file.name, type: file.type, dataUrl: ev.target.result });
+                    renderAttachments();
+                    updateButtonState(input.value.trim().length > 0 || attachedFiles.length > 0);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function renderAttachments() {
+            const strip = document.getElementById('attachment-strip');
+            const wrapper = document.getElementById('chat-input-bar-wrapper');
+            if (attachedFiles.length === 0) {
+                strip.classList.remove('has-attachments');
+                strip.innerHTML = '';
+                wrapper.classList.remove('has-attachments');
+                return;
+            }
+            strip.classList.add('has-attachments');
+            wrapper.classList.add('has-attachments');
+            strip.innerHTML = attachedFiles.map((f, i) => {
+                if (f.type.startsWith('image/')) {
+                    return `<div class="attach-chip">
+                        <img class="attach-chip-img" src="${f.dataUrl}" alt="${escapeHtml(f.name)}" title="${escapeHtml(f.name)}" onclick="openAttachment(${i})">
+                        <span class="attach-chip-name">${escapeHtml(f.name)}</span>
+                        <button class="attach-remove" onclick="removeAttachment(${i})" title="Remove">&#x2715;</button>
+                    </div>`;
+                } else {
+                    const ext = (f.name.split('.').pop() || 'FILE').toUpperCase().slice(0, 5);
+                    return `<div class="attach-chip">
+                        <div class="attach-chip-file" onclick="openAttachment(${i})" title="${escapeHtml(f.name)}">
+                            <i data-lucide="file-text" class="w-5 text-violet-400"></i>
+                            <span>${escapeHtml(ext)}</span>
+                        </div>
+                        <span class="attach-chip-name">${escapeHtml(f.name)}</span>
+                        <button class="attach-remove" onclick="removeAttachment(${i})" title="Remove">&#x2715;</button>
+                    </div>`;
+                }
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function removeAttachment(i) {
+            attachedFiles.splice(i, 1);
+            renderAttachments();
+            updateButtonState(input.value.trim().length > 0 || attachedFiles.length > 0);
+        }
+
+        function openAttachment(i) {
+            const f = attachedFiles[i];
+            if (!f) return;
+            const w = window.open('', '_blank');
+            if (!w) return;
+            if (f.type.startsWith('image/')) {
+                w.document.write(`<!DOCTYPE html><html><head><title>${f.name}</title></head><body style="margin:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="${f.dataUrl}" style="max-width:100%;max-height:100vh;object-fit:contain;"></body></html>`);
+            } else {
+                try {
+                    const text = decodeURIComponent(escape(atob(f.dataUrl.split(',')[1])));
+                    w.document.write(`<!DOCTYPE html><html><head><title>${f.name}</title></head><body style="margin:0;background:#0a0a0a;color:#e5e7eb;font-family:monospace;padding:20px;white-space:pre-wrap;word-break:break-all;font-size:13px;">${escapeHtml(text)}</body></html>`);
+                } catch(e) {
+                    w.document.write(`<!DOCTYPE html><html><body style="background:#0a0a0a;color:#e5e7eb;font-family:sans-serif;padding:20px;"><p>Binary file: ${f.name}</p></body></html>`);
+                }
+            }
+        }
+
+        // ── Paste images (screenshots) ─────────────────────────────
+        document.addEventListener('paste', function(e) {
+            if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') && document.activeElement.id !== 'chat-input') return;
+            const items = Array.from(e.clipboardData?.items || []);
+            const imageItems = items.filter(item => item.type.startsWith('image/'));
+            if (imageItems.length > 0) {
+                e.preventDefault();
+                imageItems.forEach(item => {
+                    const file = item.getAsFile();
+                    if (file) handleFileSelect([file]);
+                });
+            }
+        });
+
+        // ── Drag and drop ─────────────────────────────────────────
+        let _dragCounter = 0;
+        const dragOverlay = document.getElementById('drag-overlay');
+
+        document.addEventListener('dragenter', function(e) {
+            if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+                e.preventDefault();
+                _dragCounter++;
+                if (_dragCounter === 1) {
+                    dragOverlay.classList.add('drag-active');
+                    lucide.createIcons();
+                }
+            }
+        });
+        document.addEventListener('dragleave', function(e) {
+            _dragCounter--;
+            if (_dragCounter <= 0) {
+                _dragCounter = 0;
+                dragOverlay.classList.remove('drag-active');
+            }
+        });
+        document.addEventListener('dragover', function(e) { e.preventDefault(); });
+        document.addEventListener('drop', function(e) {
+            e.preventDefault();
+            _dragCounter = 0;
+            dragOverlay.classList.remove('drag-active');
+            const files = Array.from(e.dataTransfer.files || []);
+            if (files.length > 0) handleFileSelect(files);
+        });
 
         function selectModel(v) {
             selectedModel = v;
@@ -5221,11 +5399,28 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             return d.innerHTML;
         }
 
-        function appendUserMessage(text) {
+        function appendUserMessage(text, files) {
             const el = document.createElement('div');
             el.className = 'flex justify-end msg-enter pr-2';
+            let filesHtml = '';
+            if (files && files.length > 0) {
+                const chips = files.map(f => {
+                    if (f.type.startsWith('image/')) {
+                        return `<img src="${f.dataUrl}" alt="${escapeHtml(f.name)}" title="${escapeHtml(f.name)}"
+                            onclick="(function(){var w=window.open('','_blank');w.document.write('<!DOCTYPE html><html><body style=\\'margin:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh;\\'><img src=\\''+this.src+'\\' style=\\'max-width:100%;max-height:100vh;\\'/></body></html>');}).call(this)"
+                            style="max-height:120px;max-width:180px;border-radius:8px;object-fit:cover;cursor:pointer;display:block;border:1px solid rgba(255,255,255,0.1);">`;
+                    } else {
+                        const ext = (f.name.split('.').pop() || 'FILE').toUpperCase().slice(0, 5);
+                        return `<div style="display:inline-flex;align-items:center;gap:6px;background:#1c1c1c;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:11px;color:#aaa;cursor:default;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                            ${escapeHtml(f.name)}
+                        </div>`;
+                    }
+                }).join('');
+                filesHtml = `<div style="display:flex;flex-wrap:wrap;gap:6px;${text ? 'margin-bottom:8px;' : ''}">${chips}</div>`;
+            }
             el.innerHTML = `
-                <div class="bg-[#1a1a1a] border border-white/8 py-2 px-3.5 rounded-2xl rounded-tr-sm max-w-[72%] text-sm text-gray-200 leading-relaxed break-words whitespace-pre-wrap ml-auto">${escapeHtml(text)}</div>`;
+                <div class="bg-[#1a1a1a] border border-white/8 py-2 px-3.5 rounded-2xl rounded-tr-sm max-w-[72%] text-sm text-gray-200 leading-relaxed break-words ml-auto">${filesHtml}${text ? `<span style="white-space:pre-wrap">${escapeHtml(text)}</span>` : ''}</div>`;
             chatResults.appendChild(el);
         }
 
@@ -5325,11 +5520,18 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         // ── Send handler ──────────────────────────────────────────
         async function handleSend() {
             const val = input.value.trim();
-            if (!val || isTyping) return;
+            const hasAttachments = attachedFiles.length > 0;
+            if ((!val && !hasAttachments) || isTyping) return;
 
             isTyping = true;
             userIsNearBottom = true;
             input.value = '';
+
+            // Snapshot and clear attachments
+            const filesToSend = [...attachedFiles];
+            attachedFiles = [];
+            renderAttachments();
+
             updateButtonState(false);
             setGeneratingState(true);
 
@@ -5340,16 +5542,22 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 greetingActive = false;
             }
 
-            await ensureConversation(val);
-            appendUserMessage(val);
+            await ensureConversation(val || (filesToSend[0] && filesToSend[0].name) || 'File upload');
+            appendUserMessage(val, filesToSend);
             scrollToBottom();
-            saveMessage('user', val);
+            // Build text for history/API — append file names so model knows about them
+            let textForHistory = val;
+            if (filesToSend.length > 0) {
+                const fileLabels = filesToSend.map(f => `[Attached file: ${f.name}]`).join(' ');
+                textForHistory = val ? `${val}\n\n${fileLabels}` : fileLabels;
+            }
+            saveMessage('user', textForHistory);
 
             const { responseEl: aiEl, avatarEl } = appendAIMessageShell();
             scrollToBottom();
 
             // ── Canvas context: include current code when modifying ──
-            let messageToSend = val;
+            let messageToSend = textForHistory;
             const canvasSb = document.getElementById('canvas-sidebar');
             const hasCanvasCode = canvasEnabled && monacoEditor && canvasSb.classList.contains('cs-open');
             let previousCanvasCode = null;
@@ -5357,7 +5565,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 const currentCode = monacoEditor.getValue();
                 if (currentCode && currentCode !== '// Generating\u2026' && currentCode !== '// Fixing\u2026') {
                     previousCanvasCode = currentCode;
-                    messageToSend = `[Current canvas code — you MUST return the complete updated code in a fenced code block]\n\`\`\`\n${currentCode}\n\`\`\`\n\nUser request: ${val}\n\nIMPORTANT: Always return the full updated code even for small changes. Do not skip unchanged parts.`;
+                    messageToSend = `[Current canvas code — you MUST return the complete updated code in a fenced code block]\n\`\`\`\n${currentCode}\n\`\`\`\n\nUser request: ${textForHistory}\n\nIMPORTANT: Always return the full updated code even for small changes. Do not skip unchanged parts.`;
                 }
             }
 
@@ -5365,7 +5573,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             let _thinkInterval = null;
             let _thinkStart = 0;
             if (selectedModel === '3.6') {
-                const isCodePrompt = /website|webpage|html|css|code|build|creat|mak|landing|page|app|component|fix|updat|slider|canvas|design|layout|button|navbar|feature/i.test(val);
+                const isCodePrompt = /website|webpage|html|css|code|build|creat|mak|landing|page|app|component|fix|updat|slider|canvas|design|layout|button|navbar|feature/i.test(textForHistory);
                 const phases = isCodePrompt
                     ? ['Thinking\u2026', 'Creating website\u2026', 'Gathering components\u2026', 'Finishing\u2026']
                     : ['Thinking\u2026'];
@@ -5409,7 +5617,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     aiEl.innerHTML = `<div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3"><i data-lucide="alert-circle" class="w-4 shrink-0 mt-0.5"></i><span>${escapeHtml(data.error || 'Something went wrong.')}</span></div>`;
                     lucide.createIcons();
                 } else {
-                    conversationHistory.push({ role: 'user', content: val }, { role: 'assistant', content: data.reply });
+                    conversationHistory.push({ role: 'user', content: textForHistory }, { role: 'assistant', content: data.reply });
                     // When canvas is open with existing code, aggressively try to extract updated code
                     let codeBlock = canvasEnabled ? extractCodeBlock(data.reply) : null;
                     if (!codeBlock && hasCanvasCode && canvasEnabled) {
