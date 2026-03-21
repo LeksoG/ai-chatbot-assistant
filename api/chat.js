@@ -14,9 +14,11 @@ module.exports = async function handler(req, res) {
             return res.status(405).json({ error: 'Method not allowed' });
         }
 
-        const { message, history = [], modelVersion = '3.6' } = req.body || {};
+        const { message, history = [], modelVersion = '3.6', images = [] } = req.body || {};
 
-        if (!message) {
+        const hasImages = Array.isArray(images) && images.length > 0;
+
+        if (!message && !hasImages) {
             return res.status(400).json({ error: 'Message is required' });
         }
 
@@ -28,9 +30,16 @@ module.exports = async function handler(req, res) {
             });
         }
 
-        // Model routing: 3.5 = fast/small, 3.6 = large/advanced
-        const model     = modelVersion === '3.6' ? 'mistral-large-latest' : 'mistral-small-latest';
-        const maxTokens = modelVersion === '3.6' ? 8000 : 5000;
+        // Model routing: use vision-capable Pixtral when images are present
+        let model, maxTokens;
+        if (hasImages) {
+            // pixtral-12b supports vision and is available on standard API keys
+            model     = 'pixtral-12b-2409';
+            maxTokens = 8000;
+        } else {
+            model     = modelVersion === '3.6' ? 'mistral-large-latest' : 'mistral-small-latest';
+            maxTokens = modelVersion === '3.6' ? 8000 : 5000;
+        }
 
         const systemPrompt = `You are Clarity AI, a helpful AI assistant. Rules:
 - Be extremely concise. No filler, no preamble, no repeating the question.
@@ -39,6 +48,7 @@ module.exports = async function handler(req, res) {
 - When the user provides [Current canvas code] and asks for changes: describe what you changed in one sentence max, then return the FULL updated code. Do not explain unchanged parts.
 - Use **bold** for key terms, \`inline code\` for commands/variables, code blocks for code.
 - Use bullet lists only for 3+ items. Never over-explain.
+- When images are provided, analyze them thoroughly and accurately.
 
 HTML/website generation rules (CRITICAL — always follow these):
 - ALWAYS produce a single, fully self-contained HTML file. Never reference external files.
@@ -51,10 +61,21 @@ HTML/website generation rules (CRITICAL — always follow these):
 - If an icon or logo is needed, draw it with inline SVG or use a Unicode character.
 - The output must render correctly in a sandboxed iframe with no internet access to local paths.`;
 
+        // Build user message content — multimodal when images present
+        let userContent;
+        if (hasImages) {
+            userContent = [
+                { type: 'text', text: message || 'Please analyze the attached image(s).' },
+                ...images.map(url => ({ type: 'image_url', image_url: { url } }))
+            ];
+        } else {
+            userContent = message;
+        }
+
         const messages = [
             { role: 'system', content: systemPrompt },
             ...history,
-            { role: 'user', content: message }
+            { role: 'user', content: userContent }
         ];
 
         const mistralRes = await fetch('https://api.mistral.ai/v1/chat/completions', {
