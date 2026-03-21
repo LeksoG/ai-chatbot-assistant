@@ -78,25 +78,41 @@ HTML/website generation rules (CRITICAL — always follow these):
             { role: 'user', content: userContent }
         ];
 
-        const mistralRes = await fetch('https://api.mistral.ai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model,
-                messages,
-                temperature: 0.7,
-                max_tokens: maxTokens
-            })
+        const requestBody = JSON.stringify({
+            model,
+            messages,
+            temperature: 0.7,
+            max_tokens: maxTokens
         });
+
+        // Retry up to 3 times with exponential backoff on 429 rate-limit responses
+        let mistralRes;
+        const MAX_RETRIES = 3;
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            mistralRes = await fetch('https://api.mistral.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: requestBody
+            });
+
+            if (mistralRes.status !== 429 || attempt === MAX_RETRIES) break;
+
+            // Respect Retry-After header if present, otherwise use exponential backoff
+            const retryAfter = parseInt(mistralRes.headers.get('Retry-After') || '0', 10);
+            const backoffMs   = retryAfter > 0 ? retryAfter * 1000 : (2 ** attempt) * 1500;
+            await new Promise(r => setTimeout(r, backoffMs));
+        }
 
         if (!mistralRes.ok) {
             const errorData = await mistralRes.json().catch(() => ({}));
-            return res.status(mistralRes.status).json({
-                error: errorData.message || `Mistral API error (${mistralRes.status})`
-            });
+            const status = mistralRes.status;
+            const message = status === 429
+                ? 'Rate limit reached — please wait a moment and try again.'
+                : (errorData.message || `Mistral API error (${status})`);
+            return res.status(status).json({ error: message });
         }
 
         const data = await mistralRes.json();
@@ -111,4 +127,7 @@ HTML/website generation rules (CRITICAL — always follow these):
         });
     }
 };
+
+
+
 
