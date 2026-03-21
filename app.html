@@ -15,7 +15,7 @@
         #canvas-name { font-size:0.62rem; color:#6b7280; line-height:1; margin-top:1px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
         /* ── Rainbow glow (main page oval input) ── */
-        .glow-wrapper { position:absolute; inset:-1.5px; border-radius:9999px; overflow:hidden; filter:blur(8px); opacity:0; transition:opacity 1s ease; }
+        .glow-wrapper { position:absolute; inset:-2px; border-radius:9999px; overflow:hidden; filter:blur(8px); opacity:0; transition:opacity 1s ease, border-radius 0.22s ease; }
         .glow-content  { position:absolute; inset:-150%; border-radius:50%; background:conic-gradient(from 0deg,transparent 0deg,#ff00c8 40deg,#7000ff 100deg,#00c2ff 160deg,#00ff85 220deg,#ffea00 280deg,transparent 360deg); animation:rainbow-trace 2.5s ease-out forwards; }
         @keyframes rainbow-trace { 0%{transform:rotate(0deg) scale(0.8)} 100%{transform:rotate(360deg) scale(1)} }
 
@@ -679,6 +679,14 @@
         #drag-overlay .drag-sub { color:#7c3aed; font-size:12px; }
         /* Upload row in version popup */
         .vpop-upload-row { display:flex; align-items:center; justify-content:space-between; padding:12px 4px 0; margin-top:8px; border-top:1px solid rgba(255,255,255,0.05); }
+
+        /* ── Image viewer modal ── */
+        #img-viewer-modal { display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.88); align-items:center; justify-content:center; animation:imgmodal-in 0.18s ease; }
+        #img-viewer-modal.open { display:flex; }
+        @keyframes imgmodal-in { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+        #img-viewer-modal img { max-width:min(90vw,1200px); max-height:88vh; object-fit:contain; border-radius:10px; box-shadow:0 24px 80px rgba(0,0,0,0.7); user-select:none; }
+        #img-viewer-close { position:fixed; top:18px; right:22px; width:38px; height:38px; background:rgba(30,30,30,0.92); border:1px solid rgba(255,255,255,0.15); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#ccc; font-size:18px; line-height:1; transition:background 0.15s,color 0.15s; z-index:10001; }
+        #img-viewer-close:hover { background:rgba(60,60,60,0.98); color:#fff; }
 
         /* ── Top fade mask (ChatGPT-style content dissolve under header) ── */
         #top-fade { display:none; position:fixed; top:3.2rem; left:0; right:0; height:5rem; pointer-events:none; z-index:15; background:linear-gradient(to bottom, var(--bg) 0%, transparent 100%); }
@@ -1440,6 +1448,12 @@
             <p class="drag-title">Drop to attach</p>
             <p class="drag-sub">Drag in the container to add an image or file</p>
         </div>
+    </div>
+
+    <!-- Image viewer modal -->
+    <div id="img-viewer-modal" onclick="if(event.target===this)closeImgViewer()">
+        <button id="img-viewer-close" onclick="closeImgViewer()" title="Close (Esc)">&#x2715;</button>
+        <img id="img-viewer-img" src="" alt="">
     </div>
 
     <!-- Top fade mask — ChatGPT-style dissolve under header -->
@@ -2816,14 +2830,18 @@
         function renderAttachments() {
             const strip = document.getElementById('attachment-strip');
             const wrapper = document.getElementById('chat-input-bar-wrapper');
+            const glow    = document.getElementById('rainbow-glow');
             if (attachedFiles.length === 0) {
                 strip.classList.remove('has-attachments');
                 strip.innerHTML = '';
                 wrapper.classList.remove('has-attachments');
+                if (glow) glow.style.borderRadius = '9999px';
                 return;
             }
             strip.classList.add('has-attachments');
             wrapper.classList.add('has-attachments');
+            // Match glow shape to expanded container (rounded-2xl ≈ 1rem)
+            if (glow) glow.style.borderRadius = '1.1rem';
             strip.innerHTML = attachedFiles.map((f, i) => {
                 if (f.type.startsWith('image/')) {
                     return `<div class="attach-chip">
@@ -2855,19 +2873,38 @@
         function openAttachment(i) {
             const f = attachedFiles[i];
             if (!f) return;
-            const w = window.open('', '_blank');
-            if (!w) return;
             if (f.type.startsWith('image/')) {
-                w.document.write(`<!DOCTYPE html><html><head><title>${f.name}</title></head><body style="margin:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="${f.dataUrl}" style="max-width:100%;max-height:100vh;object-fit:contain;"></body></html>`);
+                viewImageModal(f.dataUrl, f.name);
             } else {
+                const w = window.open('', '_blank');
+                if (!w) return;
                 try {
                     const text = decodeURIComponent(escape(atob(f.dataUrl.split(',')[1])));
-                    w.document.write(`<!DOCTYPE html><html><head><title>${f.name}</title></head><body style="margin:0;background:#0a0a0a;color:#e5e7eb;font-family:monospace;padding:20px;white-space:pre-wrap;word-break:break-all;font-size:13px;">${escapeHtml(text)}</body></html>`);
+                    w.document.write(`<!DOCTYPE html><html><head><title>${escapeHtml(f.name)}</title></head><body style="margin:0;background:#0a0a0a;color:#e5e7eb;font-family:monospace;padding:20px;white-space:pre-wrap;word-break:break-all;font-size:13px;">${escapeHtml(text)}</body></html>`);
                 } catch(e) {
-                    w.document.write(`<!DOCTYPE html><html><body style="background:#0a0a0a;color:#e5e7eb;font-family:sans-serif;padding:20px;"><p>Binary file: ${f.name}</p></body></html>`);
+                    w.document.write(`<!DOCTYPE html><html><body style="background:#0a0a0a;color:#e5e7eb;font-family:sans-serif;padding:20px;"><p>Binary file: ${escapeHtml(f.name)}</p></body></html>`);
                 }
             }
         }
+
+        // ── Image viewer modal ─────────────────────────────────────
+        function viewImageModal(src, alt) {
+            const modal = document.getElementById('img-viewer-modal');
+            const img   = document.getElementById('img-viewer-img');
+            img.src = src;
+            img.alt = alt || '';
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeImgViewer() {
+            const modal = document.getElementById('img-viewer-modal');
+            modal.classList.remove('open');
+            document.getElementById('img-viewer-img').src = '';
+            document.body.style.overflow = '';
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeImgViewer();
+        });
 
         // ── Paste images (screenshots) ─────────────────────────────
         document.addEventListener('paste', function(e) {
@@ -5406,8 +5443,8 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             if (files && files.length > 0) {
                 const chips = files.map(f => {
                     if (f.type.startsWith('image/')) {
-                        return `<img src="${f.dataUrl}" alt="${escapeHtml(f.name)}" title="${escapeHtml(f.name)}"
-                            onclick="(function(){var w=window.open('','_blank');w.document.write('<!DOCTYPE html><html><body style=\\'margin:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh;\\'><img src=\\''+this.src+'\\' style=\\'max-width:100%;max-height:100vh;\\'/></body></html>');}).call(this)"
+                        return `<img src="${f.dataUrl}" alt="${escapeHtml(f.name)}" title="Click to view · ${escapeHtml(f.name)}"
+                            onclick="viewImageModal(this.src, this.alt)"
                             style="max-height:120px;max-width:180px;border-radius:8px;object-fit:cover;cursor:pointer;display:block;border:1px solid rgba(255,255,255,0.1);">`;
                     } else {
                         const ext = (f.name.split('.').pop() || 'FILE').toUpperCase().slice(0, 5);
@@ -5602,7 +5639,12 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: messageToSend, history: conversationHistory, modelVersion: selectedModel }),
+                    body: JSON.stringify({
+                        message: messageToSend,
+                        history: conversationHistory,
+                        modelVersion: selectedModel,
+                        images: filesToSend.filter(f => f.type.startsWith('image/')).map(f => f.dataUrl)
+                    }),
                     signal: chatAbortCtrl.signal
                 });
                 if (_thinkInterval) { clearInterval(_thinkInterval); _thinkInterval = null; }
