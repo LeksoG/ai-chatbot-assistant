@@ -723,12 +723,12 @@
         .cr-err { color:#f87171; white-space:pre-wrap; word-break:break-word; display:block; }
         .cr-sys { color:#4b5563; font-style:italic; display:block; }
         .cr-in-echo { color:#a78bfa; white-space:pre-wrap; display:block; }
-        .cr-console-input-row { display:flex; align-items:center; gap:8px; padding:8px 12px; border-top:1px solid rgba(255,255,255,0.06); background:#0d0d0d; flex-shrink:0; }
-        .cr-console-input-row .cr-prompt-sym { color:#a78bfa; font-family:monospace; font-size:14px; font-weight:700; }
-        #cr-console-input { flex:1; background:transparent; border:none; outline:none; color:#e2e8f0; font-family:'SF Mono','Fira Code',monospace; font-size:13px; caret-color:#a78bfa; }
-        #cr-console-input::placeholder { color:#374151; }
-        .cr-enter-btn { font-size:11px; padding:3px 10px; border-radius:6px; background:rgba(167,139,250,0.14); color:#a78bfa; border:1px solid rgba(167,139,250,0.25); cursor:pointer; transition:background 0.15s; flex-shrink:0; }
-        .cr-enter-btn:hover { background:rgba(167,139,250,0.28); }
+        /* Inline prompt + input field (replaces bottom bar) */
+        .cr-inline-line { display:flex; align-items:baseline; line-height:1.65; font-family:'SF Mono','Fira Code','Cascadia Code',monospace; font-size:13px; }
+        .cr-inline-prompt { color:#d4d4d4; white-space:pre; user-select:none; }
+        .cr-inline-field { background:transparent; border:none; outline:none; color:#a78bfa; font-family:inherit; font-size:inherit; caret-color:#a78bfa; min-width:4ch; width:auto; flex:1; }
+        .cr-inline-field::selection { background:rgba(167,139,250,0.3); }
+        .cr-inline-answer { color:#a78bfa; white-space:pre; }
         @media (max-width:768px) { .cr-code-panel { display:none; } }
 
         /* ── Presentation slide nav arrows ── */
@@ -1892,12 +1892,6 @@
                     <span>Console</span>
                 </div>
                 <div id="cr-console-output"></div>
-                <div class="cr-console-input-row" id="cr-input-row" style="display:none">
-                    <span class="cr-prompt-sym">&gt;</span>
-                    <input id="cr-console-input" type="text" placeholder="Type input and press Enter…"
-                        onkeydown="if(event.key==='Enter') crSubmitInput()">
-                    <button class="cr-enter-btn" onclick="crSubmitInput()">Enter</button>
-                </div>
             </div>
         </div>
     </div>
@@ -3270,7 +3264,6 @@ Return ONLY the JSON object: {"title":"Short Title","slides":[{"html":"..."},{"h
             document.getElementById('cr-lang-label').textContent = getLangLabel(crCurrentLang) || crCurrentLang || 'Code';
             document.getElementById('cr-code-display').textContent = crCurrentCode;
             document.getElementById('cr-console-output').innerHTML = '';
-            document.getElementById('cr-input-row').style.display = 'none';
             document.getElementById('cr-status-msg').textContent = '';
             crInputResolve = null;
             lucide.createIcons();
@@ -3290,7 +3283,6 @@ Return ONLY the JSON object: {"title":"Short Title","slides":[{"html":"..."},{"h
         }
         function crRerun() {
             document.getElementById('cr-console-output').innerHTML = '';
-            document.getElementById('cr-input-row').style.display = 'none';
             document.getElementById('cr-status-msg').textContent = '';
             crInputResolve = null;
             crLaunch();
@@ -3306,21 +3298,46 @@ Return ONLY the JSON object: {"title":"Short Title","slides":[{"html":"..."},{"h
             out.scrollTop = out.scrollHeight;
         }
 
-        // Show console input bar and wait for user to press Enter
-        function crWaitInput(prompt) {
-            if (prompt) crAppend(prompt, 'out');
-            const row = document.getElementById('cr-input-row');
-            row.style.display = 'flex';
-            const inp = document.getElementById('cr-console-input');
-            inp.value = '';
-            setTimeout(() => inp.focus(), 0);
-            return new Promise(resolve => { crInputResolve = resolve; });
-        }
-        function crSubmitInput() {
-            const val = document.getElementById('cr-console-input').value;
-            document.getElementById('cr-input-row').style.display = 'none';
-            crAppend('> ' + val, 'in');
-            if (crInputResolve) { crInputResolve(val); crInputResolve = null; }
+        // Render an inline prompt + editable field; resolves with the typed value
+        function crWaitInlineInput(promptText) {
+            const out  = document.getElementById('cr-console-output');
+            const line = document.createElement('div');
+            line.className = 'cr-inline-line';
+
+            // Non-editable prompt text
+            const promptSpan = document.createElement('span');
+            promptSpan.className = 'cr-inline-prompt';
+            promptSpan.textContent = promptText;
+
+            // Editable field right after the prompt
+            const field = document.createElement('input');
+            field.type  = 'text';
+            field.className = 'cr-inline-field';
+            field.spellcheck = false;
+            field.autocomplete = 'off';
+
+            line.appendChild(promptSpan);
+            line.appendChild(field);
+            out.appendChild(line);
+            out.scrollTop = out.scrollHeight;
+            setTimeout(() => field.focus(), 0);
+
+            return new Promise(resolve => {
+                field.addEventListener('keydown', function onKey(e) {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    const val = field.value;
+                    field.removeEventListener('keydown', onKey);
+                    // Replace the editable field with a frozen answer span
+                    field.remove();
+                    const ans = document.createElement('span');
+                    ans.className = 'cr-inline-answer';
+                    ans.textContent = val;
+                    line.appendChild(ans);
+                    out.scrollTop = out.scrollHeight;
+                    resolve(val);
+                });
+            });
         }
 
         // ── JavaScript runner ──────────────────────────────────────
@@ -3381,22 +3398,45 @@ Return ONLY the JSON object: {"title":"Short Title","slides":[{"html":"..."},{"h
             return pyodideInstance;
         }
 
+        // Extract the prompt strings from input() calls using regex
+        function crExtractInputPrompts(code) {
+            const prompts = [];
+            // Match input("...") or input('...') with optional f-prefix
+            const re = /\binput\s*\(\s*(?:f?(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'))?/g;
+            let m;
+            while ((m = re.exec(code)) !== null) {
+                const p = m[1] !== undefined ? m[1] : (m[2] !== undefined ? m[2] : '');
+                prompts.push(p);
+            }
+            return prompts;
+        }
+
         async function crRunPython(code) {
             let py;
             try { py = await crLoadPyodide(); } catch { return; }
 
-            // Count input() calls to pre-collect them interactively
-            const inputCount = (code.match(/\binput\s*\(/g) || []).length;
-            const inputs = [];
+            const prompts = crExtractInputPrompts(code);
+            const inputs  = [];
 
-            if (inputCount > 0) {
-                crAppend(`This script needs ${inputCount} input value${inputCount > 1 ? 's' : ''}. Provide them before running:`, 'sys');
-                for (let i = 0; i < inputCount; i++) {
-                    const val = await crWaitInput(`Input ${i + 1} of ${inputCount}:`);
-                    inputs.push(val);
-                }
+            // Collect each input inline using the actual prompt text from the code
+            for (const p of prompts) {
+                const val = await crWaitInlineInput(p);
+                inputs.push(val);
+            }
+
+            if (inputs.length > 0) {
                 let idx = 0;
                 py.setStdin({ stdin: () => idx < inputs.length ? inputs[idx++] + '\n' : null });
+                // Suppress the prompt string that input() would normally write to stdout
+                // (we already rendered it above inline) so it doesn't appear twice
+                await py.runPythonAsync(`
+import builtins as __bi, sys as __sys
+__orig_input = __bi.input
+def __quiet_input(prompt=''):
+    line = __sys.stdin.readline()
+    return line.rstrip('\\n')
+__bi.input = __quiet_input
+`);
             }
 
             crAppend('▶ Running Python…', 'sys');
@@ -3405,11 +3445,13 @@ Return ONLY the JSON object: {"title":"Short Title","slides":[{"html":"..."},{"h
                 await py.runPythonAsync(code);
                 crAppend('✓ Done.', 'sys');
             } catch(e) {
-                // Extract the relevant part of the traceback
                 const msg   = e.message || String(e);
                 const lines = msg.split('\n').filter(l => l.trim());
-                const last  = lines.slice(-4).join('\n');
-                crAppend(last || msg, 'err');
+                crAppend(lines.slice(-4).join('\n') || msg, 'err');
+            }
+            // Restore original input() for future runs
+            if (inputs.length > 0) {
+                try { await py.runPythonAsync('__bi.input = __orig_input'); } catch {}
             }
             document.getElementById('cr-status-msg').textContent = '';
         }
