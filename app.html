@@ -2790,15 +2790,50 @@
             this.value = '';
         });
 
-        function handleFileSelect(files) {
-            files.forEach(file => {
+        // Compress an image file to JPEG at ≤1280px — greatly reduces payload/tokens
+        function compressImage(file) {
+            return new Promise(resolve => {
                 const reader = new FileReader();
                 reader.onload = function(ev) {
-                    attachedFiles.push({ name: file.name, type: file.type, dataUrl: ev.target.result });
-                    renderAttachments();
-                    updateButtonState(input.value.trim().length > 0 || attachedFiles.length > 0);
+                    const img = new Image();
+                    img.onload = function() {
+                        const MAX = 1280;
+                        let { width, height } = img;
+                        if (width > MAX || height > MAX) {
+                            const scale = MAX / Math.max(width, height);
+                            width  = Math.round(width  * scale);
+                            height = Math.round(height * scale);
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width  = width;
+                        canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.85));
+                    };
+                    img.onerror = () => resolve(ev.target.result); // fallback: use original
+                    img.src = ev.target.result;
                 };
+                reader.onerror = () => resolve(null);
                 reader.readAsDataURL(file);
+            });
+        }
+
+        function handleFileSelect(files) {
+            files.forEach(async file => {
+                let dataUrl;
+                if (file.type.startsWith('image/')) {
+                    dataUrl = await compressImage(file);
+                } else {
+                    dataUrl = await new Promise(resolve => {
+                        const r = new FileReader();
+                        r.onload = e => resolve(e.target.result);
+                        r.readAsDataURL(file);
+                    });
+                }
+                if (!dataUrl) return;
+                attachedFiles.push({ name: file.name, type: file.type, dataUrl });
+                renderAttachments();
+                updateButtonState(input.value.trim().length > 0 || attachedFiles.length > 0);
             });
         }
 
