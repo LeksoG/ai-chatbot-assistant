@@ -680,6 +680,26 @@
         /* Upload row in version popup */
         .vpop-upload-row { display:flex; align-items:center; justify-content:space-between; padding:12px 4px 0; margin-top:8px; border-top:1px solid rgba(255,255,255,0.05); }
 
+        /* ── Presentation chat card ── */
+        .pres-chat-card { background:#111; border:1px solid rgba(255,255,255,0.1); border-radius:14px; overflow:hidden; cursor:pointer; transition:border-color 0.18s, box-shadow 0.18s; max-width:360px; user-select:none; }
+        .pres-chat-card:hover { border-color:rgba(124,58,237,0.45); box-shadow:0 4px 28px rgba(124,58,237,0.14); }
+        .pres-chat-preview { width:100%; aspect-ratio:16/9; background:#0a0a0a; position:relative; overflow:hidden; border-bottom:1px solid rgba(255,255,255,0.06); }
+        .pres-chat-info { display:flex; align-items:center; gap:10px; padding:10px 14px; }
+        .pres-chat-title { font-size:13px; font-weight:600; color:#fff; line-height:1.2; }
+        .pres-chat-count { font-size:11px; color:#6b7280; margin-top:2px; }
+        .pres-chat-generating { font-size:13px; color:#a78bfa; font-style:italic; padding:12px 14px; }
+        @keyframes pres-shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+        .pres-shimmer { position:absolute; inset:0; background:linear-gradient(90deg,#0d0d0d 0%,#1a1a1a 30%,#222 50%,#1a1a1a 70%,#0d0d0d 100%); background-size:200% 100%; animation:pres-shimmer 1.8s ease-in-out infinite; }
+
+        /* ── Presentation slide nav arrows ── */
+        .pp-slide-view { position:relative; }
+        .pp-nav-btn { position:absolute; top:50%; transform:translateY(-50%); width:40px; height:40px; background:rgba(0,0,0,0.55); border:1px solid rgba(255,255,255,0.12); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer; transition:background 0.15s, opacity 0.15s, transform 0.15s; z-index:20; opacity:0; backdrop-filter:blur(4px); }
+        .pp-slide-view:hover .pp-nav-btn:not(:disabled) { opacity:0.7; }
+        .pp-nav-btn:hover:not(:disabled) { background:rgba(0,0,0,0.82) !important; opacity:1 !important; }
+        .pp-nav-btn:disabled { opacity:0 !important; cursor:default; pointer-events:none; }
+        .pp-prev-btn { left:14px; }
+        .pp-next-btn { right:14px; }
+
         /* ── Image viewer modal ── */
         #img-viewer-modal { display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.88); align-items:center; justify-content:center; animation:imgmodal-in 0.18s ease; }
         #img-viewer-modal.open { display:flex; }
@@ -1155,22 +1175,10 @@
             </button>
         </div>
 
-        <!-- Presentation shortcut -->
-        <div class="px-3 pb-2 shrink-0">
-            <button onclick="openPresentationPage(null)" class="w-full flex items-center justify-between gap-2.5 p-2.5 bg-white/[0.03] hover:bg-white/[0.07] rounded-xl text-sm text-gray-400 hover:text-gray-200 transition-all border border-white/5 hover:border-white/10 group">
-                <div class="flex items-center gap-2.5">
-                    <i data-lucide="presentation" class="w-4 text-violet-400 group-hover:text-violet-300 transition-colors"></i>
-                    <span class="text-xs font-medium">Presentations</span>
-                </div>
-                <i data-lucide="arrow-right" class="w-3.5 text-gray-600 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all"></i>
-            </button>
-        </div>
-
-        <!-- Sidebar tabs: Chat / Emails / Presentations -->
+        <!-- Sidebar tabs: Chat / Emails -->
         <div class="sidebar-tabs px-3">
             <button id="sidebar-tab-chat" class="sidebar-tab active" onclick="switchSidebarTab('chat')">Chat</button>
             <button id="sidebar-tab-emails" class="sidebar-tab" onclick="switchSidebarTab('emails')">Emails</button>
-            <button id="sidebar-tab-pres" class="sidebar-tab" onclick="switchSidebarTab('presentations')">Slides</button>
         </div>
 
         <!-- Search -->
@@ -1189,16 +1197,6 @@
             <p id="history-label" class="px-2 text-[10px] text-gray-600 uppercase tracking-widest mb-2">Recent</p>
             <div id="history-list">
                 <div class="p-3 text-gray-600 text-sm text-center">No history yet</div>
-            </div>
-        </div>
-
-        <!-- Presentations list (Presentations tab — hidden by default) -->
-        <div id="sidebar-pres-panel" class="px-3 flex-1 overflow-y-auto min-h-0 hidden">
-            <div class="flex items-center justify-between px-1 mb-2">
-                <p class="text-[10px] text-gray-600 uppercase tracking-widest">Presentations</p>
-            </div>
-            <div id="presentations-list">
-                <div class="p-3 text-gray-600 text-sm text-center">No presentations yet</div>
             </div>
         </div>
 
@@ -1381,6 +1379,16 @@
                 <div class="toggle-thumb"></div>
             </button>
         </div>
+        <!-- Presentations toggle -->
+        <div class="border-t border-white/5 pt-3 mt-3 px-1 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-medium text-white">Presentations</p>
+                <p class="text-[10px] text-gray-500 mt-0.5">Generate slides from your prompts</p>
+            </div>
+            <button id="pres-toggle-track" onclick="togglePresentationsMode()" class="toggle-track shrink-0 ml-3">
+                <div class="toggle-thumb"></div>
+            </button>
+        </div>
         <!-- Gmail Connection -->
         <div id="gmail-popup-section" class="border-t border-white/5 pt-3 mt-3 px-1 flex items-center justify-between">
             <div>
@@ -1392,16 +1400,6 @@
             </div>
             <button id="gmail-popup-btn" onclick="handleGmailPopupAction()" class="text-[10px] font-medium text-violet-400 hover:text-violet-300 bg-violet-950/40 hover:bg-violet-950/60 border border-violet-800/30 px-2.5 py-1 rounded-lg transition-all cursor-pointer">
                 Connect
-            </button>
-        </div>
-        <!-- Presentation toggle -->
-        <div class="border-t border-white/5 pt-3 mt-3 px-1 flex items-center justify-between">
-            <div>
-                <p class="text-xs font-medium text-white">Presentations</p>
-                <p class="text-[10px] text-gray-500 mt-0.5">Create AI-powered slide decks</p>
-            </div>
-            <button onclick="closeVersionPopup(); openPresentationPage(null);" class="text-[10px] font-medium text-violet-400 hover:text-violet-300 bg-violet-950/40 hover:bg-violet-950/60 border border-violet-800/30 px-2.5 py-1 rounded-lg transition-all cursor-pointer">
-                Open
             </button>
         </div>
         <!-- Upload File -->
@@ -1801,38 +1799,6 @@
     </div>
 
     <!-- ═══════════════════════════════════════════════════════
-         PRESENTATION RENAME MODAL
-    ═══════════════════════════════════════════════════════ -->
-    <div id="pp-rename-modal" class="pp-modal-backdrop">
-        <div class="absolute inset-0" onclick="closePPRenameModal()"></div>
-        <div class="relative pp-modal-card w-80 mx-4">
-            <h3 class="text-white font-semibold text-sm mb-3">Rename presentation</h3>
-            <input id="pp-rename-input" type="text" placeholder="Presentation title"
-                class="w-full bg-[#1a1a1a] border border-white/8 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-violet-600/70 transition-colors mb-3 placeholder-gray-600"
-                onkeydown="if(event.key==='Enter') confirmPPRename()">
-            <div class="flex gap-2">
-                <button onclick="closePPRenameModal()" class="flex-1 py-2 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Cancel</button>
-                <button onclick="confirmPPRename()" class="flex-1 py-2 text-sm text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition-colors">Rename</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════
-         PRESENTATION DELETE MODAL
-    ═══════════════════════════════════════════════════════ -->
-    <div id="pp-delete-modal" class="pp-modal-backdrop">
-        <div class="absolute inset-0" onclick="closePPDeleteModal()"></div>
-        <div class="relative pp-modal-card w-72 mx-4">
-            <h3 class="text-white font-semibold text-sm mb-1.5">Delete presentation?</h3>
-            <p class="text-gray-500 text-xs mb-4">This cannot be undone.</p>
-            <div class="flex gap-2">
-                <button onclick="closePPDeleteModal()" class="flex-1 py-2 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Cancel</button>
-                <button onclick="confirmPPDelete()" class="flex-1 py-2 text-sm text-white bg-red-600 hover:bg-red-500 rounded-xl transition-colors">Delete</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════
          PRESENTATION SAVE/DISCARD MODAL (on back)
     ═══════════════════════════════════════════════════════ -->
     <div id="pp-save-modal" class="pp-modal-backdrop">
@@ -1923,6 +1889,13 @@
             <div class="pp-main">
                 <!-- Slide preview -->
                 <div class="pp-slide-view" id="pp-slide-view">
+                    <!-- Prev / Next navigation arrows -->
+                    <button id="pp-prev-btn" class="pp-nav-btn pp-prev-btn" onclick="navigateSlide('prev')" title="Previous slide (←)">
+                        <i data-lucide="chevron-left" class="w-5"></i>
+                    </button>
+                    <button id="pp-next-btn" class="pp-nav-btn pp-next-btn" onclick="navigateSlide('next')" title="Next slide (→)">
+                        <i data-lucide="chevron-right" class="w-5"></i>
+                    </button>
                     <div class="pp-active-slide" id="pp-active-slide">
                         <!-- Frame wrapper: animated on slide navigation -->
                         <div id="pp-slide-frame-wrap">
@@ -2601,6 +2574,7 @@
         let pendingRenameId      = null;
         let pendingDeleteId      = null;
         let canvasEnabled        = localStorage.getItem('clarity_canvas') === 'true';
+        let presentationsEnabled = localStorage.getItem('clarity_presentations') === 'true';
         let versionPopupOpen     = false;
         let monacoReady          = false;
         let monacoEditor         = null;
@@ -2619,6 +2593,7 @@
             document.getElementById('pill-model-label').textContent = selectedModel;
             updateModelCards();
             if (canvasEnabled) document.getElementById('canvas-toggle-track').classList.add('on');
+            if (presentationsEnabled) document.getElementById('pres-toggle-track').classList.add('on');
             updateUserUI();
             // Fetch fresh profile so initials/name/2FA always reflect the latest DB data
             try {
@@ -2904,6 +2879,11 @@
         }
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') closeImgViewer();
+            // Arrow-key slide navigation when presentation page is open
+            if (document.getElementById('presentation-page')?.classList.contains('pp-open')) {
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); navigateSlide('next'); }
+                if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); navigateSlide('prev'); }
+            }
         });
 
         // ── Paste images (screenshots) ─────────────────────────────
@@ -2980,6 +2960,169 @@
             canvasEnabled = !canvasEnabled;
             localStorage.setItem('clarity_canvas', canvasEnabled);
             document.getElementById('canvas-toggle-track').classList.toggle('on', canvasEnabled);
+        }
+
+        // ── Presentations mode toggle ─────────────────────────────
+        function togglePresentationsMode() {
+            presentationsEnabled = !presentationsEnabled;
+            localStorage.setItem('clarity_presentations', presentationsEnabled);
+            document.getElementById('pres-toggle-track').classList.toggle('on', presentationsEnabled);
+        }
+
+        // ── Detect presentation intent in chat ────────────────────
+        function detectPresentationIntent(text) {
+            const lower = text.toLowerCase();
+            const hasCreate = /\b(create|make|build|generate|write|design|prepare|produce|give me|put together)\b/.test(lower);
+            const hasDeck   = /\b(presentation|slide deck|slideshow|slides|powerpoint|keynote|deck)\b/.test(lower);
+            return hasCreate && hasDeck;
+        }
+
+        // ── Append a "generating presentation" shell into the chat ─
+        function appendPresentationShell() {
+            const el = document.createElement('div');
+            el.className = 'flex justify-start items-start gap-4 msg-enter';
+            el.innerHTML = `
+                <div class="ai-avatar w-9 h-9 shrink-0 mt-1">${ANIMATED_LOGO_SVG}</div>
+                <div class="flex-1 min-w-0 pt-0.5">
+                    <div class="pres-chat-card" style="cursor:default">
+                        <div class="pres-chat-preview"><div class="pres-shimmer"></div></div>
+                        <p class="pres-chat-generating">Creating presentation\u2026</p>
+                    </div>
+                </div>`;
+            chatResults.appendChild(el);
+            return el;
+        }
+
+        // ── Replace shell with clickable presentation card ─────────
+        function renderPresentationChatCard(shellEl, title, slideCount) {
+            const avatarEl = shellEl.querySelector('.ai-avatar');
+            if (avatarEl) avatarEl.innerHTML = STATIC_LOGO_SVG;
+            const slide1Html = activePresentationData?.slides?.[0]?.html || '';
+            shellEl.querySelector('.flex-1').innerHTML = `
+                <div class="pres-chat-card" onclick="openPresentationFromChat()">
+                    <div class="pres-chat-preview">
+                        <div style="transform:scale(0.218);transform-origin:top left;width:458%;height:458%;pointer-events:none;overflow:hidden;">
+                            <iframe srcdoc="${escapeHtml(slide1Html)}" style="width:100%;height:100%;border:0;" sandbox="allow-scripts"></iframe>
+                        </div>
+                    </div>
+                    <div class="pres-chat-info">
+                        <i data-lucide="presentation" class="w-4 text-violet-400 shrink-0"></i>
+                        <div class="flex-1 min-w-0">
+                            <p class="pres-chat-title">${escapeHtml(title)}</p>
+                            <p class="pres-chat-count">${slideCount} slide${slideCount !== 1 ? 's' : ''} &middot; Click to open</p>
+                        </div>
+                        <i data-lucide="arrow-right" class="w-4 text-gray-500 shrink-0"></i>
+                    </div>
+                </div>`;
+            lucide.createIcons();
+        }
+
+        // ── Open the presentation page from chat card ──────────────
+        function openPresentationFromChat() {
+            if (!activePresentationData) return;
+            const page = document.getElementById('presentation-page');
+            page.style.animation = 'none';
+            page.offsetHeight;
+            page.style.animation = '';
+            page.classList.add('pp-open');
+            document.getElementById('pp-title').value = activePresentationData.title || 'Untitled';
+            const mob = document.getElementById('pp-title-mobile');
+            if (mob) mob.value = activePresentationData.title || 'Untitled';
+            activeSlideIndex = 0;
+            renderPPSlides(true);
+            lucide.createIcons();
+        }
+
+        // ── Main chat-based presentation generator ─────────────────
+        async function handleChatPresentation(val, filesToSend) {
+            await ensureConversation(val);
+            appendUserMessage(val, filesToSend);
+            scrollToBottom();
+            saveMessage('user', val);
+
+            const shellEl = appendPresentationShell();
+            scrollToBottom();
+
+            const slideCount = 7;
+            const prompt = `Create a professional, visually stunning slide presentation about: "${val}"
+
+Return a JSON object with two fields:
+1. "title": a concise, catchy presentation title (1-3 words max). Do NOT just reuse the user's prompt. Create a short branded name.
+2. "slides": a JSON array of exactly ${slideCount} slide objects. Each slide has an "html" field containing a complete self-contained HTML page (inline CSS only, no external resources, 960x540 viewport).
+
+Design requirements for EVERY slide:
+- Full-bleed backgrounds: bold CSS gradients or dark rich backgrounds. Never plain white.
+- Cohesive 3-4 color theme applied consistently.
+- Typography: large bold headings (2.5-3.5rem), clean sans-serif fonts.
+- Layout: CSS flexbox/grid, generous padding (60-80px), visual hierarchy.
+- Visual polish: box-shadows, rounded corners, semi-transparent overlay cards.
+- Icons: Unicode symbols (▸ ◆ ★ ● ✦ ⚡ 🎯 📊 💡 🚀) for bullets/decoration.
+- IMAGES: Include relevant images on 2-3 slides using https://images.unsplash.com/photo-PHOTO_ID?w=400&h=250&fit=crop or https://source.unsplash.com/400x250/?KEYWORD with specific topic keywords.
+- Each slide is <html><head><style>...</style></head><body>...</body></html>.
+
+Slide structure: title slide, overview/agenda, content slides with stats/examples/images, key takeaways, closing slide.
+
+Return ONLY the JSON object: {"title":"Short Title","slides":[{"html":"..."},{"html":"..."}]}`;
+
+            chatAbortCtrl = new AbortController();
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: prompt, history: [], modelVersion: selectedModel }),
+                    signal: chatAbortCtrl.signal
+                });
+                const data = await res.json();
+                if (res.ok && data.reply) {
+                    let parsed = null;
+                    try {
+                        const cleaned = data.reply.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+                        parsed = JSON.parse(cleaned);
+                    } catch (_) {
+                        const m = data.reply.match(/\{[\s\S]*\}/);
+                        if (m) try { parsed = JSON.parse(m[0]); } catch (_2) {}
+                    }
+                    if (parsed && Array.isArray(parsed.slides) && parsed.slides.length > 0) {
+                        const title = parsed.title || val.slice(0, 40);
+                        activePresentationId   = null;
+                        activePresentationData = { id: null, title, slides: parsed.slides.map(s => ({ html: s.html || '' })) };
+                        activeSlideIndex = 0;
+                        await savePresentationToDB();
+                        renderPresentationChatCard(shellEl, title, parsed.slides.length);
+                        const replyText = `I created a presentation titled **${title}** with ${parsed.slides.length} slides. Click the card above to open it.`;
+                        conversationHistory.push({ role: 'user', content: val }, { role: 'assistant', content: replyText });
+                        saveMessage('assistant', replyText);
+                        scrollToBottom();
+                        return;
+                    }
+                }
+                // Fallback — show error in card
+                shellEl.querySelector('.pres-chat-generating').textContent = 'Could not generate presentation.';
+                shellEl.querySelector('.ai-avatar').innerHTML = STATIC_LOGO_SVG;
+            } catch (e) {
+                if (e.name !== 'AbortError') {
+                    shellEl.querySelector('.pres-chat-generating').textContent = 'Something went wrong.';
+                    shellEl.querySelector('.ai-avatar').innerHTML = STATIC_LOGO_SVG;
+                }
+            }
+        }
+
+        // ── Slide navigation (prev / next arrows) ─────────────────
+        function navigateSlide(dir) {
+            if (!activePresentationData) return;
+            const slides = activePresentationData.slides || [];
+            if (dir === 'prev' && activeSlideIndex > 0) {
+                selectSlide(activeSlideIndex - 1, 'prev');
+            } else if (dir === 'next' && activeSlideIndex < slides.length - 1) {
+                selectSlide(activeSlideIndex + 1, 'next');
+            }
+        }
+        function updatePPNavButtons() {
+            const slides = activePresentationData?.slides || [];
+            const prevBtn = document.getElementById('pp-prev-btn');
+            const nextBtn = document.getElementById('pp-next-btn');
+            if (prevBtn) prevBtn.disabled = activeSlideIndex <= 0;
+            if (nextBtn) nextBtn.disabled = activeSlideIndex >= slides.length - 1;
         }
 
         // ── Code helpers ──────────────────────────────────────────
@@ -3664,20 +3807,17 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             renderConversationList(filtered);
         }
 
-        // ── Sidebar tabs (Chat / Presentations / Artifacts) ──────────────────
+        // ── Sidebar tabs (Chat / Emails) ──────────────────────────
         let activeSidebarTab = 'chat';
         function switchSidebarTab(tab) {
             activeSidebarTab = tab;
             document.getElementById('sidebar-tab-chat').classList.toggle('active', tab === 'chat');
-            document.getElementById('sidebar-tab-pres').classList.toggle('active', tab === 'presentations');
             document.getElementById('sidebar-tab-emails').classList.toggle('active', tab === 'emails');
             document.getElementById('sidebar-chat-panel').classList.toggle('hidden', tab !== 'chat');
-            document.getElementById('sidebar-pres-panel').classList.toggle('hidden', tab !== 'presentations');
             document.getElementById('sidebar-emails-panel').classList.toggle('hidden', tab !== 'emails');
             const searchInput = document.getElementById('sidebar-search');
-            searchInput.placeholder = tab === 'chat' ? 'Search conversations\u2026' : tab === 'emails' ? 'Search emails\u2026' : 'Search presentations\u2026';
+            searchInput.placeholder = tab === 'chat' ? 'Search conversations\u2026' : 'Search emails\u2026';
             searchInput.value = '';
-            if (tab === 'presentations') loadPresentations();
             if (tab === 'emails') loadEmailConversations();
         }
 
@@ -3941,6 +4081,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 document.getElementById('pp-slide-iframe').srcdoc = slides[activeSlideIndex].html || '';
             }
             updateMobileSlideIndicator();
+            updatePPNavButtons();
             lucide.createIcons();
         }
 
@@ -3959,6 +4100,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
 
             renderPPSlides();
             updateMobileSlideIndicator();
+            updatePPNavButtons();
             // On mobile, auto-close the slides panel after selection
             if (window.innerWidth <= 768) {
                 const panel = document.getElementById('pp-slides-panel');
@@ -5577,6 +5719,15 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 topBrand.style.opacity = '1';
                 topBrand.style.pointerEvents = 'auto';
                 greetingActive = false;
+            }
+
+            // ── Presentation mode intercept ────────────────────────
+            if (presentationsEnabled && val && detectPresentationIntent(val) && filesToSend.length === 0) {
+                await handleChatPresentation(val, filesToSend);
+                isTyping = false;
+                setGeneratingState(false);
+                updateButtonState(false);
+                return;
             }
 
             await ensureConversation(val || (filesToSend[0] && filesToSend[0].name) || 'File upload');
