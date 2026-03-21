@@ -643,10 +643,15 @@
         .cs-tab { padding:0.65rem 1.1rem; font-size:0.72rem; font-weight:500; border-bottom:2px solid transparent; color:#6b7280; transition:color 0.15s, border-color 0.15s; cursor:pointer; white-space:nowrap; }
         .cs-tab.active { color:#fff; border-bottom-color:#fff; }
         .cs-tab:hover:not(.active) { color:#d1d5db; }
-        /* ── Code block copy button ── */
+        /* ── Code block: badge + action buttons ── */
         .code-block-wrapper { position:relative; }
-        .code-copy-btn { position:absolute; top:0.55rem; right:0.55rem; font-size:0.7rem; padding:0.2rem 0.55rem; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:0.4rem; color:#9ca3af; cursor:pointer; transition:background 0.15s,color 0.15s; z-index:1; }
+        .code-lang-badge { position:absolute; top:8px; left:12px; font-size:10px; font-weight:600; letter-spacing:0.04em; padding:2px 8px; border-radius:999px; background:rgba(255,255,255,0.06); color:#6b7280; border:1px solid rgba(255,255,255,0.08); pointer-events:none; z-index:1; }
+        .code-block-actions { position:absolute; top:8px; right:8px; display:flex; align-items:center; gap:4px; z-index:1; }
+        .code-copy-btn, .code-run-btn { font-size:0.7rem; padding:0.2rem 0.55rem; border-radius:0.4rem; cursor:pointer; transition:background 0.15s, color 0.15s; border:1px solid; }
+        .code-copy-btn { background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.12); color:#9ca3af; }
         .code-copy-btn:hover { background:rgba(255,255,255,0.14); color:#fff; }
+        .code-run-btn { background:rgba(124,58,237,0.12); border-color:rgba(124,58,237,0.28); color:#a78bfa; }
+        .code-run-btn:hover { background:rgba(124,58,237,0.26); color:#c4b5fd; }
         /* ── Canvas reopen card ── */
         .canvas-reopen-card { display:flex; align-items:center; gap:0.7rem; padding:0.6rem 0.9rem; background:#111; border:1px solid rgba(255,255,255,0.07); border-radius:0.875rem; cursor:pointer; transition:background 0.15s,border-color 0.15s; margin-top:0.6rem; }
         .canvas-reopen-card:hover { background:#1a1a1a; border-color:rgba(255,255,255,0.15); }
@@ -680,6 +685,14 @@
         /* Upload row in version popup */
         .vpop-upload-row { display:flex; align-items:center; justify-content:space-between; padding:12px 4px 0; margin-top:8px; border-top:1px solid rgba(255,255,255,0.05); }
 
+        /* ── Sidebar select mode ── */
+        #sidebar-select-bar { display:none; }
+        #sidebar-select-bar.visible { display:flex; }
+        .conv-checkbox { width:14px; height:14px; accent-color:#7c3aed; cursor:pointer; flex-shrink:0; margin-right:2px; }
+        .history-item { border-radius:10px; transition:background 0.13s; margin-bottom:2px; }
+        .history-item.selected { background:rgba(124,58,237,0.12) !important; border-color:rgba(124,58,237,0.25) !important; }
+        .history-item-active { background:rgba(255,255,255,0.06); border-left:2px solid rgba(124,58,237,0.6); }
+
         /* ── Presentation chat card ── */
         .pres-chat-card { background:#111; border:1px solid rgba(255,255,255,0.1); border-radius:14px; overflow:hidden; cursor:pointer; transition:border-color 0.18s, box-shadow 0.18s; max-width:360px; user-select:none; }
         .pres-chat-card:hover { border-color:rgba(124,58,237,0.45); box-shadow:0 4px 28px rgba(124,58,237,0.14); }
@@ -690,6 +703,33 @@
         .pres-chat-generating { font-size:13px; color:#a78bfa; font-style:italic; padding:12px 14px; }
         @keyframes pres-shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
         .pres-shimmer { position:absolute; inset:0; background:linear-gradient(90deg,#0d0d0d 0%,#1a1a1a 30%,#222 50%,#1a1a1a 70%,#0d0d0d 100%); background-size:200% 100%; animation:pres-shimmer 1.8s ease-in-out infinite; }
+
+        /* ── Code Runner full-screen page ── */
+        #code-runner-page { position:fixed; inset:0; z-index:260; background:#0a0a0a; display:none; flex-direction:column; }
+        #code-runner-page.cr-open { display:flex; animation:pp-page-fade 0.28s ease forwards; }
+        .cr-topbar { display:flex; align-items:center; gap:0.75rem; padding:0.65rem 1.1rem; border-bottom:1px solid rgba(255,255,255,0.06); background:#0d0d0d; flex-shrink:0; }
+        .cr-topbar-lang { font-size:11px; font-weight:700; letter-spacing:0.04em; padding:3px 10px; border-radius:999px; background:rgba(167,139,250,0.14); color:#a78bfa; border:1px solid rgba(167,139,250,0.25); }
+        .cr-rerun-btn { display:flex; align-items:center; gap:5px; padding:4px 12px; border-radius:999px; background:rgba(124,58,237,0.14); border:1px solid rgba(124,58,237,0.28); color:#a78bfa; font-size:11px; font-weight:600; cursor:pointer; transition:background 0.15s; }
+        .cr-rerun-btn:hover { background:rgba(124,58,237,0.26); color:#c4b5fd; }
+        .cr-body { flex:1; display:flex; min-height:0; }
+        /* left: code panel */
+        .cr-code-panel { width:42%; border-right:1px solid rgba(255,255,255,0.06); overflow-y:auto; background:#0d0d0d; flex-shrink:0; }
+        .cr-code-panel pre { margin:0; padding:1.1rem 1.25rem; font-size:12.5px; line-height:1.65; color:#d4d4d4; font-family:'SF Mono','Fira Code','Cascadia Code',monospace; white-space:pre-wrap; word-break:break-word; }
+        /* right: console panel */
+        .cr-console-panel { flex:1; display:flex; flex-direction:column; min-height:0; }
+        .cr-console-header { padding:0.5rem 1rem; border-bottom:1px solid rgba(255,255,255,0.05); font-size:11px; color:#4b5563; display:flex; align-items:center; gap:6px; flex-shrink:0; }
+        #cr-console-output { flex:1; overflow-y:auto; padding:0.85rem 1rem; font-family:'SF Mono','Fira Code','Cascadia Code',monospace; font-size:13px; line-height:1.65; }
+        .cr-out { color:#d4d4d4; white-space:pre-wrap; word-break:break-word; display:block; }
+        .cr-err { color:#f87171; white-space:pre-wrap; word-break:break-word; display:block; }
+        .cr-sys { color:#4b5563; font-style:italic; display:block; }
+        .cr-in-echo { color:#a78bfa; white-space:pre-wrap; display:block; }
+        .cr-console-input-row { display:flex; align-items:center; gap:8px; padding:8px 12px; border-top:1px solid rgba(255,255,255,0.06); background:#0d0d0d; flex-shrink:0; }
+        .cr-console-input-row .cr-prompt-sym { color:#a78bfa; font-family:monospace; font-size:14px; font-weight:700; }
+        #cr-console-input { flex:1; background:transparent; border:none; outline:none; color:#e2e8f0; font-family:'SF Mono','Fira Code',monospace; font-size:13px; caret-color:#a78bfa; }
+        #cr-console-input::placeholder { color:#374151; }
+        .cr-enter-btn { font-size:11px; padding:3px 10px; border-radius:6px; background:rgba(167,139,250,0.14); color:#a78bfa; border:1px solid rgba(167,139,250,0.25); cursor:pointer; transition:background 0.15s; flex-shrink:0; }
+        .cr-enter-btn:hover { background:rgba(167,139,250,0.28); }
+        @media (max-width:768px) { .cr-code-panel { display:none; } }
 
         /* ── Presentation slide nav arrows ── */
         .pp-slide-view { position:relative; }
@@ -1194,7 +1234,18 @@
 
         <!-- Conversation history (Chat tab) -->
         <div id="sidebar-chat-panel" class="px-3 flex-1 overflow-y-auto min-h-0">
-            <p id="history-label" class="px-2 text-[10px] text-gray-600 uppercase tracking-widest mb-2">Recent</p>
+            <div class="flex items-center justify-between px-1 mb-1.5">
+                <p id="history-label" class="text-[10px] text-gray-600 uppercase tracking-widest">Recent</p>
+                <button id="sidebar-select-btn" onclick="toggleSidebarSelectMode()" class="text-[10px] text-gray-500 hover:text-gray-300 font-medium transition-colors px-1.5 py-0.5 rounded-md hover:bg-white/5">Select</button>
+            </div>
+            <!-- select-mode action bar (hidden until selection active) -->
+            <div id="sidebar-select-bar" class="hidden flex items-center justify-between mb-2 px-1">
+                <span id="sidebar-select-count" class="text-[10px] text-gray-500">0 selected</span>
+                <div class="flex gap-1.5">
+                    <button onclick="deleteSelectedConversations()" id="sidebar-delete-selected-btn" class="text-[10px] text-red-400 hover:text-red-300 font-medium px-2 py-0.5 rounded-md bg-red-950/30 hover:bg-red-950/50 border border-red-900/30 transition-colors disabled:opacity-40" disabled>Delete</button>
+                    <button onclick="toggleSidebarSelectMode()" class="text-[10px] text-gray-500 hover:text-gray-300 px-1.5 py-0.5 rounded-md hover:bg-white/5 transition-colors">Cancel</button>
+                </div>
+            </div>
             <div id="history-list">
                 <div class="p-3 text-gray-600 text-sm text-center">No history yet</div>
             </div>
@@ -1810,6 +1861,43 @@
                 <button onclick="ppDiscardAndClose()" class="flex-1 py-2 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Don't Save</button>
                 <button onclick="closePPSaveModal()" class="flex-1 py-2 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Cancel</button>
                 <button onclick="ppSaveAndClose()" class="flex-1 py-2 text-sm text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition-colors">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         CODE RUNNER PAGE (full-screen)
+    ═══════════════════════════════════════════════════════ -->
+    <div id="code-runner-page">
+        <div class="cr-topbar">
+            <button onclick="closeCodeRunner()" class="w-8 h-8 flex items-center justify-center bg-white/6 hover:bg-white/12 border border-white/8 rounded-full transition-colors group shrink-0">
+                <i data-lucide="arrow-left" class="w-3.5 text-gray-400 group-hover:text-white group-hover:-translate-x-0.5 transition-all"></i>
+            </button>
+            <span id="cr-lang-label" class="cr-topbar-lang">Code</span>
+            <span id="cr-status-msg" class="text-xs text-gray-600 italic ml-1"></span>
+            <div class="flex-1"></div>
+            <button class="cr-rerun-btn" onclick="crRerun()">
+                <i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Run again
+            </button>
+        </div>
+        <div class="cr-body">
+            <!-- Left: read-only code display -->
+            <div class="cr-code-panel">
+                <pre id="cr-code-display"></pre>
+            </div>
+            <!-- Right: console output + input -->
+            <div class="cr-console-panel">
+                <div class="cr-console-header">
+                    <i data-lucide="terminal" style="width:12px;height:12px;"></i>
+                    <span>Console</span>
+                </div>
+                <div id="cr-console-output"></div>
+                <div class="cr-console-input-row" id="cr-input-row" style="display:none">
+                    <span class="cr-prompt-sym">&gt;</span>
+                    <input id="cr-console-input" type="text" placeholder="Type input and press Enter…"
+                        onkeydown="if(event.key==='Enter') crSubmitInput()">
+                    <button class="cr-enter-btn" onclick="crSubmitInput()">Enter</button>
+                </div>
             </div>
         </div>
     </div>
@@ -3135,10 +3223,9 @@ Return ONLY the JSON object: {"title":"Short Title","slides":[{"html":"..."},{"h
                 shellEl.querySelector('.pres-chat-generating').textContent = 'Could not generate presentation.';
                 shellEl.querySelector('.ai-avatar').innerHTML = STATIC_LOGO_SVG;
             } catch (e) {
-                if (e.name !== 'AbortError') {
-                    shellEl.querySelector('.pres-chat-generating').textContent = 'Something went wrong.';
-                    shellEl.querySelector('.ai-avatar').innerHTML = STATIC_LOGO_SVG;
-                }
+                const genEl = shellEl.querySelector('.pres-chat-generating');
+                if (genEl) genEl.textContent = e.name === 'AbortError' ? 'Generation stopped by user.' : 'Something went wrong.';
+                shellEl.querySelector('.ai-avatar').innerHTML = STATIC_LOGO_SVG;
             }
         }
 
@@ -3158,6 +3245,173 @@ Return ONLY the JSON object: {"title":"Short Title","slides":[{"html":"..."},{"h
             const nextBtn = document.getElementById('pp-next-btn');
             if (prevBtn) prevBtn.disabled = activeSlideIndex <= 0;
             if (nextBtn) nextBtn.disabled = activeSlideIndex >= slides.length - 1;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  CODE RUNNER
+        // ══════════════════════════════════════════════════════════
+        let crCurrentCode = '', crCurrentLang = '';
+        let crInputResolve = null;   // resolves when user submits console input
+        let pyodideInstance = null;
+        let pyodideLoading  = false;
+
+        // Entry point: called from the ▶ Run button inside a code block
+        function openCodeRunner(btn) {
+            const wrapper = btn.closest('.code-block-wrapper');
+            crCurrentCode = wrapper.querySelector('code').textContent;
+            crCurrentLang = wrapper.getAttribute('data-lang') || '';
+            crLaunch();
+        }
+
+        function crLaunch() {
+            const page = document.getElementById('code-runner-page');
+            page.style.animation = 'none'; page.offsetHeight; page.style.animation = '';
+            page.classList.add('cr-open');
+            document.getElementById('cr-lang-label').textContent = getLangLabel(crCurrentLang) || crCurrentLang || 'Code';
+            document.getElementById('cr-code-display').textContent = crCurrentCode;
+            document.getElementById('cr-console-output').innerHTML = '';
+            document.getElementById('cr-input-row').style.display = 'none';
+            document.getElementById('cr-status-msg').textContent = '';
+            crInputResolve = null;
+            lucide.createIcons();
+
+            const l = crCurrentLang.toLowerCase();
+            if (l === 'javascript' || l === 'js')    crRunJS(crCurrentCode);
+            else if (l === 'python' || l === 'py')   crRunPython(crCurrentCode);
+            else {
+                crAppend(`Cannot run "${getLangLabel(crCurrentLang) || crCurrentLang}" in the browser.`, 'sys');
+                crAppend('Supported languages: JavaScript, Python', 'sys');
+            }
+        }
+
+        function closeCodeRunner() {
+            document.getElementById('code-runner-page').classList.remove('cr-open');
+            crInputResolve = null;
+        }
+        function crRerun() {
+            document.getElementById('cr-console-output').innerHTML = '';
+            document.getElementById('cr-input-row').style.display = 'none';
+            document.getElementById('cr-status-msg').textContent = '';
+            crInputResolve = null;
+            crLaunch();
+        }
+
+        // Append a line to the console output
+        function crAppend(text, type) {
+            const out  = document.getElementById('cr-console-output');
+            const el   = document.createElement('span');
+            el.className = type === 'err' ? 'cr-err' : type === 'sys' ? 'cr-sys' : type === 'in' ? 'cr-in-echo' : 'cr-out';
+            el.textContent = text + (text.endsWith('\n') ? '' : '\n');
+            out.appendChild(el);
+            out.scrollTop = out.scrollHeight;
+        }
+
+        // Show console input bar and wait for user to press Enter
+        function crWaitInput(prompt) {
+            if (prompt) crAppend(prompt, 'out');
+            const row = document.getElementById('cr-input-row');
+            row.style.display = 'flex';
+            const inp = document.getElementById('cr-console-input');
+            inp.value = '';
+            setTimeout(() => inp.focus(), 0);
+            return new Promise(resolve => { crInputResolve = resolve; });
+        }
+        function crSubmitInput() {
+            const val = document.getElementById('cr-console-input').value;
+            document.getElementById('cr-input-row').style.display = 'none';
+            crAppend('> ' + val, 'in');
+            if (crInputResolve) { crInputResolve(val); crInputResolve = null; }
+        }
+
+        // ── JavaScript runner ──────────────────────────────────────
+        function crRunJS(code) {
+            crAppend('▶ Running JavaScript…', 'sys');
+            const origLog   = console.log;
+            const origError = console.error;
+            const origWarn  = console.warn;
+            const origInfo  = console.info;
+            const fmt = args => args.map(a => (typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a))).join(' ');
+            console.log   = (...a) => crAppend(fmt(a), 'out');
+            console.error = (...a) => crAppend(fmt(a), 'err');
+            console.warn  = (...a) => crAppend('⚠ ' + fmt(a), 'out');
+            console.info  = (...a) => crAppend(fmt(a), 'out');
+            const restore = () => { console.log = origLog; console.error = origError; console.warn = origWarn; console.info = origInfo; };
+            try {
+                const result = new Function(code)();
+                if (result && typeof result.then === 'function') {
+                    result
+                        .then(v => { if (v !== undefined) crAppend(String(v), 'out'); crAppend('✓ Done.', 'sys'); restore(); })
+                        .catch(e => { crAppend('Error: ' + e.message, 'err'); restore(); });
+                    return;
+                }
+                crAppend('✓ Done.', 'sys');
+            } catch(e) {
+                crAppend('Error: ' + e.message, 'err');
+            }
+            restore();
+        }
+
+        // ── Python runner (Pyodide WASM) ───────────────────────────
+        async function crLoadPyodide() {
+            if (pyodideInstance) return pyodideInstance;
+            while (pyodideLoading) await new Promise(r => setTimeout(r, 80));
+            if (pyodideInstance) return pyodideInstance;
+            pyodideLoading = true;
+            crAppend('Loading Python runtime (first time may take a few seconds)…', 'sys');
+            try {
+                if (!window.loadPyodide) {
+                    await new Promise((resolve, reject) => {
+                        const s = document.createElement('script');
+                        s.src = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js';
+                        s.onload = resolve; s.onerror = reject;
+                        document.head.appendChild(s);
+                    });
+                }
+                pyodideInstance = await window.loadPyodide({
+                    stdout: t => crAppend(t, 'out'),
+                    stderr: t => crAppend(t, 'err')
+                });
+                crAppend('Python ready.', 'sys');
+            } catch(e) {
+                crAppend('Failed to load Python: ' + e.message, 'err');
+                pyodideLoading = false;
+                throw e;
+            }
+            pyodideLoading = false;
+            return pyodideInstance;
+        }
+
+        async function crRunPython(code) {
+            let py;
+            try { py = await crLoadPyodide(); } catch { return; }
+
+            // Count input() calls to pre-collect them interactively
+            const inputCount = (code.match(/\binput\s*\(/g) || []).length;
+            const inputs = [];
+
+            if (inputCount > 0) {
+                crAppend(`This script needs ${inputCount} input value${inputCount > 1 ? 's' : ''}. Provide them before running:`, 'sys');
+                for (let i = 0; i < inputCount; i++) {
+                    const val = await crWaitInput(`Input ${i + 1} of ${inputCount}:`);
+                    inputs.push(val);
+                }
+                let idx = 0;
+                py.setStdin({ stdin: () => idx < inputs.length ? inputs[idx++] + '\n' : null });
+            }
+
+            crAppend('▶ Running Python…', 'sys');
+            document.getElementById('cr-status-msg').textContent = 'running';
+            try {
+                await py.runPythonAsync(code);
+                crAppend('✓ Done.', 'sys');
+            } catch(e) {
+                // Extract the relevant part of the traceback
+                const msg   = e.message || String(e);
+                const lines = msg.split('\n').filter(l => l.trim());
+                const last  = lines.slice(-4).join('\n');
+                crAppend(last || msg, 'err');
+            }
+            document.getElementById('cr-status-msg').textContent = '';
         }
 
         // ── Code helpers ──────────────────────────────────────────
@@ -3799,7 +4053,24 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             });
         }
 
-        // ── Custom marked renderer (copy button on code blocks) ──
+        // ── Language label + runnability helpers ──────────────────
+        const _langLabels = {
+            python:'Python', py:'Python', javascript:'JavaScript', js:'JavaScript',
+            typescript:'TypeScript', ts:'TypeScript', html:'HTML', css:'CSS',
+            bash:'Bash', sh:'Shell', shell:'Shell', sql:'SQL', java:'Java',
+            cpp:'C++', 'c++':'C++', c:'C', rust:'Rust', go:'Go',
+            ruby:'Ruby', rb:'Ruby', php:'PHP', swift:'Swift', kotlin:'Kotlin',
+            r:'R', json:'JSON', yaml:'YAML', yml:'YAML', xml:'XML'
+        };
+        function getLangLabel(lang) {
+            const k = (lang || '').toLowerCase().trim();
+            return _langLabels[k] || (lang ? lang.charAt(0).toUpperCase() + lang.slice(1) : '');
+        }
+        function isRunnableLang(lang) {
+            return ['python','py','javascript','js'].includes((lang || '').toLowerCase().trim());
+        }
+
+        // ── Custom marked renderer (code blocks with badge + actions) ──
         // marked.js v14+ passes a token object { text, lang } instead of (code, lang) strings
         const _renderer = new marked.Renderer();
         _renderer.code = function(codeOrToken, lang) {
@@ -3811,8 +4082,13 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 text = codeOrToken || '';
                 language = lang || '';
             }
-            const esc = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            return `<div class="code-block-wrapper"><button class="code-copy-btn" onclick="copyCode(this)">Copy</button><pre><code class="language-${language}">${esc}</code></pre></div>`;
+            const esc   = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const label = getLangLabel(language);
+            const badge = label ? `<span class="code-lang-badge">${label}</span>` : '';
+            const runBtn = isRunnableLang(language)
+                ? `<button class="code-run-btn" onclick="openCodeRunner(this)" title="Run this code">&#9654; Run</button>`
+                : '';
+            return `<div class="code-block-wrapper" data-lang="${language}">${badge}<div class="code-block-actions">${runBtn}<button class="code-copy-btn" onclick="copyCode(this)">Copy</button></div><pre style="padding-top:2.2rem"><code class="language-${language}">${esc}</code></pre></div>`;
         };
         marked.setOptions({ renderer: _renderer });
 
@@ -5073,30 +5349,98 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
         }
 
+        let sidebarSelectMode = false;
+        let selectedConvIds = new Set();
+
+        function toggleSidebarSelectMode() {
+            sidebarSelectMode = !sidebarSelectMode;
+            selectedConvIds.clear();
+            const btn = document.getElementById('sidebar-select-btn');
+            const bar = document.getElementById('sidebar-select-bar');
+            if (sidebarSelectMode) {
+                btn.textContent = 'Done';
+                btn.classList.add('text-violet-400');
+                bar.classList.remove('hidden');
+                bar.classList.add('visible');
+            } else {
+                btn.textContent = 'Select';
+                btn.classList.remove('text-violet-400');
+                bar.classList.remove('visible');
+                bar.classList.add('hidden');
+            }
+            renderConversationList(allConversations);
+        }
+
+        function toggleConvSelection(id) {
+            if (selectedConvIds.has(id)) selectedConvIds.delete(id);
+            else selectedConvIds.add(id);
+            const count = selectedConvIds.size;
+            document.getElementById('sidebar-select-count').textContent = count + ' selected';
+            document.getElementById('sidebar-delete-selected-btn').disabled = count === 0;
+            // Update visual state of the clicked item
+            document.querySelectorAll('.history-item').forEach(el => {
+                el.classList.toggle('selected', selectedConvIds.has(el.dataset.id));
+            });
+        }
+
+        async function deleteSelectedConversations() {
+            if (selectedConvIds.size === 0) return;
+            const ids = [...selectedConvIds];
+            await Promise.all(ids.map(id =>
+                fetch('/api/conversations?id=' + id, { method: 'DELETE', headers: authHeaders() }).catch(() => {})
+            ));
+            if (ids.includes(activeConversationId)) startNewChat();
+            sidebarSelectMode = false;
+            selectedConvIds.clear();
+            await loadConversations();
+            const btn = document.getElementById('sidebar-select-btn');
+            const bar = document.getElementById('sidebar-select-bar');
+            btn.textContent = 'Select';
+            btn.classList.remove('text-violet-400');
+            bar.classList.remove('visible');
+            bar.classList.add('hidden');
+        }
+
         function renderConversationList(convs) {
             const list = document.getElementById('history-list');
             if (!convs || !convs.length) {
                 list.innerHTML = '<div class="p-3 text-gray-600 text-sm text-center">No history yet</div>';
                 return;
             }
-            list.innerHTML = convs.map(c => `
-                <div class="group relative flex items-center rounded-xl hover:bg-white/5 transition-colors ${activeConversationId === c.id ? 'bg-white/5' : ''}">
-                    <button onclick="loadConversation('${c.id}')" class="flex-1 text-left flex items-center gap-2.5 px-3 py-2.5 min-w-0">
-                        <i data-lucide="message-square" class="w-3.5 shrink-0 text-gray-600 group-hover:text-gray-400 transition-colors"></i>
-                        <span class="text-sm text-gray-400 group-hover:text-gray-200 transition-colors truncate">${escapeHtml(c.title)}</span>
-                    </button>
-                    <div class="flex gap-0.5 pr-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                        <button onclick="openRenameModal('${c.id}','${escapeHtml(c.title).replace(/'/g,'\\\'')}')"
-                            class="p-1.5 hover:bg-white/10 rounded-lg transition-colors" title="Rename">
-                            <i data-lucide="pencil" class="w-3 text-gray-500 hover:text-gray-200"></i>
+            const isActive = id => activeConversationId === id;
+            list.innerHTML = convs.map(c => {
+                const safe  = escapeHtml(c.title);
+                const safej = safe.replace(/'/g,"\\'");
+                if (sidebarSelectMode) {
+                    const checked = selectedConvIds.has(c.id);
+                    return `
+                        <div class="history-item flex items-center gap-2.5 px-2 py-2 cursor-pointer hover:bg-white/5 ${checked ? 'selected' : ''}"
+                             data-id="${c.id}" onclick="toggleConvSelection('${c.id}')">
+                            <input type="checkbox" class="conv-checkbox" ${checked ? 'checked' : ''}
+                                onclick="event.stopPropagation();toggleConvSelection('${c.id}')">
+                            <i data-lucide="message-square" class="w-3.5 shrink-0 text-gray-600"></i>
+                            <span class="text-sm text-gray-400 truncate flex-1">${safe}</span>
+                        </div>`;
+                }
+                return `
+                    <div class="history-item group relative flex items-center hover:bg-white/5 ${isActive(c.id) ? 'history-item-active' : ''}"
+                         data-id="${c.id}">
+                        <button onclick="loadConversation('${c.id}')" class="flex-1 text-left flex items-center gap-2.5 px-2.5 py-2.5 min-w-0">
+                            <i data-lucide="message-square" class="w-3.5 shrink-0 ${isActive(c.id) ? 'text-violet-400' : 'text-gray-600 group-hover:text-gray-400'} transition-colors"></i>
+                            <span class="text-sm ${isActive(c.id) ? 'text-gray-200' : 'text-gray-400 group-hover:text-gray-200'} transition-colors truncate">${safe}</span>
                         </button>
-                        <button onclick="openDeleteModal('${c.id}')"
-                            class="p-1.5 hover:bg-red-900/30 rounded-lg transition-colors" title="Delete">
-                            <i data-lucide="trash-2" class="w-3 text-gray-500 hover:text-red-400"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+                        <div class="flex gap-0.5 pr-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                            <button onclick="openRenameModal('${c.id}','${safej}')"
+                                class="p-1.5 hover:bg-white/10 rounded-lg transition-colors" title="Rename">
+                                <i data-lucide="pencil" class="w-3 text-gray-500 hover:text-gray-200"></i>
+                            </button>
+                            <button onclick="openDeleteModal('${c.id}')"
+                                class="p-1.5 hover:bg-red-900/30 rounded-lg transition-colors" title="Delete">
+                                <i data-lucide="trash-2" class="w-3 text-gray-500 hover:text-red-400"></i>
+                            </button>
+                        </div>
+                    </div>`;
+            }).join('');
             lucide.createIcons();
         }
 
@@ -5891,7 +6235,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 if (_thinkInterval) { clearInterval(_thinkInterval); _thinkInterval = null; }
                 avatarEl.innerHTML = STATIC_LOGO_SVG;
                 if (err.name === 'AbortError') {
-                    aiEl.innerHTML = `<div class="text-gray-500 text-sm italic">Generation stopped.</div>`;
+                    aiEl.innerHTML = `<div class="text-gray-500 text-sm italic">Generation stopped by user.</div>`;
                 } else {
                     aiEl.innerHTML = `<div class="flex items-start gap-2 text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3"><i data-lucide="wifi-off" class="w-4 shrink-0 mt-0.5"></i><span>Request timed out or connection lost. Try again — complex requests (like full websites) may take a moment.</span></div>`;
                     lucide.createIcons();
