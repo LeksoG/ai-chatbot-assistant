@@ -687,9 +687,10 @@
 
         /* ── Artifact language badge ── */
         .art-lang-badge { position:absolute; top:8px; left:8px; z-index:5; font-size:10px; font-weight:700; letter-spacing:0.05em; padding:2px 7px; border-radius:999px; pointer-events:none; backdrop-filter:blur(4px); }
+        .artifact-lang-row { font-size:10px; color:#6b7280; margin-top:4px; display:flex; align-items:center; gap:4px; }
         .art-lang-html   { background:rgba(249,115,22,0.22); color:#fb923c; border:1px solid rgba(249,115,22,0.35); }
         .art-lang-python { background:rgba(59,130,246,0.22); color:#60a5fa; border:1px solid rgba(59,130,246,0.35); }
-        .art-lang-js     { background:rgba(250,204,21,0.22); color:#fcd34d; border:1px solid rgba(250,204,21,0.35); }
+        .art-lang-js, .art-lang-javascript { background:rgba(250,204,21,0.22); color:#fcd34d; border:1px solid rgba(250,204,21,0.35); }
 
         /* ── Logo gradient swatches (account page) ── */
         .logo-swatch { width:28px; height:28px; border-radius:8px; cursor:pointer; border:2px solid transparent; transition:transform 0.15s, box-shadow 0.15s; flex-shrink:0; }
@@ -1229,7 +1230,7 @@
         <!-- Sidebar tabs: Chat / Emails -->
         <div class="sidebar-tabs px-3">
             <button id="sidebar-tab-chat" class="sidebar-tab active" onclick="switchSidebarTab('chat')">Chat</button>
-            <button id="sidebar-tab-emails" class="sidebar-tab" onclick="switchSidebarTab('emails')" style="display:flex;align-items:center;justify-content:center;gap:3px"><i data-lucide="mail" style="width:11px;height:11px;flex-shrink:0"></i>Email Writer</button>
+            <button id="sidebar-tab-emails" class="sidebar-tab" onclick="switchSidebarTab('emails')">Emails</button>
         </div>
 
         <!-- Search -->
@@ -1455,10 +1456,11 @@
         <div id="gmail-popup-section" class="border-t border-white/5 pt-3 mt-3 px-1 flex items-center justify-between">
             <div>
                 <div class="flex items-center gap-2">
-                    <p class="text-xs font-medium text-white">Gmail</p>
+                    <i data-lucide="mail" class="w-3.5 text-violet-400"></i>
+                    <p class="text-xs font-medium text-white">Email Writer</p>
                     <span id="gmail-status-badge" class="gmail-status-pill disconnected">Not connected</span>
                 </div>
-                <p class="text-[10px] text-gray-500 mt-0.5">Connect your Gmail account</p>
+                <p class="text-[10px] text-gray-500 mt-0.5">Connect Gmail to compose &amp; send</p>
             </div>
             <button id="gmail-popup-btn" onclick="handleGmailPopupAction()" class="text-[10px] font-medium text-violet-400 hover:text-violet-300 bg-violet-950/40 hover:bg-violet-950/60 border border-violet-800/30 px-2.5 py-1 rounded-lg transition-all cursor-pointer">
                 Connect
@@ -2760,11 +2762,7 @@
         // Use a generation counter instead of a boolean so that calling
         // runGreeting() again always invalidates any prior running instance.
         let greetingGen = 0;
-        // Keep legacy alias used elsewhere to stop the animation
-        Object.defineProperty(window, 'greetingActive', {
-            set(v) { if (!v) greetingGen++; },
-            get()  { return false; } // not used for control
-        });
+
 
         async function runGreeting() {
             const myGen     = ++greetingGen;
@@ -3321,6 +3319,13 @@ Return ONLY the JSON object: {"title":"Short Title","slides":[{"html":"..."},{"h
             const wrapper = btn.closest('.code-block-wrapper');
             crCurrentCode = wrapper.querySelector('code').textContent;
             crCurrentLang = wrapper.getAttribute('data-lang') || '';
+            crLaunch();
+        }
+
+        // Entry point: called from artifact viewer Run button with (code, lang) args
+        function startCodeRunner(code, lang) {
+            crCurrentCode = code;
+            crCurrentLang = lang || '';
             crLaunch();
         }
 
@@ -3913,7 +3918,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 document.body.classList.add('conversation-started');
                 topBrand.style.opacity = '1';
                 topBrand.style.pointerEvents = 'auto';
-                greetingActive = false;
+                greetingGen++;
             }
 
             // 1. Show visible user message in chat
@@ -6221,7 +6226,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 document.body.classList.add('conversation-started');
                 topBrand.style.opacity = '1';
                 topBrand.style.pointerEvents = 'auto';
-                greetingActive = false;
+                greetingGen++;
             }
 
             // ── Presentation mode intercept ────────────────────────
@@ -6699,6 +6704,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                             <span class="artifact-author">${escapeHtml(a.user_name || 'Anonymous')}</span>
                             <span class="artifact-date">${dateStr}</span>
                         </div>
+                        ${artLang ? `<div class="artifact-lang-row">Language: <span class="art-lang-badge art-lang-${artLang.toLowerCase()}" style="position:static;display:inline-block">${artLang}</span></div>` : ''}
                     </div>
                 </div>`;
             }).join('');
@@ -7121,11 +7127,9 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         async function checkGmailStatus() {
             try {
                 const uid = currentUser.id || '';
-                console.log('[Gmail] checkGmailStatus userId=', uid);
-                if (!uid) { console.warn('[Gmail] No userId, skipping status check'); return; }
+                if (!uid) return;
                 const res = await fetch(`/api/gmail?action=status&userId=${encodeURIComponent(uid)}`);
                 const data = await res.json();
-                console.log('[Gmail] status response:', data);
                 gmailConnected = data.connected;
                 gmailEmail = data.email || '';
                 updateGmailUI();
@@ -7222,7 +7226,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         const _gmailReason = new URLSearchParams(window.location.search).get('reason');
         if (_gmailParam === 'error') {
             window.history.replaceState({}, '', '/app');
-            console.error('[Gmail] OAuth callback error:', _gmailReason);
             showAppToast('Gmail connection failed: ' + (_gmailReason || 'unknown error'), 'error');
         } else if (_gmailParam === 'connected') {
             window.history.replaceState({}, '', '/app');
@@ -7231,7 +7234,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     if (gmailConnected) {
                         showAppToast('Gmail connected successfully!', 'success');
                     } else {
-                        console.error('[Gmail] Status still shows not connected after callback redirect');
                         showAppToast('Gmail OAuth completed but connection not found - check Supabase table', 'error');
                     }
                 });
@@ -8324,16 +8326,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }).catch(() => showAppToast('Network error sending email', 'error'));
         }
 
-        function epoSendEmail() {
-            epoShowRecipient();
-        }
 
-        function epoManualEdit() {
-            const content = document.getElementById('epo-email-content').innerText;
-            navigator.clipboard.writeText(content).then(() => {
-                showAppToast('Draft copied! Paste it into your email client.', 'success');
-            });
-        }
     </script>
 </body>
 </html>
