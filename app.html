@@ -685,6 +685,17 @@
         /* Upload row in version popup */
         .vpop-upload-row { display:flex; align-items:center; justify-content:space-between; padding:12px 4px 0; margin-top:8px; border-top:1px solid rgba(255,255,255,0.05); }
 
+        /* ── Artifact language badge ── */
+        .art-lang-badge { position:absolute; top:8px; left:8px; z-index:5; font-size:10px; font-weight:700; letter-spacing:0.05em; padding:2px 7px; border-radius:999px; pointer-events:none; backdrop-filter:blur(4px); }
+        .art-lang-html   { background:rgba(249,115,22,0.22); color:#fb923c; border:1px solid rgba(249,115,22,0.35); }
+        .art-lang-python { background:rgba(59,130,246,0.22); color:#60a5fa; border:1px solid rgba(59,130,246,0.35); }
+        .art-lang-js     { background:rgba(250,204,21,0.22); color:#fcd34d; border:1px solid rgba(250,204,21,0.35); }
+
+        /* ── Logo gradient swatches (account page) ── */
+        .logo-swatch { width:28px; height:28px; border-radius:8px; cursor:pointer; border:2px solid transparent; transition:transform 0.15s, box-shadow 0.15s; flex-shrink:0; }
+        .logo-swatch:hover { transform:scale(1.12); }
+        .logo-swatch.active { border-color:#fff; box-shadow:0 0 0 2px rgba(255,255,255,0.25); }
+
         /* ── Sidebar select mode ── */
         #sidebar-select-bar { display:none; }
         #sidebar-select-bar.visible { display:flex; }
@@ -1218,7 +1229,7 @@
         <!-- Sidebar tabs: Chat / Emails -->
         <div class="sidebar-tabs px-3">
             <button id="sidebar-tab-chat" class="sidebar-tab active" onclick="switchSidebarTab('chat')">Chat</button>
-            <button id="sidebar-tab-emails" class="sidebar-tab" onclick="switchSidebarTab('emails')">Emails</button>
+            <button id="sidebar-tab-emails" class="sidebar-tab" onclick="switchSidebarTab('emails')" style="display:flex;align-items:center;justify-content:center;gap:3px"><i data-lucide="mail" style="width:11px;height:11px;flex-shrink:0"></i>Email Writer</button>
         </div>
 
         <!-- Search -->
@@ -1278,7 +1289,7 @@
         <!-- User profile -->
         <div class="p-3 border-t border-white/5 shrink-0">
             <div class="flex items-center gap-2.5 bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 mb-1.5">
-                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shrink-0 shadow-md">
+                <div id="sidebar-user-avatar" class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-md transition-all duration-500" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">
                     <span id="user-initials" class="text-white text-xs font-bold"></span>
                 </div>
                 <div class="flex-1 min-w-0">
@@ -2424,17 +2435,27 @@
         <div class="max-w-xl mx-auto w-full px-5 pb-16 pt-6">
 
             <!-- Profile hero card -->
-            <div class="relative overflow-hidden rounded-2xl mb-5 border border-white/6 bg-gradient-to-br from-[#1a0f2e] via-[#110d1f] to-[#0d0d16] p-6">
-                <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(124,58,237,0.12),transparent_60%)]"></div>
+            <div id="account-hero-card" class="relative overflow-hidden rounded-2xl mb-3 border border-white/6 p-6 transition-all duration-500" style="background:linear-gradient(135deg,#1a0f2e,#110d1f,#0d0d16)">
+                <div id="account-hero-radial" class="absolute inset-0 transition-all duration-500" style="background:radial-gradient(ellipse at top right,rgba(124,58,237,0.12),transparent 60%)"></div>
                 <div class="relative flex items-center gap-4">
-                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-xl shadow-violet-900/40 shrink-0">
+                    <div id="account-logo-avatar" class="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl shrink-0 transition-all duration-500" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);box-shadow:0 12px 30px #4c1d9560">
                         <span id="account-initials" class="text-white text-2xl font-bold tracking-tight"></span>
                     </div>
                     <div class="min-w-0">
                         <h1 id="account-fullname" class="text-lg font-bold text-white truncate"></h1>
-                        <p id="account-email" class="text-violet-300/70 text-sm truncate mt-0.5"></p>
+                        <p id="account-email" class="text-gray-400 text-sm truncate mt-0.5"></p>
                     </div>
                 </div>
+            </div>
+            <!-- Logo color picker -->
+            <div class="account-section mb-5 py-3 px-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="palette" class="w-3.5 text-gray-500"></i>
+                        <span class="text-xs font-medium text-gray-400">Logo color</span>
+                    </div>
+                </div>
+                <div class="flex gap-2.5 flex-wrap" id="logo-swatches"></div>
             </div>
 
             <!-- Profile section -->
@@ -2677,6 +2698,7 @@
             if (canvasEnabled) document.getElementById('canvas-toggle-track').classList.add('on');
             if (presentationsEnabled) document.getElementById('pres-toggle-track').classList.add('on');
             updateUserUI();
+            applyLogoPreset(localStorage.getItem('clarity_logo_preset') || 'violet', false);
             // Fetch fresh profile so initials/name/2FA always reflect the latest DB data
             try {
                 const r = await fetch('/api/auth/user', { headers: authHeaders() });
@@ -3001,6 +3023,14 @@
                 if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); navigateSlide('next'); }
                 if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); navigateSlide('prev'); }
             }
+            // R to rerun code when the code runner is open (and not typing in an input)
+            if (document.getElementById('code-runner-page')?.classList.contains('cr-open')) {
+                const tag = document.activeElement?.tagName;
+                if ((e.key === 'r' || e.key === 'R') && tag !== 'INPUT' && tag !== 'TEXTAREA') {
+                    e.preventDefault();
+                    crRerun();
+                }
+            }
         });
 
         // ── Paste images (screenshots) ─────────────────────────────
@@ -3084,6 +3114,43 @@
             presentationsEnabled = !presentationsEnabled;
             localStorage.setItem('clarity_presentations', presentationsEnabled);
             document.getElementById('pres-toggle-track').classList.toggle('on', presentationsEnabled);
+        }
+
+        // ── Logo gradient presets ─────────────────────────────────
+        const LOGO_PRESETS = [
+            { id:'violet', logo:'linear-gradient(135deg,#7c3aed,#4f46e5)', shadow:'#4c1d9560', hero:'linear-gradient(135deg,#1a0f2e,#110d1f,#0d0d16)', radial:'rgba(124,58,237,0.12)', swatch:'#7c3aed' },
+            { id:'blue',   logo:'linear-gradient(135deg,#3b82f6,#0891b2)', shadow:'#1e3a8a60', hero:'linear-gradient(135deg,#0f1a2e,#0d1520,#0d0d0d)', radial:'rgba(59,130,246,0.12)',  swatch:'#3b82f6' },
+            { id:'green',  logo:'linear-gradient(135deg,#10b981,#0d9488)', shadow:'#064e3b60', hero:'linear-gradient(135deg,#0f2e1a,#0d2014,#0d0d0d)', radial:'rgba(16,185,129,0.12)', swatch:'#10b981' },
+            { id:'rose',   logo:'linear-gradient(135deg,#f43f5e,#e11d48)', shadow:'#88133760', hero:'linear-gradient(135deg,#2e0f1a,#200d14,#0d0d0d)', radial:'rgba(244,63,94,0.12)',  swatch:'#f43f5e' },
+            { id:'orange', logo:'linear-gradient(135deg,#f97316,#d97706)', shadow:'#7c2d1260', hero:'linear-gradient(135deg,#2e1a0f,#201408,#0d0d0d)', radial:'rgba(249,115,22,0.12)', swatch:'#f97316' },
+            { id:'pink',   logo:'linear-gradient(135deg,#ec4899,#a855f7)', shadow:'#83184360', hero:'linear-gradient(135deg,#2e0f25,#1f0d1a,#0d0d0d)', radial:'rgba(236,72,153,0.12)', swatch:'#ec4899' },
+        ];
+
+        function applyLogoPreset(id, save) {
+            const p = LOGO_PRESETS.find(x => x.id === id) || LOGO_PRESETS[0];
+            if (save) localStorage.setItem('clarity_logo_preset', p.id);
+            // Sidebar avatar
+            const sa = document.getElementById('sidebar-user-avatar');
+            if (sa) sa.style.background = p.logo;
+            // Account page hero
+            const hero = document.getElementById('account-hero-card');
+            if (hero) hero.style.background = p.hero;
+            const radial = document.getElementById('account-hero-radial');
+            if (radial) radial.style.background = `radial-gradient(ellipse at top right,${p.radial},transparent 60%)`;
+            const logo = document.getElementById('account-logo-avatar');
+            if (logo) { logo.style.background = p.logo; logo.style.boxShadow = `0 12px 30px ${p.shadow}`; }
+            // Update swatch active state
+            document.querySelectorAll('.logo-swatch').forEach(el => el.classList.toggle('active', el.dataset.id === p.id));
+        }
+
+        function buildLogoSwatches() {
+            const el = document.getElementById('logo-swatches');
+            if (!el) return;
+            const saved = localStorage.getItem('clarity_logo_preset') || 'violet';
+            el.innerHTML = LOGO_PRESETS.map(p => `
+                <button class="logo-swatch${p.id === saved ? ' active' : ''}" data-id="${p.id}"
+                    style="background:${p.logo}" title="${p.id.charAt(0).toUpperCase()+p.id.slice(1)}"
+                    onclick="applyLogoPreset('${p.id}', true)"></button>`).join('');
         }
 
         // ── Detect presentation intent in chat ────────────────────
@@ -4093,6 +4160,16 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 btn.textContent = 'Copied!';
                 setTimeout(() => btn.textContent = 'Copy', 2000);
             });
+        }
+
+        // ── Detect artifact code language from content ─────────────
+        function detectArtifactLang(code) {
+            if (!code) return null;
+            const t = code.trim();
+            if (/<!DOCTYPE|<html/i.test(t)) return 'HTML';
+            if (/^\s*(?:import\s+\w|from\s+\w+\s+import|\bdef\s+\w+\s*\(|\bclass\s+\w+.*:|\bprint\s*\()/m.test(t)) return 'Python';
+            if (/^\s*(?:function\s+\w+|const\s+\w|let\s+\w|var\s+\w|.*=>|console\.)/m.test(t)) return 'JavaScript';
+            return null;
         }
 
         // ── Language label + runnability helpers ──────────────────
@@ -5750,6 +5827,11 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             document.getElementById('account-lname').value             = currentUser.last_name  || '';
             document.getElementById('account-email-input').value       = currentUser.email || '';
 
+            // Apply logo preset and build swatches
+            const savedPreset = localStorage.getItem('clarity_logo_preset') || 'violet';
+            buildLogoSwatches();
+            applyLogoPreset(savedPreset, false);
+
             const track = document.getElementById('twofa-track');
             const label = document.getElementById('twofa-label');
             if (currentUser.two_fa_enabled) {
@@ -6602,8 +6684,11 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                         </button>`;
                 }
                 const privateBadge = a.is_private ? '<span style="font-size:0.6rem;color:#a78bfa;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);border-radius:4px;padding:1px 5px;margin-left:4px">Private</span>' : '';
+                const artLang = detectArtifactLang(a.code);
+                const artLangBadge = artLang ? `<div class="art-lang-badge art-lang-${artLang.toLowerCase()}">${artLang}</div>` : '';
                 return `
-                <div class="artifact-card" onclick='openArtifactViewer(${JSON.stringify(a)})'>
+                <div class="artifact-card" style="position:relative" onclick='openArtifactViewer(${JSON.stringify(a)})'>
+                    ${artLangBadge}
                     <div class="artifact-card-overlay">${viewBtn}${extraBtns}</div>
                     <div class="artifact-thumb" id="art-grid-thumb-${idx}">
                     </div>
@@ -6814,24 +6899,46 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                         <i data-lucide="play" class="w-3"></i> Use Artifact
                     </button>`;
             }
+            // Detect language and add Run button for Python/JS artifacts
+            const avLang = detectArtifactLang(artifactData.code);
+            if (avLang === 'Python' || avLang === 'JavaScript') {
+                const langColor = avLang === 'Python' ? 'text-blue-400 bg-blue-900/20 border-blue-700/30' : 'text-yellow-400 bg-yellow-900/20 border-yellow-700/30';
+                actionBtns += `<button class="flex items-center gap-1.5 px-2.5 py-1.5 border rounded-lg text-xs font-medium transition-colors ${langColor} hover:opacity-80"
+                    onclick="startCodeRunner(currentViewerArtifact?.code||'',${JSON.stringify(avLang.toLowerCase())})">
+                    <i data-lucide="play" class="w-3"></i> Run
+                </button>`;
+            }
+
             // Inject action buttons into the dedicated slot
             document.getElementById('artifact-viewer-action-btns').innerHTML = actionBtns;
 
             const iframe = document.getElementById('artifact-viewer-iframe');
-            // After the iframe renders, capture a snapshot for sidebar thumbnails
             iframe.onload = () => {
                 const id = artifactData.id;
                 if (!localStorage.getItem('art_snap_' + id)) {
                     setTimeout(() => captureArtifactSnapshot(iframe, id), 1500);
                 }
             };
+
+            function setArtifactIframeSrc(code) {
+                const lang = detectArtifactLang(code);
+                if (lang === 'Python' || lang === 'JavaScript') {
+                    // Show styled code view instead of executing
+                    const esc = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                    const badge = lang === 'Python' ? '#60a5fa' : '#fcd34d';
+                    iframe.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0d0d0d;color:#d4d4d4;font-family:'SF Mono','Fira Code',Menlo,monospace;font-size:13px;line-height:1.7;padding:1.5rem}pre{white-space:pre-wrap;word-break:break-word}.badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;padding:2px 8px;border-radius:999px;margin-bottom:1rem;color:${badge};border:1px solid ${badge}40;background:${badge}18}</style></head><body><div class="badge">${lang}</div><pre>${esc}</pre></body></html>`;
+                } else {
+                    iframe.srcdoc = code;
+                }
+            }
+
             if (artifactData.code) {
-                iframe.srcdoc = artifactData.code;
+                setArtifactIframeSrc(artifactData.code);
             } else {
                 iframe.srcdoc = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a0a;color:#6b7280;font-family:sans-serif;font-size:0.9rem">Loading\u2026</div>';
                 fetch('/api/artifacts?id=' + encodeURIComponent(artifactData.id))
                     .then(r => r.json())
-                    .then(data => { if (data && data.code) { iframe.srcdoc = data.code; currentViewerArtifact = data; } })
+                    .then(data => { if (data && data.code) { setArtifactIframeSrc(data.code); currentViewerArtifact = data; } })
                     .catch(() => {});
             }
             const modal = document.getElementById('artifact-viewer-modal');
