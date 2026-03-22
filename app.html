@@ -1229,7 +1229,7 @@
         <!-- Sidebar tabs: Chat / Emails -->
         <div class="sidebar-tabs px-3">
             <button id="sidebar-tab-chat" class="sidebar-tab active" onclick="switchSidebarTab('chat')">Chat</button>
-            <button id="sidebar-tab-emails" class="sidebar-tab" onclick="switchSidebarTab('emails')" style="display:flex;align-items:center;justify-content:center;gap:3px"><i data-lucide="mail" style="width:11px;height:11px;flex-shrink:0"></i>Email Writer</button>
+            <button id="sidebar-tab-emails" class="sidebar-tab" onclick="switchSidebarTab('emails')">Emails</button>
         </div>
 
         <!-- Search -->
@@ -1455,10 +1455,11 @@
         <div id="gmail-popup-section" class="border-t border-white/5 pt-3 mt-3 px-1 flex items-center justify-between">
             <div>
                 <div class="flex items-center gap-2">
-                    <p class="text-xs font-medium text-white">Gmail</p>
+                    <i data-lucide="mail" class="w-3.5 text-violet-400"></i>
+                    <p class="text-xs font-medium text-white">Email Writer</p>
                     <span id="gmail-status-badge" class="gmail-status-pill disconnected">Not connected</span>
                 </div>
-                <p class="text-[10px] text-gray-500 mt-0.5">Connect your Gmail account</p>
+                <p class="text-[10px] text-gray-500 mt-0.5">Connect Gmail to compose &amp; send</p>
             </div>
             <button id="gmail-popup-btn" onclick="handleGmailPopupAction()" class="text-[10px] font-medium text-violet-400 hover:text-violet-300 bg-violet-950/40 hover:bg-violet-950/60 border border-violet-800/30 px-2.5 py-1 rounded-lg transition-all cursor-pointer">
                 Connect
