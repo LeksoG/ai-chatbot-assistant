@@ -41,7 +41,45 @@
         body.canvas-open #scroll-to-bottom { left:24%; }
 
         /* ── Sidebar ── */
-        #sidebar { transition:transform 0.5s cubic-bezier(0.4,0,0.2,1); }
+        #sidebar {
+            transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-radius 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #sidebar.sidebar-open {
+            border-top-right-radius: 40px;
+            border-bottom-right-radius: 40px;
+        }
+        .sidebar-edge-glow {
+            position:absolute; top:0; right:0; width:1px; height:100%; z-index:5; pointer-events:none;
+            background:linear-gradient(to bottom, transparent, rgba(255,255,255,0.4), transparent);
+            box-shadow:0 0 15px 1px rgba(255,255,255,0.3);
+            opacity:0; transition:opacity 1s ease;
+        }
+        #sidebar.sidebar-open .sidebar-edge-glow { opacity:1; }
+        /* Liquid hover effect */
+        .sb-btn {
+            position:relative; z-index:1; transition:transform 0.2s ease;
+        }
+        .sb-btn::before {
+            content:''; position:absolute; inset:0;
+            background:rgba(255,255,255,0.06); border-radius:inherit;
+            z-index:-1; opacity:0; transform:scale(0.85);
+            transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease;
+        }
+        .sb-btn:hover::before { opacity:1; transform:scale(1); }
+        .sb-btn:active { transform:scale(0.96); }
+        /* Staggered item animation */
+        .history-item {
+            opacity:0; transform:translateX(-20px);
+            transition:opacity 0.7s cubic-bezier(0.23,1,0.32,1),
+                        transform 0.7s cubic-bezier(0.23,1,0.32,1),
+                        background 0.13s;
+            border-radius:10px; margin-bottom:2px;
+        }
+        #sidebar.sidebar-open .history-item { opacity:1; transform:translateX(0); }
+        /* Hamburger toggle */
+        #sidebar-menu-btn { transition:opacity 0.3s ease; }
+        #sidebar-menu-btn.sb-hidden { opacity:0; pointer-events:none; }
 
         /* ── Markdown ── */
         .ai-response { line-height:1.75; }
@@ -128,7 +166,6 @@
         #sidebar-select-bar { display:none; }
         #sidebar-select-bar.visible { display:flex; }
         .conv-checkbox { width:14px; height:14px; accent-color:#7c3aed; cursor:pointer; flex-shrink:0; margin-right:2px; }
-        .history-item { border-radius:10px; transition:background 0.13s; margin-bottom:2px; }
         .history-item.selected { background:rgba(124,58,237,0.12) !important; border-color:rgba(124,58,237,0.25) !important; }
         .history-item-active { background:rgba(255,255,255,0.06); border-left:2px solid rgba(124,58,237,0.6); }
 
@@ -197,11 +234,10 @@
         .diff-highlight-line { background: rgba(59, 130, 246, 0.15) !important; }
         .diff-glyph { border-left: 3px solid #3b82f6 !important; margin-left: 3px; }
 
-        /* ── Sidebar tabs (Chat / Presentations) ── */
-        .sidebar-tabs { display:flex; border-bottom:1px solid rgba(255,255,255,0.05); flex-shrink:0; }
-        .sidebar-tab { flex:1; padding:0.6rem 0; font-size:0.7rem; font-weight:500; text-align:center; color:#6b7280; cursor:pointer; border-bottom:2px solid transparent; transition:color 0.15s, border-color 0.15s; }
-        .sidebar-tab.active { color:#fff; border-bottom-color:#7c3aed; }
-        .sidebar-tab:hover:not(.active) { color:#d1d5db; }
+        /* ── Sidebar section label ── */
+        .sb-section-label { font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#4b5563; padding:0 4px; }
+        .custom-sb-scroll::-webkit-scrollbar { width:3px; }
+        .custom-sb-scroll::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.05); border-radius:10px; }
         /* ── Presentation sidebar card ── */
         .pres-card { display:flex; align-items:center; gap:0.65rem; padding:0.6rem 0.75rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:0.75rem; cursor:pointer; transition:all 0.15s; margin-bottom:0.4rem; }
         .pres-card:hover { background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.12); }
@@ -615,111 +651,96 @@
     </svg>
 
     <!-- Sidebar overlay -->
-    <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 opacity-0 pointer-events-none transition-opacity duration-500" onclick="toggleSidebar(false)"></div>
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 opacity-0 pointer-events-none transition-opacity duration-700" onclick="toggleSidebar(false)"></div>
 
     <!-- Sidebar -->
-    <div id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-[#0d0d0d] z-50 border-r border-white/5 -translate-x-full flex flex-col">
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-full md:w-[380px] bg-[#0a0a0a] z-50 -translate-x-full flex flex-col shadow-2xl overflow-hidden">
+
+        <!-- Edge glow -->
+        <div class="sidebar-edge-glow"></div>
 
         <!-- Header -->
-        <div class="p-5 flex justify-between items-center border-b border-white/5 shrink-0">
-            <div class="flex items-center gap-2">
-                <svg class="w-7 h-7" viewBox="-15 -15 130 130">
-                    <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
-                    <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
-                    <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
-                </svg>
-                <span class="font-bold text-white text-sm tracking-tight">Clarity AI</span>
-            </div>
-            <button onclick="toggleSidebar(false)" class="p-1.5 hover:bg-white/5 rounded-lg transition-colors">
-                <i data-lucide="x" class="w-4 text-gray-400"></i>
-            </button>
-        </div>
-
-        <!-- New conversation -->
-        <div class="p-3 pb-1.5 shrink-0">
-            <button onclick="newConversation()" class="w-full flex items-center gap-2.5 p-3 bg-white/5 hover:bg-white/10 rounded-xl text-sm text-gray-300 transition-colors border border-white/5 group">
-                <i data-lucide="plus" class="w-4 group-hover:text-violet-400 transition-colors"></i>
-                <span>New Conversation</span>
-            </button>
-        </div>
-
-        <!-- Artifacts shortcut -->
-        <div class="px-3 pb-1.5 shrink-0">
-            <button onclick="openArtifactsPage()" class="w-full flex items-center justify-between gap-2.5 p-2.5 bg-white/[0.03] hover:bg-white/[0.07] rounded-xl text-sm text-gray-400 hover:text-gray-200 transition-all border border-white/5 hover:border-white/10 group">
+        <div class="p-6 space-y-4 shrink-0">
+            <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-2.5">
-                    <i data-lucide="box" class="w-4 text-violet-400 group-hover:text-violet-300 transition-colors"></i>
-                    <span class="text-xs font-medium">User Artifacts</span>
+                    <svg class="w-7 h-7" viewBox="-15 -15 130 130">
+                        <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
+                        <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
+                        <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
+                    </svg>
+                    <span class="font-bold text-white text-[17px] tracking-tight">Clarity AI</span>
                 </div>
-                <i data-lucide="arrow-right" class="w-3.5 text-gray-600 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all"></i>
+                <button onclick="toggleSidebar(false)" class="p-2 hover:bg-white/5 rounded-full transition-colors">
+                    <i data-lucide="x" class="w-5 text-white/40"></i>
+                </button>
+            </div>
+            <button onclick="newConversation()" class="sb-btn w-full bg-[#161616] border border-white/5 p-4 rounded-2xl flex items-center gap-3 group">
+                <i data-lucide="plus" class="w-4 text-white group-hover:scale-110 transition-transform"></i>
+                <span class="font-medium text-[15px]">New Conversation</span>
+            </button>
+            <button onclick="openArtifactsPage()" class="sb-btn w-full bg-[#161616] border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="box" class="w-4 text-white/60"></i>
+                    <span class="font-medium text-[15px]">User Artifacts</span>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 text-white/20"></i>
             </button>
         </div>
 
-        <!-- Sidebar tabs: Chat / Emails -->
-        <div class="sidebar-tabs px-3">
-            <button id="sidebar-tab-chat" class="sidebar-tab active" onclick="switchSidebarTab('chat')">Chat</button>
-        </div>
-
-        <!-- Search -->
-        <div class="px-3 pt-2 pb-1 shrink-0">
-            <div class="relative">
-                <i data-lucide="search" class="w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none"></i>
+        <!-- Search + section label -->
+        <div class="px-6 pb-3 shrink-0">
+            <div class="relative mb-4">
+                <i data-lucide="search" class="w-3.5 absolute left-4 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none"></i>
                 <input id="sidebar-search" type="text" placeholder="Search conversations…"
                     autocomplete="off" spellcheck="false"
-                    class="w-full bg-white/5 border border-white/5 rounded-xl pl-9 pr-3 py-2 text-sm text-gray-300 placeholder-gray-600 outline-none focus:border-violet-600/40 focus:bg-white/8 transition-all"
+                    class="w-full bg-[#111] border border-white/5 rounded-xl pl-11 pr-4 py-3 text-[13px] text-gray-300 placeholder:text-white/20 outline-none focus:border-white/20 transition-all"
                     oninput="filterSidebarContent(this.value)">
+            </div>
+            <div class="flex items-center justify-between px-1">
+                <span id="history-label" class="sb-section-label">Recent</span>
+                <button id="sidebar-select-btn" onclick="toggleSidebarSelectMode()" class="text-[10px] text-gray-500 hover:text-gray-300 font-medium transition-colors px-1.5 py-0.5 rounded-md hover:bg-white/5">Select</button>
             </div>
         </div>
 
-        <!-- Conversation history (Chat tab) -->
-        <div id="sidebar-chat-panel" class="px-3 flex-1 overflow-y-auto min-h-0">
-            <div class="flex items-center justify-between px-1 mb-1.5">
-                <p id="history-label" class="text-[10px] text-gray-600 uppercase tracking-widest">Recent</p>
-                <button id="sidebar-select-btn" onclick="toggleSidebarSelectMode()" class="text-[10px] text-gray-500 hover:text-gray-300 font-medium transition-colors px-1.5 py-0.5 rounded-md hover:bg-white/5">Select</button>
+        <!-- Select-mode action bar -->
+        <div id="sidebar-select-bar" class="hidden items-center justify-between mb-2 px-6">
+            <span id="sidebar-select-count" class="text-[10px] text-gray-500">0 selected</span>
+            <div class="flex gap-1.5">
+                <button onclick="deleteSelectedConversations()" id="sidebar-delete-selected-btn" class="text-[10px] text-red-400 hover:text-red-300 font-medium px-2 py-0.5 rounded-md bg-red-950/30 hover:bg-red-950/50 border border-red-900/30 transition-colors disabled:opacity-40" disabled>Delete</button>
+                <button onclick="toggleSidebarSelectMode()" class="text-[10px] text-gray-500 hover:text-gray-300 px-1.5 py-0.5 rounded-md hover:bg-white/5 transition-colors">Cancel</button>
             </div>
-            <!-- select-mode action bar (hidden until selection active) -->
-            <div id="sidebar-select-bar" class="hidden flex items-center justify-between mb-2 px-1">
-                <span id="sidebar-select-count" class="text-[10px] text-gray-500">0 selected</span>
-                <div class="flex gap-1.5">
-                    <button onclick="deleteSelectedConversations()" id="sidebar-delete-selected-btn" class="text-[10px] text-red-400 hover:text-red-300 font-medium px-2 py-0.5 rounded-md bg-red-950/30 hover:bg-red-950/50 border border-red-900/30 transition-colors disabled:opacity-40" disabled>Delete</button>
-                    <button onclick="toggleSidebarSelectMode()" class="text-[10px] text-gray-500 hover:text-gray-300 px-1.5 py-0.5 rounded-md hover:bg-white/5 transition-colors">Cancel</button>
-                </div>
-            </div>
-            <div id="history-list">
+        </div>
+
+        <!-- Conversation history -->
+        <div id="sidebar-chat-panel" class="px-4 flex-1 overflow-y-auto min-h-0 custom-sb-scroll">
+            <div id="history-list" class="space-y-0.5">
                 <div class="p-3 text-gray-600 text-sm text-center">No history yet</div>
             </div>
         </div>
 
-        <!-- Artifacts list (Artifacts tab — hidden by default) -->
-        <div id="sidebar-artifacts-panel" class="px-3 flex-1 overflow-y-auto min-h-0 hidden">
-            <div class="flex items-center justify-between px-1 mb-2">
-                <p class="text-[10px] text-gray-600 uppercase tracking-widest">Artifacts</p>
-            </div>
-            <div id="sidebar-artifacts-list">
-                <div class="p-3 text-gray-600 text-sm text-center">No artifacts yet</div>
-            </div>
-        </div>
-
-        <!-- User profile -->
-        <div class="p-3 border-t border-white/5 shrink-0">
-            <div class="flex items-center gap-2.5 bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 mb-1.5">
-                <div id="sidebar-user-avatar" class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-md transition-all duration-500" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">
-                    <span id="user-initials" class="text-white text-xs font-bold"></span>
+        <!-- User footer -->
+        <div class="p-4 bg-[#080808] border-t border-white/5 space-y-2 shrink-0">
+            <div class="sb-btn bg-[#121212] p-3 rounded-2xl border border-white/10 flex items-center gap-3 cursor-pointer" onclick="openAccountPage()">
+                <div id="sidebar-user-avatar" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg transition-all duration-500" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">
+                    <span id="user-initials" class="text-white text-sm font-bold"></span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p id="user-display-name" class="text-sm text-white font-medium truncate"></p>
-                    <p id="user-email-display" class="text-xs text-gray-500 truncate"></p>
+                    <p id="user-display-name" class="text-[14px] font-bold text-white truncate"></p>
+                    <p id="user-email-display" class="text-[11px] text-white/40 truncate"></p>
                 </div>
             </div>
-            <button onclick="openAccountPage()" class="sidebar-manage-btn">
+            <button onclick="openAccountPage()" class="sb-btn w-full p-2.5 flex items-center justify-center gap-2 text-[13px] font-medium text-white/40 hover:text-white/80 transition-colors">
                 <i data-lucide="settings" class="w-3.5"></i>
                 Manage account
             </button>
         </div>
     </div>
 
-    <!-- Menu button -->
-    <button onclick="toggleSidebar(true)" class="fixed top-6 left-6 z-30 p-2.5 hover:bg-white/10 rounded-xl transition-all active:scale-90 bg-white/5 border border-white/5">
-        <i data-lucide="panel-left" class="text-gray-300 w-[22px]"></i>
+    <!-- Hamburger menu button -->
+    <button id="sidebar-menu-btn" onclick="toggleSidebar(true)" class="fixed top-7 left-7 z-30 w-12 h-12 flex flex-col items-center justify-center gap-[5px] transition-all active:scale-90">
+        <span class="w-6 h-0.5 bg-white rounded-full block"></span>
+        <span class="w-6 h-0.5 bg-white rounded-full block"></span>
+        <span class="w-6 h-0.5 bg-white rounded-full block"></span>
     </button>
 
     <!-- Top brand — full-width sectioned header, shown after first message -->
@@ -2148,15 +2169,20 @@
         function toggleSidebar(open) {
             const sb = document.getElementById('sidebar');
             const ov = document.getElementById('sidebar-overlay');
+            const btn = document.getElementById('sidebar-menu-btn');
             document.body.classList.toggle('sidebar-open', open);
             if (open) {
                 sb.classList.remove('-translate-x-full');
+                sb.classList.add('sidebar-open');
                 ov.classList.remove('opacity-0','pointer-events-none');
                 ov.classList.add('opacity-100');
+                if (btn) btn.classList.add('sb-hidden');
             } else {
                 sb.classList.add('-translate-x-full');
+                sb.classList.remove('sidebar-open');
                 ov.classList.add('opacity-0','pointer-events-none');
                 ov.classList.remove('opacity-100');
+                if (btn) btn.classList.remove('sb-hidden');
             }
         }
 
@@ -3560,27 +3586,8 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             renderConversationList(filtered);
         }
 
-        // ── Sidebar tabs ───────────────────────────────────────────
-        let activeSidebarTab = 'chat';
-        function switchSidebarTab(tab) {
-            activeSidebarTab = tab;
-            document.getElementById('sidebar-tab-chat').classList.toggle('active', tab === 'chat');
-            document.getElementById('sidebar-chat-panel').classList.toggle('hidden', tab !== 'chat');
-            const searchInput = document.getElementById('sidebar-search');
-            searchInput.placeholder = 'Search conversations\u2026';
-            searchInput.value = '';
-        }
-
         function filterSidebarContent(query) {
-            if (activeSidebarTab === 'chat') {
-                filterConversations(query);
-            } else if (activeSidebarTab === 'presentations') {
-                filterPresentations(query);
-            } else if (activeSidebarTab === 'emails') {
-                filterEmailConversations(query);
-            } else {
-                filterArtifactsSidebar(query);
-            }
+            filterConversations(query);
         }
 
         // ── Presentations state ──────────────────────────────────
@@ -4826,26 +4833,27 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 return;
             }
             const isActive = id => activeConversationId === id;
-            list.innerHTML = convs.map(c => {
+            list.innerHTML = convs.map((c, idx) => {
                 const safe  = escapeHtml(c.title);
                 const safej = safe.replace(/'/g,"\\'");
+                const delay = `style="transition-delay:${0.05 + idx * 0.025}s"`;
                 if (sidebarSelectMode) {
                     const checked = selectedConvIds.has(c.id);
                     return `
                         <div class="history-item flex items-center gap-2.5 px-2 py-2 cursor-pointer hover:bg-white/5 ${checked ? 'selected' : ''}"
-                             data-id="${c.id}" onclick="toggleConvSelection('${c.id}')">
+                             data-id="${c.id}" onclick="toggleConvSelection('${c.id}')" ${delay}>
                             <input type="checkbox" class="conv-checkbox" ${checked ? 'checked' : ''}
                                 onclick="event.stopPropagation();toggleConvSelection('${c.id}')">
                             <i data-lucide="message-square" class="w-3.5 shrink-0 text-gray-600"></i>
-                            <span class="text-sm text-gray-400 truncate flex-1">${safe}</span>
+                            <span class="text-[14px] text-gray-400 truncate flex-1 font-light">${safe}</span>
                         </div>`;
                 }
                 return `
                     <div class="history-item group relative flex items-center hover:bg-white/5 ${isActive(c.id) ? 'history-item-active' : ''}"
-                         data-id="${c.id}">
-                        <button onclick="loadConversation('${c.id}')" class="flex-1 text-left flex items-center gap-2.5 px-2.5 py-2.5 min-w-0">
-                            <i data-lucide="message-square" class="w-3.5 shrink-0 ${isActive(c.id) ? 'text-violet-400' : 'text-gray-600 group-hover:text-gray-400'} transition-colors"></i>
-                            <span class="text-sm ${isActive(c.id) ? 'text-gray-200' : 'text-gray-400 group-hover:text-gray-200'} transition-colors truncate">${safe}</span>
+                         data-id="${c.id}" ${delay}>
+                        <button onclick="loadConversation('${c.id}')" class="flex-1 text-left flex items-center gap-3 px-2.5 py-2.5 min-w-0">
+                            <i data-lucide="message-square" class="w-3.5 shrink-0 ${isActive(c.id) ? 'text-violet-400' : 'text-white/10 group-hover:text-white/40'} transition-colors"></i>
+                            <span class="text-[14px] ${isActive(c.id) ? 'text-gray-200' : 'text-white/60 group-hover:text-white'} transition-colors truncate font-light">${safe}</span>
                         </button>
                         <div class="flex gap-0.5 pr-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                             <button onclick="openRenameModal('${c.id}','${safej}')"
