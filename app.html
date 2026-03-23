@@ -98,6 +98,20 @@
         /* ── Greeting typing cursor ── */
         .greeting-cursor { display:inline-block; width:2px; height:1.1em; background:#a78bfa; margin-left:1px; vertical-align:text-bottom; border-radius:1px; animation:blink 0.65s step-end infinite; }
 
+        /* ── Suggestion card cycling animations ── */
+        .sc-content-wrap { position:relative; flex-grow:1; height:22px; display:flex; align-items:center; }
+        .sc-text { white-space:nowrap; position:absolute; left:0; }
+        .sc-vanish { animation:scVanish 0.8s forwards ease-out; }
+        .sc-appear { animation:scAppear 0.6s forwards ease-in; }
+        @keyframes scVanish {
+            0%   { opacity:1; filter:blur(0px); transform:scale(1) translateY(0); }
+            100% { opacity:0; filter:blur(15px) brightness(2); transform:scale(1.1) translateY(-10px); letter-spacing:4px; }
+        }
+        @keyframes scAppear {
+            0%   { opacity:0; transform:translateY(10px); filter:blur(5px); }
+            100% { opacity:1; transform:translateY(0); filter:blur(0); }
+        }
+
         /* ── Email Mode ── */
         #email-overlay { position:fixed; inset:0; z-index:60; background:var(--bg); display:none; flex-direction:column; align-items:center; overflow:hidden; }
         #email-overlay.email-active { display:flex; }
@@ -696,6 +710,13 @@
         .logo-swatch { width:28px; height:28px; border-radius:8px; cursor:pointer; border:2px solid transparent; transition:transform 0.15s, box-shadow 0.15s; flex-shrink:0; }
         .logo-swatch:hover { transform:scale(1.12); }
         .logo-swatch.active { border-color:#fff; box-shadow:0 0 0 2px rgba(255,255,255,0.25); }
+        /* ── Customize pill button ── */
+        .customize-pill-btn { position:absolute; top:12px; right:12px; z-index:5; display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:600; color:#c4b5fd; background:rgba(124,58,237,0.12); border:1px solid rgba(124,58,237,0.3); border-radius:999px; padding:4px 12px; cursor:pointer; transition:all 0.15s; }
+        .customize-pill-btn:hover { background:rgba(124,58,237,0.22); border-color:rgba(124,58,237,0.5); color:#ddd6fe; }
+        /* ── Color customize popup ── */
+        .color-customize-popup { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); backdrop-filter:blur(6px); }
+        .color-customize-popup.hidden { display:none; }
+        .color-customize-inner { background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:1rem; padding:1.5rem; width:90%; max-width:340px; box-shadow:0 24px 60px rgba(0,0,0,0.5); }
 
         /* ── Sidebar select mode ── */
         #sidebar-select-bar { display:none; }
@@ -1352,35 +1373,43 @@
             </p>
         </div>
 
-        <!-- Suggestion cards -->
-        <div class="hide-on-start grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl mb-12">
-            <button onclick="fillInput('Help me write a professional email')"
+        <!-- Suggestion cards (cycling) -->
+        <div class="hide-on-start grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl mb-12" id="suggestion-cards-grid">
+            <button id="sc-card-0" onclick="fillInput(scGetCurrentText(0))"
                 class="flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group">
-                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
+                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform" id="sc-icon-0">
                     <i data-lucide="pen-line" class="text-blue-400 w-5"></i>
                 </div>
-                <span class="text-gray-300 font-medium">Help me write a professional email</span>
+                <div class="sc-content-wrap">
+                    <span class="sc-text text-gray-300 font-medium" id="sc-text-0">Help me write a professional email</span>
+                </div>
             </button>
-            <button onclick="fillInput('Brainstorm creative project ideas')"
+            <button id="sc-card-1" onclick="fillInput(scGetCurrentText(1))"
                 class="flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group">
-                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
+                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform" id="sc-icon-1">
                     <i data-lucide="lightbulb" class="text-yellow-400 w-5"></i>
                 </div>
-                <span class="text-gray-300 font-medium">Brainstorm creative project ideas</span>
+                <div class="sc-content-wrap">
+                    <span class="sc-text text-gray-300 font-medium" id="sc-text-1">Brainstorm creative project ideas</span>
+                </div>
             </button>
-            <button onclick="fillInput('Explain a complex topic simply')"
+            <button id="sc-card-2" onclick="fillInput(scGetCurrentText(2))"
                 class="flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group">
-                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
+                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform" id="sc-icon-2">
                     <i data-lucide="book-open" class="text-green-400 w-5"></i>
                 </div>
-                <span class="text-gray-300 font-medium">Explain a complex topic simply</span>
+                <div class="sc-content-wrap">
+                    <span class="sc-text text-gray-300 font-medium" id="sc-text-2">Explain a complex topic simply</span>
+                </div>
             </button>
-            <button onclick="fillInput('Debug and fix my code')"
+            <button id="sc-card-3" onclick="fillInput(scGetCurrentText(3))"
                 class="flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group">
-                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">
+                <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform" id="sc-icon-3">
                     <i data-lucide="code" class="text-purple-400 w-5"></i>
                 </div>
-                <span class="text-gray-300 font-medium">Debug and fix my code</span>
+                <div class="sc-content-wrap">
+                    <span class="sc-text text-gray-300 font-medium" id="sc-text-3">Debug and fix my code</span>
+                </div>
             </button>
         </div>
 
@@ -1454,15 +1483,12 @@
         </div>
         <!-- Gmail Connection -->
         <div id="gmail-popup-section" class="border-t border-white/5 pt-3 mt-3 px-1 flex items-center justify-between">
-            <div>
-                <div class="flex items-center gap-2">
-                    <i data-lucide="mail" class="w-3.5 text-violet-400"></i>
-                    <p class="text-xs font-medium text-white">Email Writer</p>
-                    <span id="gmail-status-badge" class="gmail-status-pill disconnected">Not connected</span>
-                </div>
-                <p class="text-[10px] text-gray-500 mt-0.5">Connect Gmail to compose &amp; send</p>
+            <div class="flex items-center gap-2 min-w-0">
+                <i data-lucide="mail" class="w-3.5 text-violet-400 shrink-0"></i>
+                <p class="text-xs font-medium text-white whitespace-nowrap">Email Writer</p>
+                <span id="gmail-status-badge" class="gmail-status-pill disconnected">Not connected</span>
             </div>
-            <button id="gmail-popup-btn" onclick="handleGmailPopupAction()" class="text-[10px] font-medium text-violet-400 hover:text-violet-300 bg-violet-950/40 hover:bg-violet-950/60 border border-violet-800/30 px-2.5 py-1 rounded-lg transition-all cursor-pointer">
+            <button id="gmail-popup-btn" onclick="handleGmailPopupAction()" class="text-[10px] font-medium text-violet-400 hover:text-violet-300 bg-violet-950/40 hover:bg-violet-950/60 border border-violet-800/30 px-2.5 py-1 rounded-lg transition-all cursor-pointer shrink-0 ml-2">
                 Connect
             </button>
         </div>
@@ -2440,6 +2466,9 @@
             <div id="account-hero-card" class="relative overflow-hidden rounded-2xl mb-3 border border-white/6 p-6 transition-all duration-500" style="background:linear-gradient(135deg,#1a0f2e,#110d1f,#0d0d16)">
                 <div id="account-hero-radial" class="absolute inset-0 transition-all duration-500" style="background:radial-gradient(ellipse at top right,rgba(124,58,237,0.12),transparent 60%)"></div>
                 <div class="relative flex items-center gap-4">
+                    <button onclick="openColorCustomizePopup()" class="customize-pill-btn" title="Customize colors">
+                        <i data-lucide="palette" class="w-3"></i> Customize
+                    </button>
                     <div id="account-logo-avatar" class="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl shrink-0 transition-all duration-500" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);box-shadow:0 12px 30px #4c1d9560">
                         <span id="account-initials" class="text-white text-2xl font-bold tracking-tight"></span>
                     </div>
@@ -2449,15 +2478,20 @@
                     </div>
                 </div>
             </div>
-            <!-- Logo color picker -->
-            <div class="account-section mb-5 py-3 px-4">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="palette" class="w-3.5 text-gray-500"></i>
-                        <span class="text-xs font-medium text-gray-400">Logo color</span>
+
+            <!-- Color customize popup (hidden by default) -->
+            <div id="color-customize-popup" class="color-customize-popup hidden">
+                <div class="color-customize-inner">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="palette" class="w-4 text-gray-400"></i>
+                        <span class="text-sm font-semibold text-white">Logo Color</span>
+                    </div>
+                    <div class="flex gap-2.5 flex-wrap mb-5" id="logo-swatches"></div>
+                    <div class="flex justify-end gap-2">
+                        <button onclick="cancelColorCustomize()" class="account-btn">Cancel</button>
+                        <button onclick="saveColorCustomize()" class="account-btn primary">Save</button>
                     </div>
                 </div>
-                <div class="flex gap-2.5 flex-wrap" id="logo-swatches"></div>
             </div>
 
             <!-- Profile section -->
@@ -2724,6 +2758,7 @@
             // No in-app 2FA gate — users who are already signed in are not prompted again.
             loadConversations();
             runGreeting();
+            startSuggestionCycle();
             // Gate features behind update and show update banner if needed
             initGatedFeatures();
             checkSplash();
@@ -2822,6 +2857,65 @@
                 }
                 await sleep(300);
             }
+        }
+
+        // ── Suggestion card cycling ───────────────────────────────
+        const scCardData = [
+            [
+                { text: "Help me write a professional email", color: "text-blue-400", icon: "pen-line" },
+                { text: "Draft a resignation letter", color: "text-blue-300", icon: "mail" },
+                { text: "Refine my project proposal", color: "text-blue-200", icon: "file-text" }
+            ],
+            [
+                { text: "Brainstorm creative project ideas", color: "text-yellow-400", icon: "lightbulb" },
+                { text: "Plan a YouTube script", color: "text-yellow-300", icon: "video" },
+                { text: "Design a new logo concept", color: "text-yellow-200", icon: "circle-plus" }
+            ],
+            [
+                { text: "Explain a complex topic simply", color: "text-green-400", icon: "book-open" },
+                { text: "Summarize this long article", color: "text-green-300", icon: "message-square" },
+                { text: "Teach me how quantum physics works", color: "text-green-200", icon: "atom" }
+            ],
+            [
+                { text: "Debug and fix my code", color: "text-purple-400", icon: "code" },
+                { text: "Optimize my SQL query", color: "text-purple-300", icon: "database" },
+                { text: "Translate Python to JavaScript", color: "text-purple-200", icon: "languages" }
+            ]
+        ];
+        let scIndexes = [0, 0, 0, 0];
+        let scCycleTimer = null;
+
+        function scGetCurrentText(i) {
+            return scCardData[i][scIndexes[i]].text;
+        }
+
+        function scCycleCards() {
+            for (let i = 0; i < 4; i++) {
+                const textEl = document.getElementById('sc-text-' + i);
+                const iconBox = document.getElementById('sc-icon-' + i);
+                if (!textEl || !iconBox) continue;
+                textEl.classList.remove('sc-appear');
+                textEl.classList.add('sc-vanish');
+                ((idx) => {
+                    setTimeout(() => {
+                        scIndexes[idx] = (scIndexes[idx] + 1) % scCardData[idx].length;
+                        const next = scCardData[idx][scIndexes[idx]];
+                        textEl.textContent = next.text;
+                        iconBox.innerHTML = `<i data-lucide="${next.icon}" class="${next.color} w-5"></i>`;
+                        textEl.classList.remove('sc-vanish');
+                        textEl.classList.add('sc-appear');
+                        lucide.createIcons({ nodes: [iconBox] });
+                    }, 800);
+                })(i);
+            }
+        }
+
+        function startSuggestionCycle() {
+            if (scCycleTimer) return;
+            scCycleTimer = setInterval(scCycleCards, 6000);
+        }
+        function stopSuggestionCycle() {
+            if (scCycleTimer) { clearInterval(scCycleTimer); scCycleTimer = null; }
         }
 
         // ── Input ─────────────────────────────────────────────────
@@ -3141,6 +3235,8 @@
             document.querySelectorAll('.logo-swatch').forEach(el => el.classList.toggle('active', el.dataset.id === p.id));
         }
 
+        let _colorBeforeCustomize = null;
+
         function buildLogoSwatches() {
             const el = document.getElementById('logo-swatches');
             if (!el) return;
@@ -3148,7 +3244,24 @@
             el.innerHTML = LOGO_PRESETS.map(p => `
                 <button class="logo-swatch${p.id === saved ? ' active' : ''}" data-id="${p.id}"
                     style="background:${p.logo}" title="${p.id.charAt(0).toUpperCase()+p.id.slice(1)}"
-                    onclick="applyLogoPreset('${p.id}', true)"></button>`).join('');
+                    onclick="applyLogoPreset('${p.id}', false)"></button>`).join('');
+        }
+
+        function openColorCustomizePopup() {
+            _colorBeforeCustomize = localStorage.getItem('clarity_logo_preset') || 'violet';
+            buildLogoSwatches();
+            document.getElementById('color-customize-popup').classList.remove('hidden');
+            lucide.createIcons();
+        }
+        function cancelColorCustomize() {
+            applyLogoPreset(_colorBeforeCustomize, false);
+            document.getElementById('color-customize-popup').classList.add('hidden');
+        }
+        function saveColorCustomize() {
+            const active = document.querySelector('#logo-swatches .logo-swatch.active');
+            const id = active ? active.dataset.id : (_colorBeforeCustomize || 'violet');
+            applyLogoPreset(id, true);
+            document.getElementById('color-customize-popup').classList.add('hidden');
         }
 
         // ── Detect presentation intent in chat ────────────────────
@@ -3919,6 +4032,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
                 topBrand.style.opacity = '1';
                 topBrand.style.pointerEvents = 'auto';
                 greetingGen++;
+                stopSuggestionCycle();
             }
 
             // 1. Show visible user message in chat
@@ -5583,6 +5697,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     document.body.classList.add('conversation-started');
                     topBrand.style.opacity = '1';
                     topBrand.style.pointerEvents = 'auto';
+                    stopSuggestionCycle();
                 }
 
                 let lastCanvasCode = null;
@@ -5796,6 +5911,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             // Restart greeting cycle (greetingGen increments inside runGreeting,
             // stopping any previously running instance immediately).
             runGreeting();
+            startSuggestionCycle();
 
             // Replay the rainbow glow sweep on the input oval (same as first page load)
             const _glowW = document.getElementById('rainbow-glow');
@@ -6227,6 +6343,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 topBrand.style.opacity = '1';
                 topBrand.style.pointerEvents = 'auto';
                 greetingGen++;
+                stopSuggestionCycle();
             }
 
             // ── Presentation mode intercept ────────────────────────
