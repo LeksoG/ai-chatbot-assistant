@@ -4,9 +4,6 @@
     "api/chat.js": {
       "maxDuration": 60
     },
-    "api/gmail.js": {
-      "maxDuration": 30
-    },
     "api/*.js": {
       "maxDuration": 10
     },
@@ -20,5 +17,7 @@
     { "source": "/login","destination": "/auth.html" }
   ]
 }
+
+
 
 
