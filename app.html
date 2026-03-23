@@ -41,7 +41,45 @@
         body.canvas-open #scroll-to-bottom { left:24%; }
 
         /* ── Sidebar ── */
-        #sidebar { transition:transform 0.5s cubic-bezier(0.4,0,0.2,1); }
+        #sidebar {
+            transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-radius 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #sidebar.sidebar-open {
+            border-top-right-radius: 40px;
+            border-bottom-right-radius: 40px;
+        }
+        .sidebar-edge-glow {
+            position:absolute; top:0; right:0; width:1px; height:100%; z-index:5; pointer-events:none;
+            background:linear-gradient(to bottom, transparent, rgba(255,255,255,0.4), transparent);
+            box-shadow:0 0 15px 1px rgba(255,255,255,0.3);
+            opacity:0; transition:opacity 1s ease;
+        }
+        #sidebar.sidebar-open .sidebar-edge-glow { opacity:1; }
+        /* Liquid hover effect */
+        .sb-btn {
+            position:relative; z-index:1; transition:transform 0.2s ease;
+        }
+        .sb-btn::before {
+            content:''; position:absolute; inset:0;
+            background:rgba(255,255,255,0.06); border-radius:inherit;
+            z-index:-1; opacity:0; transform:scale(0.85);
+            transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease;
+        }
+        .sb-btn:hover::before { opacity:1; transform:scale(1); }
+        .sb-btn:active { transform:scale(0.96); }
+        /* Staggered item animation */
+        .history-item {
+            opacity:0; transform:translateX(-20px);
+            transition:opacity 0.7s cubic-bezier(0.23,1,0.32,1),
+                        transform 0.7s cubic-bezier(0.23,1,0.32,1),
+                        background 0.13s;
+            border-radius:10px; margin-bottom:2px;
+        }
+        #sidebar.sidebar-open .history-item { opacity:1; transform:translateX(0); }
+        /* Hamburger toggle */
+        #sidebar-menu-btn { transition:opacity 0.3s ease; }
+        #sidebar-menu-btn.sb-hidden { opacity:0; pointer-events:none; }
 
         /* ── Markdown ── */
         .ai-response { line-height:1.75; }
@@ -99,8 +137,8 @@
         .greeting-cursor { display:inline-block; width:2px; height:1.1em; background:#a78bfa; margin-left:1px; vertical-align:text-bottom; border-radius:1px; animation:blink 0.65s step-end infinite; }
 
         /* ── Suggestion card cycling animations ── */
-        .sc-content-wrap { position:relative; flex-grow:1; height:22px; display:flex; align-items:center; }
-        .sc-text { white-space:nowrap; position:absolute; left:0; }
+        .sc-content-wrap { flex:1; min-width:0; overflow:hidden; }
+        .sc-text { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; }
         .sc-vanish { animation:scVanish 0.8s forwards ease-out; }
         .sc-appear { animation:scAppear 0.6s forwards ease-in; }
         @keyframes scVanish {
@@ -111,600 +149,6 @@
             0%   { opacity:0; transform:translateY(10px); filter:blur(5px); }
             100% { opacity:1; transform:translateY(0); filter:blur(0); }
         }
-
-        /* ── Email Mode ── */
-        #email-overlay { position:fixed; inset:0; z-index:60; background:var(--bg); display:none; flex-direction:column; align-items:center; overflow:hidden; }
-        #email-overlay.email-active { display:flex; }
-        #email-exit-btn { position:absolute; top:1.25rem; left:50%; transform:translateX(-50%); z-index:65; opacity:0; transition:opacity 0.5s ease 0.6s; }
-        #email-overlay.email-active #email-exit-btn { opacity:1; }
-
-        /* ── Email viewport wrap transition ── */
-        #email-viewport-wrap {
-            position:relative; width:100vw; height:100vh;
-            display:flex; flex-direction:column; align-items:center; justify-content:center;
-            transition: all 1s cubic-bezier(0.2,0.8,0.2,1);
-            transform-origin:center center;
-            background:var(--bg);
-        }
-        #email-viewport-wrap.email-wrapped {
-            width:94vw; height:90vh;
-            border-radius:40px;
-            background:#0f0f0f;
-            box-shadow:0 60px 120px rgba(0,0,0,0.9), 0 0 1px 1px rgba(255,255,255,0.05);
-            transform:scale(0.97) translateY(-8px);
-        }
-
-        /* ── Email hero (visible before wrap) ── */
-        .email-hero-header { transition:all 0.5s ease; }
-        #email-viewport-wrap.email-wrapped .email-hero-header { opacity:0; transform:translateY(-20px); pointer-events:none; }
-
-        /* ── Email AI cards (pre-wrap state) ── */
-        .email-ai-cards { position:relative; width:100%; max-width:700px; height:280px; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:40px; }
-        .email-ai-card {
-            position:absolute; width:calc(50% - 10px);
-            background:#121212; border:1px solid rgba(255,255,255,0.05); border-radius:1.25rem;
-            padding:1.25rem; cursor:pointer; text-align:left;
-            transition:all 0.6s cubic-bezier(0.16,1,0.3,1);
-            opacity:0; transform:translateY(30px) scale(0.96);
-            display:flex; align-items:center; gap:1rem;
-        }
-        .email-ai-card:hover { background:#181818; border-color:rgba(255,255,255,0.15); }
-        .email-ai-card .eac-icon { width:40px; height:40px; border-radius:0.75rem; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); flex-shrink:0; }
-        .email-ai-card .eac-label { font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:2px; }
-        .email-ai-card .eac-text { font-size:0.82rem; color:#9ca3af; font-weight:400; line-height:1.35; }
-
-        /* Card positions and entrance */
-        .email-ai-cards.cards-ready .email-ai-card { opacity:1; transform:translateY(0) scale(1); }
-        .email-ai-card.eac-1 { top:0; left:0; transition-delay:0.1s; }
-        .email-ai-card.eac-2 { top:0; right:0; transition-delay:0.2s; }
-        .email-ai-card.eac-3 { bottom:0; left:0; transition-delay:0.3s; }
-        .email-ai-card.eac-4 { bottom:0; right:0; transition-delay:0.4s; }
-
-        /* Cards exit when wrapped */
-        #email-viewport-wrap.email-wrapped .email-ai-card {
-            opacity:0; transform:translateY(-15px) scale(0.92);
-            transition:opacity 0.25s ease, transform 0.25s ease;
-            transition-delay:0s !important;
-        }
-
-        /* ── Typing text in email mode ── */
-        .email-typing-container {
-            position:absolute; top:-50px;
-            opacity:0; transform:translateY(8px);
-            transition:all 0.5s ease;
-            font-size:1.1rem; font-weight:400; color:#6b7280;
-            display:flex; align-items:center; justify-content:center;
-        }
-        #email-viewport-wrap.email-wrapped .email-typing-container {
-            opacity:1; transform:translateY(0); transition-delay:0.7s;
-        }
-        .email-typing-cursor { display:inline-block; width:2px; height:1.1em; background:#7c3aed; margin-left:3px; vertical-align:text-bottom; border-radius:1px; animation:blink 0.65s step-end infinite; }
-
-        /* ── Edge glow suggestion cards (shown in wrapped state) ── */
-        .email-glow-suggestions {
-            position:absolute; top:50%; left:50%;
-            transform:translate(-50%,-50%) scale(0.85);
-            display:flex; gap:14px; flex-wrap:wrap; justify-content:center;
-            opacity:0; visibility:hidden;
-            transition:all 0.5s cubic-bezier(0.34,1,0.64,1);
-        }
-        #email-viewport-wrap.email-wrapped .email-glow-suggestions {
-            opacity:1; visibility:visible;
-            transform:translate(-50%,-50%) scale(1);
-            transition-delay:0.35s;
-        }
-        .email-glow-card {
-            position:relative; min-width:130px; max-width:180px;
-            padding:12px 18px;
-            background:#161616; border-radius:14px;
-            display:flex; align-items:center; gap:10px;
-            font-size:0.78rem; font-weight:500; color:#bdc1c6;
-            cursor:pointer; z-index:10;
-            transition:all 0.2s ease;
-        }
-        .email-glow-card:hover { background:#1e1e1e; color:#e8eaed; transform:translateY(-1px); }
-        .email-glow-card .egc-icon { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); flex-shrink:0; }
-
-        /* SVG edge trace glow */
-        .email-glow-card .svg-trace {
-            position:absolute; top:-2px; left:-2px;
-            width:calc(100% + 4px); height:calc(100% + 4px);
-            pointer-events:none; z-index:-1;
-        }
-        .email-glow-card .trace-path {
-            fill:none; stroke-width:2.5; stroke-linecap:round;
-            stroke-dasharray:100 360; stroke-dashoffset:460; opacity:0;
-        }
-        @keyframes email-edge-trace {
-            0% { stroke-dashoffset:460; opacity:1; }
-            80% { opacity:1; }
-            100% { stroke-dashoffset:0; opacity:0; }
-        }
-        #email-viewport-wrap.email-wrapped .trace-path {
-            animation:email-edge-trace 2s cubic-bezier(0.4,0,0.2,1) forwards;
-            animation-delay:calc(0.5s + (var(--trace-delay) * 0.12s));
-        }
-
-        /* ── Email input transition in wrap ── */
-        .email-wrap-input {
-            position:absolute; bottom:40px; width:100%;
-            display:flex; justify-content:center;
-        }
-        .email-wrap-input-bar {
-            width:100%; max-width:480px;
-            height:50px; background:#111;
-            border:1px solid rgba(255,255,255,0.1); border-radius:25px;
-            display:flex; align-items:center; padding:0 18px; gap:10px;
-            transition:all 0.8s cubic-bezier(0.4,0,0.2,1);
-        }
-        #email-viewport-wrap.email-wrapped .email-wrap-input-bar {
-            max-width:400px; background:#161616; border-color:rgba(255,255,255,0.08);
-        }
-        .email-wrap-input-bar input {
-            flex:1; background:transparent; border:none; outline:none;
-            color:white; font-size:0.875rem;
-        }
-        .email-wrap-input-bar input::placeholder { color:#4b5563; }
-        .email-wrap-input-bar .ewi-icon {
-            width:28px; height:28px; border-radius:50%;
-            background:linear-gradient(135deg, #7c3aed, #a78bfa);
-            display:flex; align-items:center; justify-content:center; flex-shrink:0;
-        }
-        .email-wrap-input-bar button {
-            padding:8px; border-radius:50%;
-            background:white; color:black;
-            display:flex; align-items:center; justify-content:center;
-            transition:all 0.2s;
-        }
-        .email-wrap-input-bar button:disabled { opacity:0.3; cursor:not-allowed; }
-
-        /* Email chat interface (after transition) */
-        #email-chat-interface { animation:fade-up 0.4s ease forwards; }
-
-        /* Suggestion cards grid (post-transition, in chat mode) */
-        .email-suggestions { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; width:100%; max-width:42rem; padding:0 1rem; }
-        .email-suggestion-card { display:flex; align-items:center; gap:0.75rem; padding:1rem 1.15rem; background:#121212; border:1px solid rgba(255,255,255,0.05); border-radius:1rem; cursor:pointer; transition:all 0.2s; text-align:left; }
-        .email-suggestion-card:hover { background:#181818; border-color:rgba(255,255,255,0.15); transform:translateY(-1px); }
-        .email-suggestion-card .esc-icon { width:36px; height:36px; border-radius:0.65rem; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); flex-shrink:0; }
-        .email-suggestion-card .esc-text { font-size:0.82rem; color:#d1d5db; font-weight:500; line-height:1.35; }
-        /* Email chat area */
-        #email-chat-area { flex:1; width:100%; max-width:42rem; overflow-y:auto; padding:1.5rem 1rem 6rem; display:flex; flex-direction:column; gap:1.25rem; margin:0 auto; }
-        /* Email response container */
-        .email-response-container { background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:1rem; overflow:hidden; animation:msg-in 0.35s ease forwards; }
-        .email-response-header { display:flex; align-items:center; justify-content:space-between; padding:0.65rem 1rem; border-bottom:1px solid rgba(255,255,255,0.05); }
-        .email-response-body { padding:1rem 1.25rem; color:#d1d5db; font-size:0.9rem; line-height:1.75; }
-        .email-response-body.editable { background:#0d0d0d; outline:none; min-height:120px; }
-        .email-response-actions { display:flex; gap:0.5rem; padding:0.65rem 1rem; border-top:1px solid rgba(255,255,255,0.05); justify-content:flex-end; }
-        /* Recipient bar */
-        .email-recipient-bar { display:none; width:100%; max-width:42rem; padding:0 1rem; margin-bottom:0.5rem; }
-        .email-recipient-bar.visible { display:flex; gap:0.5rem; align-items:center; animation:fade-up 0.3s ease; }
-        .email-recipient-bar label { font-size:0.75rem; color:#6b7280; font-weight:500; white-space:nowrap; }
-        .email-recipient-bar input { flex:1; background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:0.6rem; padding:0.5rem 0.75rem; color:white; font-size:0.82rem; outline:none; transition:border-color 0.2s; }
-        .email-recipient-bar input:focus { border-color:rgba(124,58,237,0.5); }
-        /* Email input bar */
-        .email-input-bar { width:100%; max-width:42rem; padding:0 1rem 1.5rem; flex-shrink:0; }
-        .email-input-inner { display:flex; align-items:center; gap:0.5rem; background:#111; border:1px solid rgba(255,255,255,0.1); border-radius:9999px; padding:0.6rem 0.75rem 0.6rem 1.25rem; }
-        .email-input-inner input { flex:1; background:transparent; border:none; outline:none; color:white; font-size:0.9rem; }
-        .email-input-inner input::placeholder { color:#4b5563; }
-        .email-input-inner button { padding:0.5rem; border-radius:9999px; background:white; color:black; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
-        .email-input-inner button:disabled { opacity:0.3; cursor:not-allowed; }
-        .email-input-inner button:not(:disabled):hover { box-shadow:0 0 20px rgba(255,255,255,0.5); }
-        /* Gmail connected pill in version popup */
-        .gmail-status-pill { display:flex; align-items:center; gap:0.4rem; font-size:0.65rem; font-weight:500; padding:0.2rem 0.5rem; border-radius:9999px; }
-        .gmail-status-pill.connected { background:rgba(34,197,94,0.15); color:#4ade80; }
-        .gmail-status-pill.disconnected { background:rgba(255,255,255,0.06); color:#9ca3af; }
-
-        /* ── Mode Fade Wave Transition ── */
-        #mode-fade-wave {
-            position:fixed; inset:0; z-index:999; pointer-events:none;
-            background:#020205;
-            transform:translateY(100%);
-            transition:none;
-        }
-        #mode-fade-wave.wave-up {
-            animation:modeFadeWaveUp 0.55s cubic-bezier(0.4,0,0.2,1) forwards;
-        }
-        #mode-fade-wave.wave-down {
-            animation:modeFadeWaveDown 0.55s cubic-bezier(0.4,0,0.2,1) forwards;
-        }
-        @keyframes modeFadeWaveUp {
-            0% { transform:translateY(100%); border-radius:50% 50% 0 0; }
-            40% { border-radius:20% 20% 0 0; }
-            100% { transform:translateY(0%); border-radius:0; }
-        }
-        @keyframes modeFadeWaveDown {
-            0% { transform:translateY(0%); border-radius:0; }
-            60% { border-radius:0 0 20% 20%; }
-            100% { transform:translateY(-100%); border-radius:0 0 50% 50%; }
-        }
-
-        /* ── Email Prompt Interface (from version switcher) ── */
-        #email-prompt-overlay {
-            position:fixed; inset:0; z-index:70;
-            background:#020205;
-            display:none; flex-direction:column; align-items:center; justify-content:center;
-            overflow:hidden;
-        }
-        #email-prompt-overlay.epo-active { display:flex; }
-
-        /* Animated background orbs */
-        #email-prompt-overlay .epo-orb {
-            position:absolute; border-radius:50%; filter:blur(150px);
-            pointer-events:none; z-index:0; opacity:0.25;
-        }
-        @keyframes epoFloat {
-            0% { transform:translate(0,0) scale(1); }
-            33% { transform:translate(15%,10%) scale(1.1); }
-            66% { transform:translate(-10%,20%) scale(0.9); }
-            100% { transform:translate(5%,-15%) scale(1.05); }
-        }
-
-        /* Email prompt suggestion cards */
-        .epo-card-container {
-            position:relative; padding:1.5px; border-radius:1.25rem; overflow:hidden;
-            background:rgba(255,255,255,0.05);
-        }
-        .epo-rainbow-trace {
-            position:absolute; top:-100%; left:-100%; width:300%; height:300%;
-            background:conic-gradient(from 0deg, transparent 0deg, transparent 260deg, #d946ef 280deg, #a855f7 310deg, #3b82f6 340deg, transparent 360deg);
-            animation:epoTraceAnim 2s cubic-bezier(0.2,0,0.2,1) forwards;
-            z-index:0;
-        }
-        @keyframes epoTraceAnim {
-            0% { opacity:0; transform:rotate(0deg); }
-            5% { opacity:1; }
-            95% { opacity:1; }
-            100% { opacity:0; transform:rotate(360deg); }
-        }
-        .epo-card-inner {
-            position:relative; z-index:1; height:100%; width:100%;
-            background:rgba(10,10,15,0.85); backdrop-filter:blur(25px);
-            border-radius:calc(1.25rem - 1.5px); padding:1.25rem;
-            display:flex; flex-direction:column; text-align:left;
-            border:1px solid rgba(255,255,255,0.05);
-            cursor:pointer; transition:all 0.3s ease;
-        }
-        .epo-card-inner:hover { background:rgba(255,255,255,0.12); }
-        .epo-card-icon {
-            margin-bottom:1rem; padding:0.625rem; width:fit-content;
-            border-radius:0.75rem; background:rgba(255,255,255,0.05);
-            transition:transform 0.3s ease;
-        }
-        .epo-card-inner:hover .epo-card-icon { transform:scale(1.1); }
-        .epo-card-title { font-weight:700; font-size:0.875rem; margin-bottom:0.375rem; color:rgba(255,255,255,0.9); }
-        .epo-card-desc { font-size:0.75rem; color:#9ca3af; line-height:1.5; font-weight:500; transition:color 0.3s ease; }
-        .epo-card-inner:hover .epo-card-desc { color:#e2e8f0; }
-
-        /* Main content area states */
-        #epo-main-content { justify-content:center; }
-        #epo-main-content.epo-output-mode { justify-content:flex-start; }
-
-        /* Central oval prompt container */
-        #epo-prompt-bar {
-            position:relative; width:100%; max-width:48rem; z-index:10;
-            transition:all 0.7s cubic-bezier(0.4,0,0.2,1);
-        }
-        #epo-prompt-bar.epo-at-bottom {
-            position:fixed; bottom:1.25rem; left:50%; transform:translateX(-50%);
-            max-width:38rem; z-index:20;
-        }
-        .epo-prompt-glow {
-            position:absolute; inset:-1.5px; border-radius:9999px;
-            overflow:hidden; filter:blur(8px); opacity:0;
-            transition:opacity 1s ease;
-        }
-        #epo-prompt-bar:focus-within .epo-prompt-glow,
-        #epo-prompt-bar:hover .epo-prompt-glow { opacity:0.6; }
-        .epo-prompt-glow-inner {
-            position:absolute; inset:-150%; border-radius:50%;
-            background:conic-gradient(from 0deg, transparent 0deg, #ff00c8 40deg, #7000ff 100deg, #00c2ff 160deg, #00ff85 220deg, #ffea00 280deg, transparent 360deg);
-            animation:rainbow-trace 2.5s ease-out forwards;
-        }
-        .epo-prompt-inner {
-            position:relative; display:flex; align-items:center;
-            background:#0d0d12; border:1px solid rgba(255,255,255,0.1);
-            border-radius:9999px; padding:0.75rem 0.75rem 0.75rem 1.25rem;
-            shadow:0 25px 50px -12px rgba(0,0,0,0.5);
-            backdrop-filter:blur(30px); z-index:10;
-        }
-        .epo-logo-box {
-            display:flex; align-items:center; justify-content:center;
-            width:3rem; height:3rem; border-radius:1rem;
-            background:#1a1a24; border:1px solid rgba(255,255,255,0.1);
-            margin-right:1rem; flex-shrink:0;
-        }
-        .epo-prompt-inner input {
-            flex:1; background:transparent; border:none; outline:none;
-            font-size:1.125rem; color:white; font-weight:500;
-            min-width:0;
-        }
-        .epo-prompt-inner input::placeholder { color:#4b5563; }
-        .epo-send-btn {
-            margin-left:1rem; padding:0.875rem;
-            background:white; color:#050505; border-radius:9999px;
-            display:flex; align-items:center; justify-content:center;
-            transition:all 0.2s; flex-shrink:0;
-            box-shadow:0 0 20px rgba(255,255,255,0.1);
-        }
-        .epo-send-btn:hover { background:#e2e8f0; }
-        .epo-send-btn:active { transform:scale(0.9); }
-        .epo-send-btn:disabled { opacity:0.3; cursor:not-allowed; }
-
-        /* Email prompt output area — chat style, no container */
-        #epo-output-area {
-            display:none; width:100%; max-width:44rem;
-            z-index:10; margin:0 auto;
-            overflow-y:auto; flex:1; min-height:0;
-            padding:0 1rem 8rem;
-        }
-        #epo-output-area::-webkit-scrollbar { width:4px; }
-        #epo-output-area::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:4px; }
-        #epo-output-area.epo-out-visible {
-            display:flex; flex-direction:column; gap:1rem;
-            animation:fadeInUp 0.8s ease forwards;
-        }
-        @keyframes fadeInUp {
-            from { opacity:0; transform:translateY(20px); }
-            to { opacity:1; transform:translateY(0); }
-        }
-        .epo-writing-gradient {
-            background:linear-gradient(to right, #60a5fa, #c084fc, #f472b6);
-            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-        }
-        .epo-cursor {
-            display:inline-block; width:3px; height:1.5rem;
-            background:#a855f7; margin-left:4px; border-radius:99px;
-            vertical-align:middle;
-            box-shadow:0 0 15px rgba(168,85,247,0.7);
-            animation:blink 0.8s infinite;
-        }
-
-        /* User prompt bubble (right-aligned, like main chat) */
-        .epo-user-bubble {
-            display:flex; justify-content:flex-end; padding-right:0.5rem;
-        }
-        .epo-user-bubble-inner {
-            background:#1a1a1a; border:1px solid rgba(255,255,255,0.08);
-            padding:0.5rem 0.875rem; border-radius:1rem 1rem 0.25rem 1rem;
-            max-width:72%; font-size:0.875rem; color:#d1d5db;
-            line-height:1.6; word-break:break-word;
-        }
-
-        /* AI response row (left-aligned with avatar, no box) */
-        .epo-ai-row {
-            display:flex; justify-content:flex-start; align-items:flex-start; gap:0.75rem;
-        }
-        .epo-ai-avatar {
-            width:2rem; height:2rem; flex-shrink:0; margin-top:0.15rem;
-        }
-        .epo-ai-content {
-            flex:1; min-width:0;
-        }
-        .epo-ai-content .ai-response {
-            line-height:1.75; color:#d1d5db; font-size:0.9rem;
-        }
-
-        /* AI status label */
-        .epo-ai-status {
-            display:flex; align-items:center; gap:0.5rem;
-            margin-bottom:0.5rem; font-size:0.75rem; font-weight:600;
-        }
-
-        /* Action buttons row after AI response */
-        .epo-actions-row {
-            display:flex; align-items:center; gap:0.5rem;
-            margin-top:0.75rem; opacity:0;
-            transition:opacity 0.4s ease;
-        }
-        .epo-actions-row.epo-actions-visible { opacity:1; }
-
-        .epo-action-chip {
-            display:flex; align-items:center; gap:0.35rem;
-            padding:0.35rem 0.7rem; border-radius:0.5rem;
-            font-size:0.65rem; font-weight:600; cursor:pointer;
-            transition:all 0.2s; border:1px solid transparent;
-        }
-        .epo-action-copy {
-            background:rgba(255,255,255,0.04); color:#6b7280;
-            border-color:rgba(255,255,255,0.06);
-        }
-        .epo-action-copy:hover { background:rgba(255,255,255,0.08); color:#d1d5db; }
-        .epo-action-send {
-            background:rgba(124,58,237,0.1); color:#a78bfa;
-            border-color:rgba(124,58,237,0.2);
-        }
-        .epo-action-send:hover { background:rgba(124,58,237,0.2); color:#c4b5fd; }
-        .epo-action-retry {
-            background:rgba(255,255,255,0.04); color:#6b7280;
-            border-color:rgba(255,255,255,0.06);
-        }
-        .epo-action-retry:hover { background:rgba(255,255,255,0.08); color:#d1d5db; }
-
-        /* Recipient container */
-        #epo-recipient-container {
-            overflow:hidden; max-height:0; opacity:0;
-            transition:max-height 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease, padding 0.4s ease, margin 0.4s ease;
-            padding:0; margin:0; border-radius:0.75rem;
-            background:rgba(13,13,18,0.8); border:1px solid transparent;
-        }
-        #epo-recipient-container.epo-recipient-visible {
-            max-height:12rem; opacity:1; padding:0.875rem 1rem;
-            margin-top:0.5rem;
-            border-color:rgba(255,255,255,0.06);
-        }
-        .epo-recipient-field {
-            flex:1; display:flex; flex-direction:column; gap:0.3rem;
-        }
-        .epo-recipient-label {
-            font-size:0.6rem; font-weight:600; text-transform:uppercase;
-            letter-spacing:0.1em; color:#6b7280;
-        }
-        .epo-recipient-input {
-            background:#111118; border:1px solid rgba(255,255,255,0.08);
-            border-radius:0.5rem; padding:0.45rem 0.65rem;
-            color:white; font-size:0.75rem; outline:none;
-            transition:border-color 0.2s;
-        }
-        .epo-recipient-input:focus { border-color:rgba(124,58,237,0.5); }
-        .epo-recipient-input:disabled { opacity:0.5; cursor:not-allowed; }
-        .epo-recipient-send-btn {
-            margin-top:0.6rem; width:100%; padding:0.55rem;
-            background:white; color:#050505; border-radius:0.6rem;
-            font-size:0.7rem; font-weight:700; cursor:pointer;
-            transition:all 0.2s; letter-spacing:0.05em;
-        }
-        .epo-recipient-send-btn:hover { background:#e2e8f0; }
-        .epo-recipient-send-btn:active { transform:scale(0.98); }
-
-        /* Smart suggestions — inline after AI response */
-        #epo-smart-suggestions {
-            display:none; gap:0.4rem; flex-wrap:wrap;
-            opacity:0; transform:translateY(6px);
-            transition:opacity 0.5s ease, transform 0.5s ease;
-            margin-top:0.5rem;
-        }
-        #epo-smart-suggestions.epo-smart-visible {
-            display:flex; opacity:1; transform:translateY(0);
-        }
-        .epo-smart-chip {
-            padding:0.35rem 0.75rem; border-radius:9999px;
-            background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
-            color:#9ca3af; font-size:0.65rem; font-weight:500;
-            cursor:pointer; transition:all 0.2s; white-space:nowrap;
-        }
-        .epo-smart-chip:hover { background:rgba(124,58,237,0.12); border-color:rgba(124,58,237,0.25); color:#c4b5fd; }
-
-        /* Reading status for smart suggestions */
-        .epo-reading-status {
-            display:flex; align-items:center; gap:0.4rem;
-            font-size:0.65rem; color:#6b7280; font-weight:500;
-            opacity:0; transition:opacity 0.4s ease;
-        }
-        .epo-reading-status.epo-reading-visible { opacity:1; }
-        .epo-reading-dot {
-            width:4px; height:4px; border-radius:50%;
-            background:#7c3aed; animation:dot-bounce 1.4s infinite ease-in-out;
-        }
-
-        /* Email prompt exit button */
-        #epo-exit-btn {
-            position:fixed; top:1.25rem; left:50%; transform:translateX(-50%);
-            z-index:75; opacity:0; transition:opacity 0.5s ease 0.6s;
-        }
-        #email-prompt-overlay.epo-active #epo-exit-btn { opacity:1; }
-
-        /* Suggestion grid & footer fade on submit */
-        #epo-suggestions-grid, #epo-footer {
-            transition:opacity 0.5s ease, transform 0.5s ease;
-        }
-        #epo-suggestions-grid.epo-hidden, #epo-footer.epo-hidden {
-            opacity:0; transform:translateY(-20px); pointer-events:none;
-        }
-
-        /* ── 2FA toggle ── */
-        .toggle-track { width:44px; height:24px; background:rgba(255,255,255,0.1); border-radius:12px; position:relative; transition:background 0.2s; cursor:pointer; }
-        .toggle-track.on { background:#7c3aed; }
-        .toggle-thumb { position:absolute; top:3px; left:3px; width:18px; height:18px; background:white; border-radius:50%; transition:transform 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.4); }
-        .toggle-track.on .toggle-thumb { transform:translateX(20px); }
-
-        /* ── Account page ── */
-        #account-page { transition:transform 0.38s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease; }
-        #account-page.ap-hidden { transform:translateX(100%); opacity:0; }
-        #account-page.ap-visible { transform:translateX(0); opacity:1; }
-        .account-section { background:#111; border:1px solid rgba(255,255,255,0.06); border-radius:1rem; padding:1.5rem; margin-bottom:0.875rem; }
-        .account-section-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-        .account-input { width:100%; background:#181818; border:1px solid rgba(255,255,255,0.08); border-radius:0.65rem; padding:0.7rem 1rem; color:white; font-size:0.875rem; outline:none; transition:border-color 0.2s; }
-        .account-input:focus { border-color:rgba(124,58,237,0.5); box-shadow:0 0 0 3px rgba(124,58,237,0.08); }
-        .account-input::placeholder { color:#374151; }
-        .account-btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.5rem 1rem; background:#1a1a1a; border:1px solid rgba(255,255,255,0.1); border-radius:0.6rem; color:#d1d5db; font-size:0.8rem; font-weight:500; cursor:pointer; transition:all 0.15s; }
-        .account-btn:hover { background:#222; border-color:rgba(255,255,255,0.2); color:#fff; }
-        .account-btn.primary { background:rgba(124,58,237,0.15); border-color:rgba(124,58,237,0.4); color:#c4b5fd; }
-        .account-btn.primary:hover { background:rgba(124,58,237,0.25); border-color:rgba(124,58,237,0.6); color:#ddd6fe; }
-        .account-btn.danger { background:rgba(153,27,27,0.15); border-color:rgba(153,27,27,0.35); color:#fca5a5; }
-        .account-btn.danger:hover { background:rgba(153,27,27,0.25); border-color:rgba(153,27,27,0.55); }
-        input:-webkit-autofill { -webkit-box-shadow:0 0 0 30px #181818 inset !important; -webkit-text-fill-color:#fff !important; }
-        /* ── Sidebar manage account btn ── */
-        .sidebar-manage-btn { display:flex; align-items:center; justify-content:center; gap:0.5rem; width:100%; padding:0.6rem 1rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:0.75rem; color:#6b7280; font-size:0.75rem; font-weight:500; cursor:pointer; transition:all 0.15s; margin-top:0.5rem; }
-        .sidebar-manage-btn:hover { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.14); color:#d1d5db; }
-
-        ::-webkit-scrollbar { width:5px; }
-        ::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:4px; }
-
-        /* ── Canvas sidebar ── */
-        #canvas-sidebar { position:fixed; right:0; top:0; bottom:0; z-index:100; width:0; overflow:hidden; background:#0d0d0d; border-left:1px solid transparent; border-radius:24px 0 0 24px; display:flex; flex-direction:column; transition:width 0.42s cubic-bezier(0.4,0,0.2,1), border-color 0.42s ease; }
-        #canvas-sidebar.cs-open { width:52%; border-color:rgba(255,255,255,0.07); }
-        /* ── Canvas page nav ── */
-        #canvas-page-nav { display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.35rem 0; background:#0d0d0d; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; }
-        .cpn-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:8px; color:#6b7280; cursor:pointer; transition:all 0.15s; }
-        .cpn-btn:hover:not(:disabled) { background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.15); color:#d1d5db; }
-        .cpn-btn:disabled { opacity:0.25; cursor:not-allowed; }
-        #canvas-page-label { font-size:0.7rem; color:#9ca3af; font-weight:500; min-width:4.5rem; text-align:center; }
-        /* ── Canvas page loading overlay ── */
-        #canvas-page-loader { position:absolute; inset:0; z-index:20; display:none; align-items:center; justify-content:center; flex-direction:column; gap:0.75rem; background:rgba(13,13,13,0.92); backdrop-filter:blur(4px); }
-        #canvas-page-loader.active { display:flex; }
-        .cpl-spinner { width:28px; height:28px; border:3px solid rgba(124,58,237,0.2); border-top-color:#7c3aed; border-radius:50%; animation:cpl-spin 0.8s linear infinite; }
-        @keyframes cpl-spin { to { transform:rotate(360deg); } }
-        /* ── Canvas error panel ── */
-        #canvas-error-divider { height:6px; background:#1a1a1a; cursor:ns-resize; display:flex; align-items:center; justify-content:center; flex-shrink:0; border-top:1px solid rgba(255,255,255,0.06); transition:background 0.15s; }
-        #canvas-error-divider:hover, #canvas-error-divider.dragging { background:#252525; }
-        #canvas-error-divider::after { content:''; width:32px; height:3px; background:#444; border-radius:2px; }
-        #canvas-error-panel { background:#141414; flex-shrink:0; display:flex; flex-direction:column; overflow:hidden; height:0; transition:height 0.2s ease; }
-        #canvas-error-panel.cep-open { height:180px; }
-        /* ── Canvas fix shimmer ── */
-        @keyframes shimmer-wave { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-        #canvas-shimmer { position:absolute; inset:0; z-index:10; pointer-events:none; display:none; }
-        #canvas-shimmer.active { display:block; background:linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.02) 20%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.02) 80%, transparent 100%); background-size:200% 100%; animation:shimmer-wave 1.8s ease-in-out infinite; }
-        .cs-tab { padding:0.65rem 1.1rem; font-size:0.72rem; font-weight:500; border-bottom:2px solid transparent; color:#6b7280; transition:color 0.15s, border-color 0.15s; cursor:pointer; white-space:nowrap; }
-        .cs-tab.active { color:#fff; border-bottom-color:#fff; }
-        .cs-tab:hover:not(.active) { color:#d1d5db; }
-        /* ── Code block: badge + action buttons ── */
-        .code-block-wrapper { position:relative; }
-        .code-lang-badge { position:absolute; top:8px; left:12px; font-size:10px; font-weight:600; letter-spacing:0.04em; padding:2px 8px; border-radius:999px; background:rgba(255,255,255,0.06); color:#6b7280; border:1px solid rgba(255,255,255,0.08); pointer-events:none; z-index:1; }
-        .code-block-actions { position:absolute; top:8px; right:8px; display:flex; align-items:center; gap:4px; z-index:1; }
-        .code-copy-btn, .code-run-btn { font-size:0.7rem; padding:0.2rem 0.55rem; border-radius:0.4rem; cursor:pointer; transition:background 0.15s, color 0.15s; border:1px solid; }
-        .code-copy-btn { background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.12); color:#9ca3af; }
-        .code-copy-btn:hover { background:rgba(255,255,255,0.14); color:#fff; }
-        .code-run-btn { background:rgba(124,58,237,0.12); border-color:rgba(124,58,237,0.28); color:#a78bfa; }
-        .code-run-btn:hover { background:rgba(124,58,237,0.26); color:#c4b5fd; }
-        /* ── Canvas reopen card ── */
-        .canvas-reopen-card { display:flex; align-items:center; gap:0.7rem; padding:0.6rem 0.9rem; background:#111; border:1px solid rgba(255,255,255,0.07); border-radius:0.875rem; cursor:pointer; transition:background 0.15s,border-color 0.15s; margin-top:0.6rem; }
-        .canvas-reopen-card:hover { background:#1a1a1a; border-color:rgba(255,255,255,0.15); }
-        /* ── Version popup ── */
-        #version-popup { transform-origin:bottom left; transition:opacity 0.18s ease, transform 0.2s cubic-bezier(0.34,1.56,0.64,1); }
-        .vpop-hidden { opacity:0; transform:scale(0.92) translateY(8px); pointer-events:none; }
-        .vpop-open   { opacity:1; transform:scale(1) translateY(0); pointer-events:auto; }
-
-        /* ── File upload / attachment ── */
-        #file-upload-input { display:none; }
-        #attachment-strip { display:none; flex-wrap:wrap; gap:8px; padding:12px 14px 6px; }
-        #attachment-strip.has-attachments { display:flex; }
-        #chat-input-bar-wrapper { transition:border-radius 0.2s ease; }
-        #chat-input-bar-wrapper.has-attachments { border-radius:1rem !important; }
-        .attach-chip { position:relative; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:3px; }
-        .attach-chip-img { width:60px; height:60px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,0.12); cursor:pointer; transition:opacity 0.15s, transform 0.15s; display:block; }
-        .attach-chip-img:hover { opacity:0.85; transform:scale(1.03); }
-        .attach-chip-file { width:60px; height:60px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; background:#1c1c1c; border:1px solid rgba(255,255,255,0.1); border-radius:10px; cursor:pointer; transition:background 0.15s; }
-        .attach-chip-file:hover { background:#242424; }
-        .attach-chip-file span { font-size:9px; color:#888; font-family:monospace; font-weight:600; }
-        .attach-chip-name { font-size:9px; color:#666; max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center; }
-        .attach-remove { position:absolute; top:-5px; right:-5px; width:17px; height:17px; background:#2a2a2a; border:1px solid rgba(255,255,255,0.18); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#999; font-size:11px; line-height:1; transition:background 0.15s, color 0.15s; z-index:2; }
-        .attach-remove:hover { background:#444; color:#fff; }
-        /* Drag overlay */
-        #drag-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:14px; pointer-events:none; }
-        #drag-overlay.drag-active { display:flex; }
-        #drag-overlay .drag-box { display:flex; flex-direction:column; align-items:center; gap:14px; padding:48px 64px; border:2px dashed rgba(139,92,246,0.55); border-radius:24px; background:rgba(139,92,246,0.07); }
-        #drag-overlay .drag-icon-wrap { width:64px; height:64px; background:rgba(139,92,246,0.18); border-radius:18px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(139,92,246,0.4); }
-        #drag-overlay .drag-title { color:#c4b5fd; font-size:18px; font-weight:600; letter-spacing:-0.01em; }
-        #drag-overlay .drag-sub { color:#7c3aed; font-size:12px; }
-        /* Upload row in version popup */
-        .vpop-upload-row { display:flex; align-items:center; justify-content:space-between; padding:12px 4px 0; margin-top:8px; border-top:1px solid rgba(255,255,255,0.05); }
-
-        /* ── Artifact language badge ── */
-        .art-lang-badge { position:absolute; top:8px; left:8px; z-index:5; font-size:10px; font-weight:700; letter-spacing:0.05em; padding:2px 7px; border-radius:999px; pointer-events:none; backdrop-filter:blur(4px); }
-        .artifact-lang-row { font-size:10px; color:#6b7280; margin-top:4px; display:flex; align-items:center; gap:4px; }
-        .art-lang-html   { background:rgba(249,115,22,0.22); color:#fb923c; border:1px solid rgba(249,115,22,0.35); }
-        .art-lang-python { background:rgba(59,130,246,0.22); color:#60a5fa; border:1px solid rgba(59,130,246,0.35); }
-        .art-lang-js, .art-lang-javascript { background:rgba(250,204,21,0.22); color:#fcd34d; border:1px solid rgba(250,204,21,0.35); }
 
         /* ── Logo gradient swatches (account page) ── */
         .logo-swatch { width:28px; height:28px; border-radius:8px; cursor:pointer; border:2px solid transparent; transition:transform 0.15s, box-shadow 0.15s; flex-shrink:0; }
@@ -722,7 +166,6 @@
         #sidebar-select-bar { display:none; }
         #sidebar-select-bar.visible { display:flex; }
         .conv-checkbox { width:14px; height:14px; accent-color:#7c3aed; cursor:pointer; flex-shrink:0; margin-right:2px; }
-        .history-item { border-radius:10px; transition:background 0.13s; margin-bottom:2px; }
         .history-item.selected { background:rgba(124,58,237,0.12) !important; border-color:rgba(124,58,237,0.25) !important; }
         .history-item-active { background:rgba(255,255,255,0.06); border-left:2px solid rgba(124,58,237,0.6); }
 
@@ -791,11 +234,10 @@
         .diff-highlight-line { background: rgba(59, 130, 246, 0.15) !important; }
         .diff-glyph { border-left: 3px solid #3b82f6 !important; margin-left: 3px; }
 
-        /* ── Sidebar tabs (Chat / Presentations) ── */
-        .sidebar-tabs { display:flex; border-bottom:1px solid rgba(255,255,255,0.05); flex-shrink:0; }
-        .sidebar-tab { flex:1; padding:0.6rem 0; font-size:0.7rem; font-weight:500; text-align:center; color:#6b7280; cursor:pointer; border-bottom:2px solid transparent; transition:color 0.15s, border-color 0.15s; }
-        .sidebar-tab.active { color:#fff; border-bottom-color:#7c3aed; }
-        .sidebar-tab:hover:not(.active) { color:#d1d5db; }
+        /* ── Sidebar section label ── */
+        .sb-section-label { font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#4b5563; padding:0 4px; }
+        .custom-sb-scroll::-webkit-scrollbar { width:3px; }
+        .custom-sb-scroll::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.05); border-radius:10px; }
         /* ── Presentation sidebar card ── */
         .pres-card { display:flex; align-items:center; gap:0.65rem; padding:0.6rem 0.75rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:0.75rem; cursor:pointer; transition:all 0.15s; margin-bottom:0.4rem; }
         .pres-card:hover { background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.12); }
@@ -1209,126 +651,96 @@
     </svg>
 
     <!-- Sidebar overlay -->
-    <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 opacity-0 pointer-events-none transition-opacity duration-500" onclick="toggleSidebar(false)"></div>
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 opacity-0 pointer-events-none transition-opacity duration-700" onclick="toggleSidebar(false)"></div>
 
     <!-- Sidebar -->
-    <div id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-[#0d0d0d] z-50 border-r border-white/5 -translate-x-full flex flex-col">
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-full md:w-[380px] bg-[#0a0a0a] z-50 -translate-x-full flex flex-col shadow-2xl overflow-hidden">
+
+        <!-- Edge glow -->
+        <div class="sidebar-edge-glow"></div>
 
         <!-- Header -->
-        <div class="p-5 flex justify-between items-center border-b border-white/5 shrink-0">
-            <div class="flex items-center gap-2">
-                <svg class="w-7 h-7" viewBox="-15 -15 130 130">
-                    <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
-                    <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
-                    <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
-                </svg>
-                <span class="font-bold text-white text-sm tracking-tight">Clarity AI</span>
-            </div>
-            <button onclick="toggleSidebar(false)" class="p-1.5 hover:bg-white/5 rounded-lg transition-colors">
-                <i data-lucide="x" class="w-4 text-gray-400"></i>
-            </button>
-        </div>
-
-        <!-- New conversation -->
-        <div class="p-3 pb-1.5 shrink-0">
-            <button onclick="newConversation()" class="w-full flex items-center gap-2.5 p-3 bg-white/5 hover:bg-white/10 rounded-xl text-sm text-gray-300 transition-colors border border-white/5 group">
-                <i data-lucide="plus" class="w-4 group-hover:text-violet-400 transition-colors"></i>
-                <span>New Conversation</span>
-            </button>
-        </div>
-
-        <!-- Artifacts shortcut -->
-        <div class="px-3 pb-1.5 shrink-0">
-            <button onclick="openArtifactsPage()" class="w-full flex items-center justify-between gap-2.5 p-2.5 bg-white/[0.03] hover:bg-white/[0.07] rounded-xl text-sm text-gray-400 hover:text-gray-200 transition-all border border-white/5 hover:border-white/10 group">
+        <div class="p-6 space-y-4 shrink-0">
+            <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-2.5">
-                    <i data-lucide="box" class="w-4 text-violet-400 group-hover:text-violet-300 transition-colors"></i>
-                    <span class="text-xs font-medium">User Artifacts</span>
+                    <svg class="w-7 h-7" viewBox="-15 -15 130 130">
+                        <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
+                        <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
+                        <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
+                    </svg>
+                    <span class="font-bold text-white text-[17px] tracking-tight">Clarity AI</span>
                 </div>
-                <i data-lucide="arrow-right" class="w-3.5 text-gray-600 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all"></i>
+                <button onclick="toggleSidebar(false)" class="p-2 hover:bg-white/5 rounded-full transition-colors">
+                    <i data-lucide="x" class="w-5 text-white/40"></i>
+                </button>
+            </div>
+            <button onclick="newConversation()" class="sb-btn w-full bg-[#161616] border border-white/5 p-4 rounded-2xl flex items-center gap-3 group">
+                <i data-lucide="plus" class="w-4 text-white group-hover:scale-110 transition-transform"></i>
+                <span class="font-medium text-[15px]">New Conversation</span>
+            </button>
+            <button onclick="openArtifactsPage()" class="sb-btn w-full bg-[#161616] border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="box" class="w-4 text-white/60"></i>
+                    <span class="font-medium text-[15px]">User Artifacts</span>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 text-white/20"></i>
             </button>
         </div>
 
-        <!-- Sidebar tabs: Chat / Emails -->
-        <div class="sidebar-tabs px-3">
-            <button id="sidebar-tab-chat" class="sidebar-tab active" onclick="switchSidebarTab('chat')">Chat</button>
-            <button id="sidebar-tab-emails" class="sidebar-tab" onclick="switchSidebarTab('emails')">Emails</button>
-        </div>
-
-        <!-- Search -->
-        <div class="px-3 pt-2 pb-1 shrink-0">
-            <div class="relative">
-                <i data-lucide="search" class="w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none"></i>
+        <!-- Search + section label -->
+        <div class="px-6 pb-3 shrink-0">
+            <div class="relative mb-4">
+                <i data-lucide="search" class="w-3.5 absolute left-4 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none"></i>
                 <input id="sidebar-search" type="text" placeholder="Search conversations…"
                     autocomplete="off" spellcheck="false"
-                    class="w-full bg-white/5 border border-white/5 rounded-xl pl-9 pr-3 py-2 text-sm text-gray-300 placeholder-gray-600 outline-none focus:border-violet-600/40 focus:bg-white/8 transition-all"
+                    class="w-full bg-[#111] border border-white/5 rounded-xl pl-11 pr-4 py-3 text-[13px] text-gray-300 placeholder:text-white/20 outline-none focus:border-white/20 transition-all"
                     oninput="filterSidebarContent(this.value)">
+            </div>
+            <div class="flex items-center justify-between px-1">
+                <span id="history-label" class="sb-section-label">Recent</span>
+                <button id="sidebar-select-btn" onclick="toggleSidebarSelectMode()" class="text-[10px] text-gray-500 hover:text-gray-300 font-medium transition-colors px-1.5 py-0.5 rounded-md hover:bg-white/5">Select</button>
             </div>
         </div>
 
-        <!-- Conversation history (Chat tab) -->
-        <div id="sidebar-chat-panel" class="px-3 flex-1 overflow-y-auto min-h-0">
-            <div class="flex items-center justify-between px-1 mb-1.5">
-                <p id="history-label" class="text-[10px] text-gray-600 uppercase tracking-widest">Recent</p>
-                <button id="sidebar-select-btn" onclick="toggleSidebarSelectMode()" class="text-[10px] text-gray-500 hover:text-gray-300 font-medium transition-colors px-1.5 py-0.5 rounded-md hover:bg-white/5">Select</button>
+        <!-- Select-mode action bar -->
+        <div id="sidebar-select-bar" class="hidden items-center justify-between mb-2 px-6">
+            <span id="sidebar-select-count" class="text-[10px] text-gray-500">0 selected</span>
+            <div class="flex gap-1.5">
+                <button onclick="deleteSelectedConversations()" id="sidebar-delete-selected-btn" class="text-[10px] text-red-400 hover:text-red-300 font-medium px-2 py-0.5 rounded-md bg-red-950/30 hover:bg-red-950/50 border border-red-900/30 transition-colors disabled:opacity-40" disabled>Delete</button>
+                <button onclick="toggleSidebarSelectMode()" class="text-[10px] text-gray-500 hover:text-gray-300 px-1.5 py-0.5 rounded-md hover:bg-white/5 transition-colors">Cancel</button>
             </div>
-            <!-- select-mode action bar (hidden until selection active) -->
-            <div id="sidebar-select-bar" class="hidden flex items-center justify-between mb-2 px-1">
-                <span id="sidebar-select-count" class="text-[10px] text-gray-500">0 selected</span>
-                <div class="flex gap-1.5">
-                    <button onclick="deleteSelectedConversations()" id="sidebar-delete-selected-btn" class="text-[10px] text-red-400 hover:text-red-300 font-medium px-2 py-0.5 rounded-md bg-red-950/30 hover:bg-red-950/50 border border-red-900/30 transition-colors disabled:opacity-40" disabled>Delete</button>
-                    <button onclick="toggleSidebarSelectMode()" class="text-[10px] text-gray-500 hover:text-gray-300 px-1.5 py-0.5 rounded-md hover:bg-white/5 transition-colors">Cancel</button>
-                </div>
-            </div>
-            <div id="history-list">
+        </div>
+
+        <!-- Conversation history -->
+        <div id="sidebar-chat-panel" class="px-4 flex-1 overflow-y-auto min-h-0 custom-sb-scroll">
+            <div id="history-list" class="space-y-0.5">
                 <div class="p-3 text-gray-600 text-sm text-center">No history yet</div>
             </div>
         </div>
 
-        <!-- Email conversations list (Emails tab — hidden by default) -->
-        <div id="sidebar-emails-panel" class="px-3 flex-1 overflow-y-auto min-h-0 hidden">
-            <button onclick="openComposeEmail()" class="w-full flex items-center gap-2.5 p-3 bg-violet-600/15 hover:bg-violet-600/25 rounded-xl text-sm text-violet-300 transition-colors border border-violet-500/20 group mb-3">
-                <i data-lucide="pen-line" class="w-4 group-hover:text-violet-200 transition-colors"></i>
-                <span class="font-medium">Compose Email</span>
-            </button>
-            <div class="flex items-center justify-between px-1 mb-2">
-                <p class="text-[10px] text-gray-600 uppercase tracking-widest">Email Conversations</p>
-            </div>
-            <div id="email-conversations-list">
-                <div class="p-3 text-gray-600 text-sm text-center">No email conversations yet</div>
-            </div>
-        </div>
-
-        <!-- Artifacts list (Artifacts tab — hidden by default) -->
-        <div id="sidebar-artifacts-panel" class="px-3 flex-1 overflow-y-auto min-h-0 hidden">
-            <div class="flex items-center justify-between px-1 mb-2">
-                <p class="text-[10px] text-gray-600 uppercase tracking-widest">Artifacts</p>
-            </div>
-            <div id="sidebar-artifacts-list">
-                <div class="p-3 text-gray-600 text-sm text-center">No artifacts yet</div>
-            </div>
-        </div>
-
-        <!-- User profile -->
-        <div class="p-3 border-t border-white/5 shrink-0">
-            <div class="flex items-center gap-2.5 bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 mb-1.5">
-                <div id="sidebar-user-avatar" class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-md transition-all duration-500" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">
-                    <span id="user-initials" class="text-white text-xs font-bold"></span>
+        <!-- User footer -->
+        <div class="p-4 bg-[#080808] border-t border-white/5 space-y-2 shrink-0">
+            <div class="sb-btn bg-[#121212] p-3 rounded-2xl border border-white/10 flex items-center gap-3 cursor-pointer" onclick="openAccountPage()">
+                <div id="sidebar-user-avatar" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg transition-all duration-500" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">
+                    <span id="user-initials" class="text-white text-sm font-bold"></span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p id="user-display-name" class="text-sm text-white font-medium truncate"></p>
-                    <p id="user-email-display" class="text-xs text-gray-500 truncate"></p>
+                    <p id="user-display-name" class="text-[14px] font-bold text-white truncate"></p>
+                    <p id="user-email-display" class="text-[11px] text-white/40 truncate"></p>
                 </div>
             </div>
-            <button onclick="openAccountPage()" class="sidebar-manage-btn">
+            <button onclick="openAccountPage()" class="sb-btn w-full p-2.5 flex items-center justify-center gap-2 text-[13px] font-medium text-white/40 hover:text-white/80 transition-colors">
                 <i data-lucide="settings" class="w-3.5"></i>
                 Manage account
             </button>
         </div>
     </div>
 
-    <!-- Menu button -->
-    <button onclick="toggleSidebar(true)" class="fixed top-6 left-6 z-30 p-2.5 hover:bg-white/10 rounded-xl transition-all active:scale-90 bg-white/5 border border-white/5">
-        <i data-lucide="panel-left" class="text-gray-300 w-[22px]"></i>
+    <!-- Hamburger menu button -->
+    <button id="sidebar-menu-btn" onclick="toggleSidebar(true)" class="fixed top-7 left-7 z-30 w-12 h-12 flex flex-col items-center justify-center gap-[5px] transition-all active:scale-90">
+        <span class="w-6 h-0.5 bg-white rounded-full block"></span>
+        <span class="w-6 h-0.5 bg-white rounded-full block"></span>
+        <span class="w-6 h-0.5 bg-white rounded-full block"></span>
     </button>
 
     <!-- Top brand — full-width sectioned header, shown after first message -->
@@ -1481,17 +893,6 @@
                 <div class="toggle-thumb"></div>
             </button>
         </div>
-        <!-- Gmail Connection -->
-        <div id="gmail-popup-section" class="border-t border-white/5 pt-3 mt-3 px-1 flex items-center justify-between">
-            <div class="flex items-center gap-2 min-w-0">
-                <i data-lucide="mail" class="w-3.5 text-violet-400 shrink-0"></i>
-                <p class="text-xs font-medium text-white whitespace-nowrap">Email Writer</p>
-                <span id="gmail-status-badge" class="gmail-status-pill disconnected">Not connected</span>
-            </div>
-            <button id="gmail-popup-btn" onclick="handleGmailPopupAction()" class="text-[10px] font-medium text-violet-400 hover:text-violet-300 bg-violet-950/40 hover:bg-violet-950/60 border border-violet-800/30 px-2.5 py-1 rounded-lg transition-all cursor-pointer shrink-0 ml-2">
-                Connect
-            </button>
-        </div>
         <!-- Upload File -->
         <div class="vpop-upload-row">
             <div>
@@ -1559,47 +960,6 @@
         <i data-lucide="arrow-down" class="w-3.5"></i>
         <span>New response</span>
     </button>
-
-    <!-- ═══════════════════════════════════════════════════════
-         EMAIL MODE OVERLAY
-    ═══════════════════════════════════════════════════════ -->
-    <div id="email-overlay">
-        <!-- Exit button -->
-        <div id="email-exit-btn">
-            <button onclick="exitEmailMode()" class="flex items-center gap-2 px-4 py-2 bg-[#1a1a1a] border border-white/10 rounded-full text-xs text-gray-300 hover:text-white hover:bg-[#222] hover:border-white/20 shadow-xl transition-all">
-                <i data-lucide="log-out" class="w-3.5"></i>
-                <span>Back to AI</span>
-            </button>
-        </div>
-
-        <!-- ── Viewport Wrap Container (transition animation) ── -->
-        <div id="email-viewport-wrap">
-            <!-- Hero header (fades out on wrap) -->
-            <div class="email-hero-header text-center mb-10">
-                <div class="flex items-center justify-center gap-3 mb-4">
-                    <i data-lucide="mail" class="w-10 h-10 text-violet-400"></i>
-                    <h1 class="text-4xl font-extrabold tracking-tight">Email Assistant</h1>
-                </div>
-                <p class="text-gray-500 text-lg font-light" id="email-connected-label">Connected as: <span id="email-connected-email" class="text-gray-400"></span></p>
-            </div>
-
-            <!-- AI-style suggestion cards (visible before wrap) -->
-            <div class="email-ai-cards" id="email-ai-cards-grid">
-                <!-- Typing text (visible after wrap) -->
-                <div class="email-typing-container">
-                    <span id="email-typing-text"></span><span class="email-typing-cursor"></span>
-                </div>
-
-                <!-- 4 AI-style cards (populated by JS) -->
-                <div class="email-ai-card eac-1" id="email-ai-card-1"></div>
-                <div class="email-ai-card eac-2" id="email-ai-card-2"></div>
-                <div class="email-ai-card eac-3" id="email-ai-card-3"></div>
-                <div class="email-ai-card eac-4" id="email-ai-card-4"></div>
-
-                <!-- Edge glow suggestion cards (visible after wrap) -->
-                <div class="email-glow-suggestions" id="email-glow-suggestions"></div>
-            </div>
-
             <!-- Input bar at bottom of wrap -->
             <div class="email-wrap-input">
                 <div class="email-wrap-input-bar">
@@ -1660,119 +1020,6 @@
          MODE FADE WAVE (black wave transition between modes)
     ═══════════════════════════════════════════════════════ -->
     <div id="mode-fade-wave"></div>
-
-    <!-- ═══════════════════════════════════════════════════════
-         EMAIL PROMPT OVERLAY (opened from version switcher)
-    ═══════════════════════════════════════════════════════ -->
-    <div id="email-prompt-overlay">
-        <!-- Animated background orbs -->
-        <div class="fixed inset-0 overflow-hidden pointer-events-none">
-            <div class="epo-orb" style="top:-10%;left:-10%;width:70%;height:70%;background:#7c3aed;animation:epoFloat 20s infinite alternate ease-in-out"></div>
-            <div class="epo-orb" style="bottom:-15%;right:-5%;width:65%;height:65%;background:#3b82f6;animation:epoFloat 25s infinite alternate-reverse ease-in-out"></div>
-            <div class="epo-orb" style="top:15%;right:10%;width:50%;height:50%;background:#d946ef;animation:epoFloat 18s infinite linear"></div>
-            <div class="epo-orb" style="bottom:20%;left:20%;width:45%;height:45%;background:#06b6d4;animation:epoFloat 22s infinite alternate ease-in-out"></div>
-        </div>
-
-        <!-- Exit button -->
-        <div id="epo-exit-btn">
-            <button onclick="exitEmailPromptMode()" class="flex items-center gap-2 px-4 py-2 bg-[#1a1a1a]/80 backdrop-blur-md border border-white/10 rounded-full text-xs text-gray-300 hover:text-white hover:bg-[#222] hover:border-white/20 shadow-xl transition-all">
-                <i data-lucide="arrow-left" class="w-3.5"></i>
-                <span>Back to AI</span>
-            </button>
-        </div>
-
-        <div id="epo-main-content" class="w-full max-w-3xl z-10 px-4 flex flex-col items-center flex-1 overflow-hidden" style="padding-top:4rem;">
-            <!-- Suggestion cards grid -->
-            <div id="epo-suggestions-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 w-full">
-                <!-- Populated by JS -->
-            </div>
-
-            <!-- Central oval prompt container -->
-            <div id="epo-prompt-bar" class="mb-12 px-4">
-                <div class="epo-prompt-glow"><div class="epo-prompt-glow-inner"></div></div>
-                <div class="epo-prompt-inner">
-                    <div class="epo-logo-box">
-                        <svg class="w-7 h-7" viewBox="-15 -15 130 130">
-                            <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
-                            <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
-                            <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
-                        </svg>
-                    </div>
-                    <input id="epo-input" type="text" placeholder="Ask Clarity to write email drafts"
-                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-                    <button id="epo-send-btn" class="epo-send-btn" onclick="handleEpoSend()" disabled>
-                        <i data-lucide="send" class="w-5"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Output area — chat style, no container -->
-            <div id="epo-output-area">
-                <!-- User prompt bubble (right) -->
-                <div id="epo-user-bubble" class="epo-user-bubble"></div>
-
-                <!-- AI response (left with avatar) -->
-                <div class="epo-ai-row">
-                    <div class="epo-ai-avatar">
-                        <svg class="w-8 h-8" viewBox="-15 -15 130 130" overflow="visible">
-                            <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
-                            <path class="cl-seg" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
-                            <path class="cl-seg" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
-                        </svg>
-                    </div>
-                    <div class="epo-ai-content">
-                        <div id="epo-status-header" class="epo-ai-status">
-                            <span class="epo-writing-gradient font-medium">Writing a draft...</span>
-                        </div>
-                        <div id="epo-email-content" class="ai-response"></div>
-
-                        <!-- Action buttons (copy, send, retry) -->
-                        <div id="epo-action-buttons" class="epo-actions-row">
-                            <button onclick="copyEpoContent()" class="epo-action-chip epo-action-copy">
-                                <i data-lucide="copy" class="w-3 h-3"></i> Copy
-                            </button>
-                            <button onclick="epoShowRecipient()" class="epo-action-chip epo-action-send">
-                                <i data-lucide="send" class="w-3 h-3"></i> Send
-                            </button>
-                            <button onclick="retryEpoGeneration()" class="epo-action-chip epo-action-retry">
-                                <i data-lucide="rotate-cw" class="w-3 h-3"></i> Retry
-                            </button>
-                        </div>
-
-                        <!-- Recipient container -->
-                        <div id="epo-recipient-container">
-                            <div class="flex gap-3">
-                                <div class="epo-recipient-field">
-                                    <span class="epo-recipient-label">From</span>
-                                    <input id="epo-from-field" class="epo-recipient-input" type="email" disabled>
-                                </div>
-                                <div class="epo-recipient-field">
-                                    <span class="epo-recipient-label">To</span>
-                                    <input id="epo-to-field" class="epo-recipient-input" type="email" placeholder="recipient@gmail.com">
-                                </div>
-                            </div>
-                            <button onclick="epoFinalSend()" class="epo-recipient-send-btn">Send Email</button>
-                        </div>
-
-                        <!-- Reading status + smart suggestions (inline after response) -->
-                        <div id="epo-reading-status" class="epo-reading-status" style="margin-top:0.75rem;">
-                            <span class="epo-reading-dot"></span>
-                            <span class="epo-reading-dot" style="animation-delay:.2s"></span>
-                            <span class="epo-reading-dot" style="animation-delay:.4s"></span>
-                            <span>Reading email for suggestions...</span>
-                        </div>
-                        <div id="epo-smart-suggestions"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div id="epo-footer" class="text-center pb-6 opacity-30 flex items-center justify-center gap-4 text-xs tracking-[0.4em] uppercase font-bold z-10">
-            <i data-lucide="pen-line" class="w-4"></i>
-            <span>Clarity AI · Email Writer</span>
-        </div>
-    </div>
 
     <!-- ═══════════════════════════════════════════════════════
          CANVAS SIDEBAR (slides in from right)
@@ -2570,28 +1817,6 @@
                 </div>
             </div>
 
-            <!-- Gmail Connection -->
-            <div class="account-section">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="account-section-icon bg-blue-500/10">
-                        <i data-lucide="mail" class="w-4 text-blue-400"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-white font-semibold text-sm">Gmail</h2>
-                        <p class="text-gray-600 text-[11px]">Connect your Gmail account for email features</p>
-                    </div>
-                </div>
-                <div class="flex items-center justify-between p-3 bg-white/3 rounded-xl border border-white/5">
-                    <div class="flex items-center gap-2">
-                        <span id="account-gmail-status-icon" class="w-2 h-2 rounded-full bg-gray-600"></span>
-                        <span id="account-gmail-label" class="text-sm text-gray-400">Not connected</span>
-                    </div>
-                    <button id="account-gmail-btn" onclick="handleAccountGmailAction()" class="account-btn">
-                        <i data-lucide="link" class="w-3.5"></i> Connect Gmail
-                    </button>
-                </div>
-            </div>
-
             <!-- Sign out -->
             <div class="account-section">
                 <div class="flex items-center gap-3 mb-4">
@@ -2944,15 +2169,20 @@
         function toggleSidebar(open) {
             const sb = document.getElementById('sidebar');
             const ov = document.getElementById('sidebar-overlay');
+            const btn = document.getElementById('sidebar-menu-btn');
             document.body.classList.toggle('sidebar-open', open);
             if (open) {
                 sb.classList.remove('-translate-x-full');
+                sb.classList.add('sidebar-open');
                 ov.classList.remove('opacity-0','pointer-events-none');
                 ov.classList.add('opacity-100');
+                if (btn) btn.classList.add('sb-hidden');
             } else {
                 sb.classList.add('-translate-x-full');
+                sb.classList.remove('sidebar-open');
                 ov.classList.add('opacity-0','pointer-events-none');
                 ov.classList.remove('opacity-100');
+                if (btn) btn.classList.remove('sb-hidden');
             }
         }
 
@@ -4356,30 +3586,8 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
             renderConversationList(filtered);
         }
 
-        // ── Sidebar tabs (Chat / Emails) ──────────────────────────
-        let activeSidebarTab = 'chat';
-        function switchSidebarTab(tab) {
-            activeSidebarTab = tab;
-            document.getElementById('sidebar-tab-chat').classList.toggle('active', tab === 'chat');
-            document.getElementById('sidebar-tab-emails').classList.toggle('active', tab === 'emails');
-            document.getElementById('sidebar-chat-panel').classList.toggle('hidden', tab !== 'chat');
-            document.getElementById('sidebar-emails-panel').classList.toggle('hidden', tab !== 'emails');
-            const searchInput = document.getElementById('sidebar-search');
-            searchInput.placeholder = tab === 'chat' ? 'Search conversations\u2026' : 'Search emails\u2026';
-            searchInput.value = '';
-            if (tab === 'emails') loadEmailConversations();
-        }
-
         function filterSidebarContent(query) {
-            if (activeSidebarTab === 'chat') {
-                filterConversations(query);
-            } else if (activeSidebarTab === 'presentations') {
-                filterPresentations(query);
-            } else if (activeSidebarTab === 'emails') {
-                filterEmailConversations(query);
-            } else {
-                filterArtifactsSidebar(query);
-            }
+            filterConversations(query);
         }
 
         // ── Presentations state ──────────────────────────────────
@@ -5562,30 +4770,9 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         }
 
         // ── Gated features (only available after update) ─────────
-        function enableGatedFeatures() {
-            // Show emails tab and email-related UI
-            document.getElementById('sidebar-tab-emails').style.display = '';
-            document.getElementById('sidebar-emails-panel').classList.remove('gated-hidden');
-            // Show email mode trigger in version popup
-            const gmailSection = document.getElementById('gmail-popup-section');
-            if (gmailSection) gmailSection.style.display = '';
-        }
-
-        function disableGatedFeatures() {
-            // Hide emails tab and email-related UI until update
-            document.getElementById('sidebar-tab-emails').style.display = 'none';
-            // Hide email mode trigger in version popup
-            const gmailSection = document.getElementById('gmail-popup-section');
-            if (gmailSection) gmailSection.style.display = 'none';
-        }
-
-        function initGatedFeatures() {
-            if (clarityUpdated) {
-                enableGatedFeatures();
-            } else {
-                disableGatedFeatures();
-            }
-        }
+        function enableGatedFeatures() {}
+        function disableGatedFeatures() {}
+        function initGatedFeatures() {}
 
         let sidebarSelectMode = false;
         let selectedConvIds = new Set();
@@ -5646,26 +4833,27 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 return;
             }
             const isActive = id => activeConversationId === id;
-            list.innerHTML = convs.map(c => {
+            list.innerHTML = convs.map((c, idx) => {
                 const safe  = escapeHtml(c.title);
                 const safej = safe.replace(/'/g,"\\'");
+                const delay = `style="transition-delay:${0.05 + idx * 0.025}s"`;
                 if (sidebarSelectMode) {
                     const checked = selectedConvIds.has(c.id);
                     return `
                         <div class="history-item flex items-center gap-2.5 px-2 py-2 cursor-pointer hover:bg-white/5 ${checked ? 'selected' : ''}"
-                             data-id="${c.id}" onclick="toggleConvSelection('${c.id}')">
+                             data-id="${c.id}" onclick="toggleConvSelection('${c.id}')" ${delay}>
                             <input type="checkbox" class="conv-checkbox" ${checked ? 'checked' : ''}
                                 onclick="event.stopPropagation();toggleConvSelection('${c.id}')">
                             <i data-lucide="message-square" class="w-3.5 shrink-0 text-gray-600"></i>
-                            <span class="text-sm text-gray-400 truncate flex-1">${safe}</span>
+                            <span class="text-[14px] text-gray-400 truncate flex-1 font-light">${safe}</span>
                         </div>`;
                 }
                 return `
                     <div class="history-item group relative flex items-center hover:bg-white/5 ${isActive(c.id) ? 'history-item-active' : ''}"
-                         data-id="${c.id}">
-                        <button onclick="loadConversation('${c.id}')" class="flex-1 text-left flex items-center gap-2.5 px-2.5 py-2.5 min-w-0">
-                            <i data-lucide="message-square" class="w-3.5 shrink-0 ${isActive(c.id) ? 'text-violet-400' : 'text-gray-600 group-hover:text-gray-400'} transition-colors"></i>
-                            <span class="text-sm ${isActive(c.id) ? 'text-gray-200' : 'text-gray-400 group-hover:text-gray-200'} transition-colors truncate">${safe}</span>
+                         data-id="${c.id}" ${delay}>
+                        <button onclick="loadConversation('${c.id}')" class="flex-1 text-left flex items-center gap-3 px-2.5 py-2.5 min-w-0">
+                            <i data-lucide="message-square" class="w-3.5 shrink-0 ${isActive(c.id) ? 'text-violet-400' : 'text-white/10 group-hover:text-white/40'} transition-colors"></i>
+                            <span class="text-[14px] ${isActive(c.id) ? 'text-gray-200' : 'text-white/60 group-hover:text-white'} transition-colors truncate font-light">${safe}</span>
                         </button>
                         <div class="flex gap-0.5 pr-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                             <button onclick="openRenameModal('${c.id}','${safej}')"
@@ -7226,1223 +6414,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 }, 2000);
             });
         }
-
-        // ═══════════════════════════════════════════════════════════
-        //  GMAIL / EMAIL MODE
-        // ═══════════════════════════════════════════════════════════
-
-        let gmailConnected = false;
-        let gmailEmail = '';
-        let emailModeActive = false;
-        let emailConversationHistory = [];
-        let activeEmailConversationId = null;
-        let allEmailConversations = [];
-        let cachedGmailEmails = [];
-        let emailTyping = false;
-
-        // ── Check Gmail connection on load ──
-        async function checkGmailStatus() {
-            try {
-                const uid = currentUser.id || '';
-                if (!uid) return;
-                const res = await fetch(`/api/gmail?action=status&userId=${encodeURIComponent(uid)}`);
-                const data = await res.json();
-                gmailConnected = data.connected;
-                gmailEmail = data.email || '';
-                updateGmailUI();
-            } catch (e) { console.error('[Gmail] checkGmailStatus error:', e); }
-        }
-
-        function updateGmailUI() {
-            const badge = document.getElementById('gmail-status-badge');
-            const btn = document.getElementById('gmail-popup-btn');
-            if (gmailConnected) {
-                badge.className = 'gmail-status-pill connected';
-                badge.textContent = gmailEmail;
-                btn.textContent = 'Open';
-                btn.onclick = () => { closeVersionPopup(); openEmailPromptMode(); };
-            } else {
-                badge.className = 'gmail-status-pill disconnected';
-                badge.textContent = 'Not connected';
-                btn.textContent = 'Connect';
-                btn.onclick = () => { handleGmailConnect(); };
-            }
-            // Update account settings page Gmail section
-            const accIcon = document.getElementById('account-gmail-status-icon');
-            const accLabel = document.getElementById('account-gmail-label');
-            const accBtn = document.getElementById('account-gmail-btn');
-            if (accIcon && accLabel && accBtn) {
-                if (gmailConnected) {
-                    accIcon.className = 'w-2 h-2 rounded-full bg-green-400';
-                    accLabel.textContent = gmailEmail;
-                    accLabel.className = 'text-sm text-green-400';
-                    accBtn.innerHTML = '<i data-lucide="unlink" class="w-3.5"></i> Disconnect';
-                    accBtn.className = 'account-btn danger';
-                    lucide.createIcons();
-                } else {
-                    accIcon.className = 'w-2 h-2 rounded-full bg-gray-600';
-                    accLabel.textContent = 'Not connected';
-                    accLabel.className = 'text-sm text-gray-400';
-                    accBtn.innerHTML = '<i data-lucide="link" class="w-3.5"></i> Connect Gmail';
-                    accBtn.className = 'account-btn';
-                    lucide.createIcons();
-                }
-            }
-        }
-
-        async function handleAccountGmailAction() {
-            if (gmailConnected) {
-                // Disconnect
-                const btn = document.getElementById('account-gmail-btn');
-                btn.innerHTML = 'Disconnecting\u2026';
-                btn.disabled = true;
-                try {
-                    await fetch('/api/gmail?action=disconnect', {
-                        method: 'POST',
-                        headers: authHeaders(),
-                        body: JSON.stringify({ userId: currentUser.id })
-                    });
-                    gmailConnected = false;
-                    gmailEmail = '';
-                    updateGmailUI();
-                    showAppToast('Gmail disconnected', 'success');
-                } catch (_) {
-                    showAppToast('Failed to disconnect Gmail', 'error');
-                }
-                btn.disabled = false;
-            } else {
-                handleGmailConnect();
-            }
-        }
-
-        async function handleGmailPopupAction() {
-            if (gmailConnected) {
-                closeVersionPopup();
-                openEmailPromptMode();
-            } else {
-                handleGmailConnect();
-            }
-        }
-
-        async function handleGmailConnect() {
-            try {
-                const res = await fetch(`/api/gmail?action=auth-url&userId=${encodeURIComponent(currentUser.id || '')}`);
-                const data = await res.json();
-                if (data.url) {
-                    window.location.href = data.url;
-                } else if (data.error) {
-                    showAppToast(data.error, 'error');
-                }
-            } catch (_) {
-                showAppToast('Failed to initiate Gmail connection', 'error');
-            }
-        }
-
-        // Check for gmail URL params on load
-        const _gmailParam = new URLSearchParams(window.location.search).get('gmail');
-        const _gmailReason = new URLSearchParams(window.location.search).get('reason');
-        if (_gmailParam === 'error') {
-            window.history.replaceState({}, '', '/app');
-            showAppToast('Gmail connection failed: ' + (_gmailReason || 'unknown error'), 'error');
-        } else if (_gmailParam === 'connected') {
-            window.history.replaceState({}, '', '/app');
-            setTimeout(() => {
-                checkGmailStatus().then(() => {
-                    if (gmailConnected) {
-                        showAppToast('Gmail connected successfully!', 'success');
-                    } else {
-                        showAppToast('Gmail OAuth completed but connection not found - check Supabase table', 'error');
-                    }
-                });
-            }, 800);
-        }
-
-        // ── Email Mode ──────────────────────────────────────────
-
-        let emailWrapSuggestions = [];
-        let emailTypingInterval = null;
-        const emailTypingPhrases = [
-            "Draft emails with AI assistance...",
-            "Summarize long threads in seconds...",
-            "Reply professionally in one click...",
-            "Find important emails instantly..."
-        ];
-        let emailPhraseIdx = 0, emailCharIdx = 0, emailIsDeleting = false;
-
-        function emailTypingEffect() {
-            const el = document.getElementById('email-typing-text');
-            if (!el) return;
-            const phrase = emailTypingPhrases[emailPhraseIdx];
-            if (emailIsDeleting) {
-                emailCharIdx--;
-                el.textContent = phrase.substring(0, emailCharIdx);
-                if (emailCharIdx === 0) {
-                    emailIsDeleting = false;
-                    emailPhraseIdx = (emailPhraseIdx + 1) % emailTypingPhrases.length;
-                    emailTypingInterval = setTimeout(emailTypingEffect, 400);
-                    return;
-                }
-                emailTypingInterval = setTimeout(emailTypingEffect, 25);
-            } else {
-                emailCharIdx++;
-                el.textContent = phrase.substring(0, emailCharIdx);
-                if (emailCharIdx === phrase.length) {
-                    emailIsDeleting = true;
-                    emailTypingInterval = setTimeout(emailTypingEffect, 1800);
-                    return;
-                }
-                emailTypingInterval = setTimeout(emailTypingEffect, 50);
-            }
-        }
-
-        async function enterEmailMode() {
-            emailModeActive = true;
-            const overlay = document.getElementById('email-overlay');
-            const wrap = document.getElementById('email-viewport-wrap');
-            const chatInterface = document.getElementById('email-chat-interface');
-
-            overlay.classList.add('email-active');
-
-            // Reset to wrap view
-            wrap.style.display = '';
-            wrap.classList.remove('email-wrapped');
-            chatInterface.style.display = 'none';
-
-            // Set connected email labels
-            document.getElementById('email-connected-email').textContent = gmailEmail;
-            document.getElementById('email-from-field').value = gmailEmail;
-            document.getElementById('email-chat-connected-email').textContent = gmailEmail;
-
-            // Clear previous state
-            emailConversationHistory = [];
-            activeEmailConversationId = null;
-            document.getElementById('email-chat-area').innerHTML = '';
-            document.getElementById('email-recipient-bar').classList.remove('visible');
-            document.getElementById('email-suggestions-area').innerHTML = '';
-            document.getElementById('email-header-area').style.display = '';
-
-            // Clear AI cards
-            for (let i = 1; i <= 4; i++) {
-                document.getElementById('email-ai-card-' + i).innerHTML = '';
-            }
-            document.getElementById('email-glow-suggestions').innerHTML = '';
-            document.getElementById('email-ai-cards-grid').classList.remove('cards-ready');
-
-            // Enable wrap input
-            const wrapInput = document.getElementById('email-wrap-input-field');
-            wrapInput.value = '';
-            document.getElementById('email-wrap-send-btn').disabled = true;
-            wrapInput.oninput = () => { document.getElementById('email-wrap-send-btn').disabled = !wrapInput.value.trim(); };
-
-            lucide.createIcons();
-
-            // Load emails and generate suggestions
-            await loadEmailSuggestions();
-
-            // Start typing effect
-            emailPhraseIdx = 0; emailCharIdx = 0; emailIsDeleting = false;
-            if (emailTypingInterval) clearTimeout(emailTypingInterval);
-            emailTypingEffect();
-        }
-
-        function openComposeEmail() {
-            toggleSidebar(false);
-            if (!clarityUpdated) {
-                openUpdateSplash();
-                return;
-            }
-            if (gmailConnected) {
-                openEmailPromptMode();
-            } else {
-                showAppToast('Connect Gmail first to compose emails', 'error');
-            }
-        }
-
-        function exitEmailMode() {
-            emailModeActive = false;
-            const overlay = document.getElementById('email-overlay');
-            const wrap = document.getElementById('email-viewport-wrap');
-
-            // Animate unwrap
-            wrap.classList.remove('email-wrapped');
-
-            setTimeout(() => {
-                overlay.classList.remove('email-active');
-                emailConversationHistory = [];
-                activeEmailConversationId = null;
-                if (emailTypingInterval) clearTimeout(emailTypingInterval);
-            }, 400);
-        }
-
-        function emailWrapInputSubmit() {
-            const inp = document.getElementById('email-wrap-input-field');
-            const val = inp.value.trim();
-            if (!val) return;
-            transitionToEmailChat(val);
-        }
-
-        function transitionToEmailChat(initialPrompt) {
-            const wrap = document.getElementById('email-viewport-wrap');
-            const chatInterface = document.getElementById('email-chat-interface');
-
-            // Fade out wrap, show chat interface
-            wrap.style.transition = 'opacity 0.4s ease';
-            wrap.style.opacity = '0';
-
-            setTimeout(() => {
-                wrap.style.display = 'none';
-                chatInterface.style.display = 'flex';
-                chatInterface.style.opacity = '0';
-                chatInterface.style.animation = 'fade-up 0.4s ease forwards';
-
-                if (initialPrompt) {
-                    document.getElementById('email-input').value = initialPrompt;
-                    updateEmailSendBtn();
-                    handleEmailSend();
-                }
-            }, 350);
-        }
-
-        async function loadEmailSuggestions() {
-            // Show loading state on AI cards
-            const defaultCards = [
-                { icon: 'pen-line', color: 'text-blue-400', label: 'WRITING', labelColor: 'text-blue-400', text: 'Loading suggestions...' },
-                { icon: 'lightbulb', color: 'text-purple-400', label: 'ANALYSIS', labelColor: 'text-purple-400', text: 'Reading your inbox...' },
-                { icon: 'clock', color: 'text-green-400', label: 'PLANNING', labelColor: 'text-green-400', text: 'Checking recent emails...' },
-                { icon: 'search', color: 'text-amber-400', label: 'RESEARCH', labelColor: 'text-amber-400', text: 'Finding insights...' }
-            ];
-            for (let i = 0; i < 4; i++) {
-                const card = document.getElementById('email-ai-card-' + (i + 1));
-                card.innerHTML = `
-                    <div class="eac-icon"><i data-lucide="${defaultCards[i].icon}" class="w-4.5 ${defaultCards[i].color}"></i></div>
-                    <div><div class="eac-label ${defaultCards[i].labelColor}">${defaultCards[i].label}</div><div class="eac-text">${defaultCards[i].text}</div></div>`;
-                card.onclick = null;
-            }
-            lucide.createIcons();
-
-            // Animate cards in
-            setTimeout(() => {
-                document.getElementById('email-ai-cards-grid').classList.add('cards-ready');
-            }, 100);
-
-            try {
-                // Fetch recent emails
-                const emailsRes = await fetch(`/api/gmail?action=emails&userId=${encodeURIComponent(currentUser.id || '')}`);
-                const emailsData = await emailsRes.json();
-                cachedGmailEmails = emailsData.emails || [];
-
-                if (cachedGmailEmails.length === 0) {
-                    // Update cards with generic suggestions
-                    const genericSugs = [
-                        { icon: 'pen-line', color: 'text-blue-400', label: 'COMPOSE', labelColor: 'text-blue-400', text: 'Write a new email', prompt: 'Help me compose a professional email' },
-                        { icon: 'reply', color: 'text-purple-400', label: 'DRAFT', labelColor: 'text-purple-400', text: 'Draft a follow-up message', prompt: 'Draft a follow-up email' },
-                        { icon: 'file-text', color: 'text-green-400', label: 'TEMPLATE', labelColor: 'text-green-400', text: 'Create an email template', prompt: 'Create a professional email template' },
-                        { icon: 'send', color: 'text-amber-400', label: 'OUTREACH', labelColor: 'text-amber-400', text: 'Write a cold outreach email', prompt: 'Write a cold outreach email' }
-                    ];
-                    updateEmailAICards(genericSugs);
-                    emailWrapSuggestions = genericSugs;
-                    // Trigger wrap transition after cards load
-                    setTimeout(() => triggerEmailWrap(), 2500);
-                    return;
-                }
-
-                // Get AI suggestions based on emails
-                const sugRes = await fetch('/api/gmail?action=suggestions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: currentUser.id, emails: cachedGmailEmails })
-                });
-                const sugData = await sugRes.json();
-                const suggestions = sugData.suggestions || [];
-
-                const labelCategories = ['REPLY', 'COMPOSE', 'SUMMARIZE', 'ACTION'];
-                const labelColors = ['text-blue-400', 'text-purple-400', 'text-green-400', 'text-amber-400'];
-                const iconColors = ['text-blue-400', 'text-purple-400', 'text-green-400', 'text-amber-400'];
-
-                const mappedSugs = suggestions.slice(0, 4).map((s, i) => ({
-                    icon: s.icon || 'mail',
-                    color: iconColors[i % 4],
-                    label: labelCategories[i % 4],
-                    labelColor: labelColors[i % 4],
-                    text: s.title,
-                    prompt: s.prompt
-                }));
-
-                emailWrapSuggestions = mappedSugs;
-                updateEmailAICards(mappedSugs);
-
-                // Also populate the chat mode suggestion cards
-                const sugArea = document.getElementById('email-suggestions-area');
-                sugArea.innerHTML = mappedSugs.map((s, i) => `
-                    <button class="email-suggestion-card" onclick="fillEmailInput('${escapeHtml(s.prompt.replace(/'/g, "\\'"))}')">
-                        <div class="esc-icon">
-                            <i data-lucide="${escapeHtml(s.icon)}" class="w-4 ${s.color}"></i>
-                        </div>
-                        <span class="esc-text">${escapeHtml(s.text)}</span>
-                    </button>
-                `).join('');
-                lucide.createIcons();
-
-                // Trigger wrap transition after cards are shown
-                setTimeout(() => triggerEmailWrap(), 2800);
-
-            } catch (err) {
-                const fallbackSugs = [
-                    { icon: 'pen-line', color: 'text-blue-400', label: 'COMPOSE', labelColor: 'text-blue-400', text: 'Write a new email', prompt: 'Help me compose a professional email' },
-                    { icon: 'reply', color: 'text-purple-400', label: 'REPLY', labelColor: 'text-purple-400', text: 'Draft a quick reply', prompt: 'Help me draft a reply' },
-                    { icon: 'file-text', color: 'text-green-400', label: 'TEMPLATE', labelColor: 'text-green-400', text: 'Create an email template', prompt: 'Create a professional email template' },
-                    { icon: 'send', color: 'text-amber-400', label: 'SEND', labelColor: 'text-amber-400', text: 'Send a message', prompt: 'Help me write and send an email' }
-                ];
-                updateEmailAICards(fallbackSugs);
-                emailWrapSuggestions = fallbackSugs;
-                setTimeout(() => triggerEmailWrap(), 2500);
-            }
-        }
-
-        function updateEmailAICards(sugs) {
-            for (let i = 0; i < Math.min(sugs.length, 4); i++) {
-                const card = document.getElementById('email-ai-card-' + (i + 1));
-                const s = sugs[i];
-                card.innerHTML = `
-                    <div class="eac-icon"><i data-lucide="${escapeHtml(s.icon)}" class="w-4.5 ${s.color}"></i></div>
-                    <div><div class="eac-label ${s.labelColor}">${escapeHtml(s.label)}</div><div class="eac-text">${escapeHtml(s.text)}</div></div>`;
-                card.onclick = () => {
-                    transitionToEmailChat(s.prompt);
-                };
-            }
-            lucide.createIcons();
-        }
-
-        function triggerEmailWrap() {
-            if (!emailModeActive) return;
-            const wrap = document.getElementById('email-viewport-wrap');
-            wrap.classList.add('email-wrapped');
-
-            // Populate edge glow suggestion cards
-            const glowArea = document.getElementById('email-glow-suggestions');
-
-            glowArea.innerHTML = emailWrapSuggestions.map((s, i) => {
-                const gid = 'eeg-' + i;
-                return `
-                <div class="email-glow-card" style="--trace-delay:${i + 1}" onclick="transitionToEmailChat('${escapeHtml(s.prompt.replace(/'/g, "\\'"))}')">
-                    <svg class="svg-trace" viewBox="0 0 200 56"><defs><linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#7c3aed"/><stop offset="33%" style="stop-color:#a78bfa"/><stop offset="66%" style="stop-color:#c084fc"/><stop offset="100%" style="stop-color:#7c3aed"/></linearGradient></defs><rect class="trace-path" x="1.5" y="1.5" rx="15" ry="15" width="197" height="53" stroke="url(#${gid})"/></svg>
-                    <div class="egc-icon"><i data-lucide="${escapeHtml(s.icon)}" class="w-3.5 ${s.color}"></i></div>
-                    <span>${escapeHtml(s.text)}</span>
-                </div>`;
-            }).join('');
-            lucide.createIcons();
-        }
-
-        function fillEmailInput(text) {
-            const inp = document.getElementById('email-input');
-            inp.value = text;
-            updateEmailSendBtn();
-            inp.focus();
-        }
-
-        function updateEmailSendBtn() {
-            const btn = document.getElementById('email-send-btn');
-            const val = document.getElementById('email-input').value.trim();
-            btn.disabled = !val || emailTyping;
-        }
-
-        // ── Email Send Handler ──────────────────────────────────
-
-        async function handleEmailSend() {
-            const inp = document.getElementById('email-input');
-            const val = inp.value.trim();
-            if (!val || emailTyping) return;
-
-            emailTyping = true;
-            inp.value = '';
-            updateEmailSendBtn();
-
-            // Hide suggestions after first message
-            document.getElementById('email-suggestions-area').style.display = 'none';
-
-            // Ensure chat interface is visible (in case coming from wrap view)
-            const chatIf = document.getElementById('email-chat-interface');
-            if (chatIf.style.display === 'none' || chatIf.style.display === '') {
-                document.getElementById('email-viewport-wrap').style.display = 'none';
-                chatIf.style.display = 'flex';
-                chatIf.style.opacity = '1';
-            }
-
-            // Ensure email conversation exists
-            await ensureEmailConversation(val);
-
-            // Append user message
-            appendEmailUserMessage(val);
-
-            // Save user message
-            saveEmailMessage('user', val);
-
-            // Create AI response shell
-            const chatArea = document.getElementById('email-chat-area');
-            const shellEl = document.createElement('div');
-            shellEl.className = 'email-response-container';
-            shellEl.innerHTML = `
-                <div class="email-response-header">
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="sparkles" class="w-3.5 text-violet-400"></i>
-                        <span class="text-xs text-gray-400 font-medium">Clarity AI</span>
-                    </div>
-                    <div class="loading-dots flex items-center gap-1"><span></span><span></span><span></span></div>
-                </div>
-                <div class="email-response-body ai-response"></div>
-            `;
-            chatArea.appendChild(shellEl);
-            const bodyEl = shellEl.querySelector('.email-response-body');
-            chatArea.scrollTop = chatArea.scrollHeight;
-            lucide.createIcons();
-
-            try {
-                const res = await fetch('/api/gmail?action=compose', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        prompt: val,
-                        history: emailConversationHistory,
-                        emails: cachedGmailEmails
-                    })
-                });
-                const data = await res.json();
-
-                if (!res.ok) {
-                    bodyEl.innerHTML = `<span class="text-red-400">${escapeHtml(data.error || 'Something went wrong.')}</span>`;
-                } else {
-                    emailConversationHistory.push({ role: 'user', content: val }, { role: 'assistant', content: data.reply });
-                    saveEmailMessage('assistant', data.reply);
-
-                    // Typewriter effect for email
-                    await emailTypeWriter(bodyEl, data.reply);
-
-                    // Add action buttons after typing
-                    const headerEl = shellEl.querySelector('.email-response-header');
-                    headerEl.querySelector('.loading-dots')?.remove();
-
-                    const actionsHtml = `
-                        <div class="email-response-actions">
-                            <button onclick="copyEmailContent(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
-                                <i data-lucide="copy" class="w-3"></i> Copy
-                            </button>
-                            <button onclick="prepareEmailSend(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-white bg-violet-600 hover:bg-violet-500 rounded-lg transition-colors">
-                                <i data-lucide="send" class="w-3"></i> Send
-                            </button>
-                        </div>`;
-                    shellEl.insertAdjacentHTML('beforeend', actionsHtml);
-                    lucide.createIcons();
-                }
-            } catch (err) {
-                bodyEl.innerHTML = `<span class="text-red-400">Network error. Please try again.</span>`;
-            }
-
-            emailTyping = false;
-            updateEmailSendBtn();
-            chatArea.scrollTop = chatArea.scrollHeight;
-        }
-
-        function appendEmailUserMessage(text) {
-            const chatArea = document.getElementById('email-chat-area');
-            const el = document.createElement('div');
-            el.className = 'flex justify-end msg-enter pr-2';
-            el.innerHTML = `<div class="bg-[#1a1a1a] border border-white/8 py-2 px-3.5 rounded-2xl rounded-tr-sm max-w-[72%] text-sm text-gray-200 leading-relaxed break-words whitespace-pre-wrap ml-auto">${escapeHtml(text)}</div>`;
-            chatArea.appendChild(el);
-            chatArea.scrollTop = chatArea.scrollHeight;
-        }
-
-        async function emailTypeWriter(el, text) {
-            let built = '';
-            for (let i = 0; i < text.length; i += 3) {
-                built += text.slice(i, i + 3);
-                el.innerHTML = marked.parse(built) + '<span class="typing-cursor"></span>';
-                const chatArea = document.getElementById('email-chat-area');
-                chatArea.scrollTop = chatArea.scrollHeight;
-                await sleep(14);
-            }
-            el.innerHTML = marked.parse(text);
-        }
-
-        // ── Copy email content ──────────────────────────────────
-
-        function copyEmailContent(btn) {
-            const container = btn.closest('.email-response-container');
-            const body = container.querySelector('.email-response-body');
-            const text = body.innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                btn.innerHTML = '<i data-lucide="check" class="w-3"></i> Copied!';
-                lucide.createIcons();
-                setTimeout(() => {
-                    btn.innerHTML = '<i data-lucide="copy" class="w-3"></i> Copy';
-                    lucide.createIcons();
-                }, 2000);
-            });
-        }
-
-        // ── Send email flow ─────────────────────────────────────
-
-        function prepareEmailSend(btn) {
-            const container = btn.closest('.email-response-container');
-            const body = container.querySelector('.email-response-body');
-            const actionsDiv = container.querySelector('.email-response-actions');
-
-            // Make body editable
-            body.setAttribute('contenteditable', 'true');
-            body.classList.add('editable');
-            body.focus();
-
-            // Show recipient bar
-            const recipientBar = document.getElementById('email-recipient-bar');
-            recipientBar.classList.add('visible');
-
-            // Replace actions with send/cancel
-            actionsDiv.innerHTML = `
-                <button onclick="cancelEmailSend(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
-                    Cancel
-                </button>
-                <button onclick="confirmEmailSend(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-white bg-green-600 hover:bg-green-500 rounded-lg transition-colors">
-                    <i data-lucide="send" class="w-3"></i> Send Email
-                </button>`;
-            lucide.createIcons();
-        }
-
-        function cancelEmailSend(btn) {
-            const container = btn.closest('.email-response-container');
-            const body = container.querySelector('.email-response-body');
-            const actionsDiv = container.querySelector('.email-response-actions');
-
-            body.removeAttribute('contenteditable');
-            body.classList.remove('editable');
-            document.getElementById('email-recipient-bar').classList.remove('visible');
-
-            actionsDiv.innerHTML = `
-                <button onclick="copyEmailContent(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
-                    <i data-lucide="copy" class="w-3"></i> Copy
-                </button>
-                <button onclick="prepareEmailSend(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-white bg-violet-600 hover:bg-violet-500 rounded-lg transition-colors">
-                    <i data-lucide="send" class="w-3"></i> Send
-                </button>`;
-            lucide.createIcons();
-        }
-
-        async function confirmEmailSend(btn) {
-            const toField = document.getElementById('email-to-field');
-            const to = toField.value.trim();
-            if (!to) {
-                toField.style.borderColor = 'rgba(239,68,68,0.7)';
-                toField.focus();
-                setTimeout(() => { toField.style.borderColor = ''; }, 2000);
-                return;
-            }
-
-            const container = btn.closest('.email-response-container');
-            const body = container.querySelector('.email-response-body');
-            const emailContent = body.innerHTML;
-
-            // Extract subject from content if possible
-            let subject = '';
-            const subjectMatch = body.innerText.match(/\*?\*?Subject:\*?\*?\s*(.+)/i);
-            if (subjectMatch) subject = subjectMatch[1].trim();
-
-            btn.textContent = 'Sending\u2026';
-            btn.disabled = true;
-
-            try {
-                const res = await fetch('/api/gmail?action=send', {
-                    method: 'POST',
-                    headers: authHeaders(),
-                    body: JSON.stringify({
-                        userId: currentUser.id,
-                        to,
-                        subject: subject || 'No Subject',
-                        body: emailContent
-                    })
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    body.removeAttribute('contenteditable');
-                    body.classList.remove('editable');
-                    document.getElementById('email-recipient-bar').classList.remove('visible');
-
-                    const actionsDiv = container.querySelector('.email-response-actions');
-                    actionsDiv.innerHTML = `
-                        <div class="flex items-center gap-2 text-green-400 text-xs">
-                            <i data-lucide="check-circle" class="w-3.5"></i>
-                            <span>Email sent to ${escapeHtml(to)}</span>
-                        </div>`;
-                    lucide.createIcons();
-
-                    // Save sent status
-                    saveEmailMessage('assistant', `[SENT to ${to}] ${body.innerText}`, to, subject);
-                } else if (res.status === 403) {
-                    // Permission denied — need to reconnect Gmail with updated scopes
-                    showAppToast('Gmail permissions expired. Reconnecting...', 'error');
-                    btn.textContent = 'Send Email';
-                    btn.disabled = false;
-                    // Auto-disconnect and redirect to re-auth
-                    try {
-                        await fetch('/api/gmail?action=disconnect', {
-                            method: 'POST', headers: authHeaders(),
-                            body: JSON.stringify({ userId: currentUser.id })
-                        });
-                        gmailConnected = false;
-                        gmailEmail = '';
-                        updateGmailUI();
-                    } catch(_) {}
-                    setTimeout(() => handleGmailConnect(), 1500);
-                } else {
-                    showAppToast(data.error || 'Failed to send email', 'error');
-                    btn.textContent = 'Send Email';
-                    btn.disabled = false;
-                }
-            } catch (_) {
-                showAppToast('Network error. Could not send email.', 'error');
-                btn.textContent = 'Send Email';
-                btn.disabled = false;
-            }
-        }
-
-        // ── Email conversation persistence ──────────────────────
-
-        async function ensureEmailConversation(firstMsg) {
-            if (activeEmailConversationId) return;
-            try {
-                const res = await fetch('/api/gmail?action=conversations', {
-                    method: 'POST',
-                    headers: authHeaders(),
-                    body: JSON.stringify({
-                        userId: currentUser.id,
-                        title: firstMsg.slice(0, 60).trim(),
-                        gmailEmail: gmailEmail
-                    })
-                });
-                if (!res.ok) return;
-                const conv = await res.json();
-                activeEmailConversationId = conv.id;
-                loadEmailConversations();
-            } catch (_) {}
-        }
-
-        async function saveEmailMessage(role, content, recipient, subject) {
-            if (!activeEmailConversationId) return;
-            try {
-                await fetch('/api/gmail?action=messages', {
-                    method: 'POST',
-                    headers: authHeaders(),
-                    body: JSON.stringify({
-                        conversationId: activeEmailConversationId,
-                        role,
-                        content,
-                        recipient: recipient || '',
-                        subject: subject || ''
-                    })
-                });
-            } catch (_) {}
-        }
-
-        async function loadEmailConversations() {
-            try {
-                const res = await fetch(`/api/gmail?action=conversations&userId=${encodeURIComponent(currentUser.id || '')}`, { headers: authHeaders() });
-                if (!res.ok) return;
-                const convs = await res.json();
-                allEmailConversations = convs || [];
-                renderEmailConversationList(allEmailConversations);
-            } catch (_) {}
-        }
-
-        function renderEmailConversationList(list) {
-            const container = document.getElementById('email-conversations-list');
-            if (!list.length) {
-                container.innerHTML = '<div class="p-3 text-gray-600 text-sm text-center">No email conversations yet</div>';
-                return;
-            }
-            container.innerHTML = list.map(c => {
-                const d = new Date(c.updated_at || c.created_at);
-                const timeStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                return `
-                    <div class="flex items-center gap-2 p-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition-colors group mb-1" onclick="loadEmailConversation('${c.id}')">
-                        <i data-lucide="mail" class="w-3.5 text-gray-600 shrink-0"></i>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm text-gray-300 truncate">${escapeHtml(c.title)}</p>
-                            <p class="text-[10px] text-gray-600">${timeStr}${c.gmail_email ? ' \u00B7 ' + escapeHtml(c.gmail_email) : ''}</p>
-                        </div>
-                        <button onclick="event.stopPropagation(); deleteEmailConversation('${c.id}')" class="p-1 opacity-0 group-hover:opacity-100 hover:bg-white/10 rounded-lg transition-all">
-                            <i data-lucide="trash-2" class="w-3 text-gray-600 hover:text-red-400"></i>
-                        </button>
-                    </div>`;
-            }).join('');
-            lucide.createIcons();
-        }
-
-        function filterEmailConversations(query) {
-            const q = query.trim().toLowerCase();
-            if (!q) {
-                renderEmailConversationList(allEmailConversations);
-                return;
-            }
-            const filtered = allEmailConversations.filter(c => c.title.toLowerCase().includes(q));
-            renderEmailConversationList(filtered);
-        }
-
-        async function loadEmailConversation(id) {
-            toggleSidebar(false);
-            try {
-                const res = await fetch(`/api/gmail?action=conversations&id=${id}`, { headers: authHeaders() });
-                if (!res.ok) return;
-                const data = await res.json();
-
-                // Enter email mode and load conversation (skip wrap, go straight to chat)
-                if (!emailModeActive) {
-                    emailModeActive = true;
-                    const overlay = document.getElementById('email-overlay');
-                    overlay.classList.add('email-active');
-                    document.getElementById('email-viewport-wrap').style.display = 'none';
-                    const chatIf = document.getElementById('email-chat-interface');
-                    chatIf.style.display = 'flex';
-                    chatIf.style.opacity = '1';
-                    document.getElementById('email-connected-email').textContent = data.gmail_email || gmailEmail;
-                    document.getElementById('email-chat-connected-email').textContent = data.gmail_email || gmailEmail;
-                    document.getElementById('email-from-field').value = data.gmail_email || gmailEmail;
-                    lucide.createIcons();
-                }
-
-                activeEmailConversationId = id;
-                emailConversationHistory = [];
-                document.getElementById('email-chat-area').innerHTML = '';
-                document.getElementById('email-suggestions-area').style.display = 'none';
-
-                // Render messages
-                const messages = data.messages || [];
-                for (const msg of messages) {
-                    if (msg.role === 'user') {
-                        appendEmailUserMessage(msg.content);
-                        emailConversationHistory.push({ role: 'user', content: msg.content });
-                    } else {
-                        const chatArea = document.getElementById('email-chat-area');
-                        const shellEl = document.createElement('div');
-                        shellEl.className = 'email-response-container';
-
-                        const isSent = msg.is_sent || msg.content.startsWith('[SENT');
-                        shellEl.innerHTML = `
-                            <div class="email-response-header">
-                                <div class="flex items-center gap-2">
-                                    <i data-lucide="sparkles" class="w-3.5 text-violet-400"></i>
-                                    <span class="text-xs text-gray-400 font-medium">Clarity AI</span>
-                                </div>
-                                ${isSent ? '<span class="text-[10px] text-green-400 flex items-center gap-1"><i data-lucide="check-circle" class="w-3"></i> Sent</span>' : ''}
-                            </div>
-                            <div class="email-response-body ai-response">${marked.parse(msg.content)}</div>
-                            ${!isSent ? `<div class="email-response-actions">
-                                <button onclick="copyEmailContent(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
-                                    <i data-lucide="copy" class="w-3"></i> Copy
-                                </button>
-                                <button onclick="prepareEmailSend(this)" class="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-white bg-violet-600 hover:bg-violet-500 rounded-lg transition-colors">
-                                    <i data-lucide="send" class="w-3"></i> Send
-                                </button>
-                            </div>` : ''}`;
-                        chatArea.appendChild(shellEl);
-                        emailConversationHistory.push({ role: 'assistant', content: msg.content });
-                    }
-                }
-                lucide.createIcons();
-            } catch (_) {
-                showAppToast('Failed to load email conversation', 'error');
-            }
-        }
-
-        async function deleteEmailConversation(id) {
-            if (!confirm('Delete this email conversation?')) return;
-            try {
-                await fetch(`/api/gmail?action=conversations&id=${id}`, {
-                    method: 'DELETE',
-                    headers: authHeaders()
-                });
-                allEmailConversations = allEmailConversations.filter(c => c.id !== id);
-                renderEmailConversationList(allEmailConversations);
-                if (activeEmailConversationId === id) {
-                    activeEmailConversationId = null;
-                    emailConversationHistory = [];
-                }
-            } catch (_) {
-                showAppToast('Failed to delete', 'error');
-            }
-        }
-
-        // ── Init Gmail check (skip if returning from OAuth — handled above) ──
-        if (!_gmailParam) checkGmailStatus();
-
-        // ═══════════════════════════════════════════════════════════
-        //  EMAIL PROMPT MODE (from version switcher — new interface)
-        // ═══════════════════════════════════════════════════════════
-
-        let epoActive = false;
-        let epoDrafting = false;
-        let epoLastPrompt = '';
-
-        const epoSuggestions = [
-            { icon: 'mail', title: 'Follow-up', desc: 'Gentle nudge for a reply', color: 'text-blue-400' },
-            { icon: 'briefcase', title: 'Pitch Idea', desc: 'Professional project intro', color: 'text-purple-400' },
-            { icon: 'zap', title: 'Launch Day', desc: 'Announce new product', color: 'text-fuchsia-400' },
-            { icon: 'message-circle', title: 'Feedback', desc: 'Ask for user thoughts', color: 'text-cyan-400' }
-        ];
-
-        function renderEpoSuggestionCards() {
-            const grid = document.getElementById('epo-suggestions-grid');
-            grid.innerHTML = epoSuggestions.map((item, idx) => `
-                <div class="epo-card-container shadow-2xl">
-                    <div class="epo-rainbow-trace" style="animation-delay:${idx * 0.15}s"></div>
-                    <button class="epo-card-inner" onclick="epoFillInput('${item.desc}')">
-                        <div class="epo-card-icon ${item.color}">
-                            <i data-lucide="${item.icon}" class="w-5"></i>
-                        </div>
-                        <h3 class="epo-card-title">${item.title}</h3>
-                        <p class="epo-card-desc">${item.desc}</p>
-                    </button>
-                </div>
-            `).join('');
-            lucide.createIcons();
-        }
-
-        function epoFillInput(text) {
-            const inp = document.getElementById('epo-input');
-            inp.value = text;
-            document.getElementById('epo-send-btn').disabled = false;
-            handleEpoSend();
-        }
-
-        function openEmailPromptMode() {
-            if (epoActive) return;
-
-            const wave = document.getElementById('mode-fade-wave');
-            wave.className = '';
-            void wave.offsetWidth;
-            wave.classList.add('wave-up');
-
-            setTimeout(() => {
-                epoActive = true;
-                const overlay = document.getElementById('email-prompt-overlay');
-                overlay.classList.add('epo-active');
-
-                // Reset state
-                const promptBar = document.getElementById('epo-prompt-bar');
-                promptBar.classList.remove('epo-at-bottom');
-                document.getElementById('epo-input').value = '';
-                document.getElementById('epo-send-btn').disabled = true;
-                document.getElementById('epo-output-area').classList.remove('epo-out-visible');
-                document.getElementById('epo-output-area').style.display = 'none';
-                document.getElementById('epo-main-content').classList.remove('epo-output-mode');
-                document.getElementById('epo-action-buttons').classList.remove('epo-actions-visible');
-                document.getElementById('epo-suggestions-grid').classList.remove('epo-hidden');
-                document.getElementById('epo-footer').classList.remove('epo-hidden');
-                document.getElementById('epo-email-content').innerHTML = '';
-                document.getElementById('epo-user-bubble').innerHTML = '';
-                document.getElementById('epo-recipient-container').classList.remove('epo-recipient-visible');
-                document.getElementById('epo-to-field').value = '';
-                document.getElementById('epo-smart-suggestions').classList.remove('epo-smart-visible');
-                document.getElementById('epo-smart-suggestions').innerHTML = '';
-                document.getElementById('epo-reading-status').classList.remove('epo-reading-visible');
-
-                renderEpoSuggestionCards();
-
-                // Enable input tracking
-                const inp = document.getElementById('epo-input');
-                inp.oninput = () => {
-                    document.getElementById('epo-send-btn').disabled = !inp.value.trim();
-                };
-                inp.onkeydown = (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleEpoSend(); }
-                };
-
-                lucide.createIcons();
-
-                // Wave down to reveal
-                setTimeout(() => {
-                    wave.classList.remove('wave-up');
-                    void wave.offsetWidth;
-                    wave.classList.add('wave-down');
-                    setTimeout(() => { wave.className = ''; wave.style.transform = 'translateY(100%)'; }, 600);
-                }, 80);
-            }, 500);
-        }
-
-        function exitEmailPromptMode() {
-            if (!epoActive) return;
-
-            const wave = document.getElementById('mode-fade-wave');
-            wave.className = '';
-            wave.style.transform = '';
-            void wave.offsetWidth;
-            wave.classList.add('wave-up');
-
-            setTimeout(() => {
-                epoActive = false;
-                epoDrafting = false;
-                const overlay = document.getElementById('email-prompt-overlay');
-                overlay.classList.remove('epo-active');
-
-                // Wave down to reveal main AI
-                setTimeout(() => {
-                    wave.classList.remove('wave-up');
-                    void wave.offsetWidth;
-                    wave.classList.add('wave-down');
-                    setTimeout(() => { wave.className = ''; wave.style.transform = 'translateY(100%)'; }, 600);
-                }, 80);
-            }, 500);
-        }
-
-        async function handleEpoSend() {
-            const inp = document.getElementById('epo-input');
-            const val = inp.value.trim();
-            if (!val || epoDrafting) return;
-
-            epoDrafting = true;
-            epoLastPrompt = val;
-
-            // Hide suggestion cards and footer
-            document.getElementById('epo-suggestions-grid').classList.add('epo-hidden');
-            document.getElementById('epo-footer').classList.add('epo-hidden');
-
-            // Move oval to bottom
-            const promptBar = document.getElementById('epo-prompt-bar');
-            promptBar.classList.add('epo-at-bottom');
-
-            // Reset states
-            document.getElementById('epo-recipient-container').classList.remove('epo-recipient-visible');
-            document.getElementById('epo-smart-suggestions').classList.remove('epo-smart-visible');
-            document.getElementById('epo-smart-suggestions').innerHTML = '';
-            document.getElementById('epo-reading-status').classList.remove('epo-reading-visible');
-            document.getElementById('epo-action-buttons').classList.remove('epo-actions-visible');
-
-            // Show output area after transition
-            setTimeout(() => {
-                document.getElementById('epo-main-content').classList.add('epo-output-mode');
-                const output = document.getElementById('epo-output-area');
-                output.style.display = '';
-                void output.offsetWidth;
-                output.classList.add('epo-out-visible');
-
-                // Show user bubble on right
-                document.getElementById('epo-user-bubble').innerHTML =
-                    `<div class="epo-user-bubble-inner">${escapeHtml(val)}</div>`;
-
-                // Show AI writing status
-                document.getElementById('epo-status-header').innerHTML =
-                    '<span class="epo-writing-gradient font-medium">Writing a draft...</span>';
-
-                const contentEl = document.getElementById('epo-email-content');
-                contentEl.innerHTML = '<span class="epo-cursor"></span>';
-
-                // Generate email via API
-                generateEpoEmail(val, contentEl);
-            }, 600);
-        }
-
-        async function generateEpoEmail(prompt, contentEl) {
-            try {
-                const res = await fetch('/api/gmail?action=compose', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        prompt: prompt,
-                        history: [],
-                        emails: cachedGmailEmails || []
-                    })
-                });
-                const data = await res.json();
-
-                if (!res.ok) {
-                    contentEl.innerHTML = `<span class="text-red-400">${escapeHtml(data.error || 'Something went wrong.')}</span>`;
-                    epoDrafting = false;
-                    return;
-                }
-
-                // Typewriter effect with markdown rendering
-                const fullText = data.reply || '';
-                const outputScroller = document.getElementById('epo-output-area');
-                let charIndex = 0;
-                const typeText = () => {
-                    if (charIndex < fullText.length) {
-                        charIndex = Math.min(charIndex + 3, fullText.length);
-                        const partial = fullText.slice(0, charIndex);
-                        contentEl.innerHTML = marked.parse(partial) + '<span class="epo-cursor"></span>';
-                        // Auto-scroll to follow the text
-                        outputScroller.scrollTop = outputScroller.scrollHeight;
-                        setTimeout(typeText, 15);
-                    } else {
-                        finishEpoGeneration(fullText);
-                    }
-                };
-                setTimeout(typeText, 300);
-
-            } catch (err) {
-                contentEl.innerHTML = '<span class="text-red-400">Network error. Please try again.</span>';
-                epoDrafting = false;
-            }
-        }
-
-        function finishEpoGeneration(text) {
-            epoDrafting = false;
-            const contentEl = document.getElementById('epo-email-content');
-            // Format text with better structure
-            contentEl.innerHTML = formatEpoEmail(text);
-
-            document.getElementById('epo-status-header').innerHTML = `
-                <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs tracking-[0.15em] uppercase">
-                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" style="box-shadow:0 0 10px rgba(16,185,129,0.8)"></div>
-                    Draft Ready
-                </div>`;
-
-            // Show action buttons
-            document.getElementById('epo-action-buttons').classList.add('epo-actions-visible');
-
-            // Set From field
-            document.getElementById('epo-from-field').value = gmailEmail || 'you@gmail.com';
-
-            // Show "Reading email for suggestions..." then smart suggestions
-            const readingStatus = document.getElementById('epo-reading-status');
-            readingStatus.classList.add('epo-reading-visible');
-
-            setTimeout(() => {
-                readingStatus.classList.remove('epo-reading-visible');
-                setTimeout(() => {
-                    renderEpoSmartSuggestions(text);
-                }, 200);
-            }, 1500);
-
-            lucide.createIcons();
-        }
-
-        function formatEpoEmail(text) {
-            return marked.parse(text);
-        }
-
-        function renderEpoSmartSuggestions(emailText) {
-            // Generate contextual 3-4 word suggestions based on email content
-            const suggestions = generateSmartSuggestions(emailText);
-            const container = document.getElementById('epo-smart-suggestions');
-            container.innerHTML = suggestions.map(s =>
-                `<button class="epo-smart-chip" onclick="epoSmartAction('${s.action}')">${s.label}</button>`
-            ).join('');
-            lucide.createIcons();
-            setTimeout(() => container.classList.add('epo-smart-visible'), 50);
-        }
-
-        function generateSmartSuggestions(text) {
-            const lower = text.toLowerCase();
-            const suggestions = [];
-
-            if (lower.includes('meeting') || lower.includes('schedule') || lower.includes('call')) {
-                suggestions.push({ label: 'Add calendar link', action: 'add_calendar' });
-                suggestions.push({ label: 'Make it shorter', action: 'shorter' });
-            } else if (lower.includes('follow') || lower.includes('check in') || lower.includes('update')) {
-                suggestions.push({ label: 'Add urgency tone', action: 'urgent' });
-                suggestions.push({ label: 'Make more casual', action: 'casual' });
-            } else if (lower.includes('thank') || lower.includes('appreciate') || lower.includes('grateful')) {
-                suggestions.push({ label: 'Add specific details', action: 'details' });
-                suggestions.push({ label: 'Keep it brief', action: 'shorter' });
-            } else if (lower.includes('project') || lower.includes('proposal') || lower.includes('pitch')) {
-                suggestions.push({ label: 'Add key metrics', action: 'metrics' });
-                suggestions.push({ label: 'More professional tone', action: 'formal' });
-            } else if (lower.includes('sorry') || lower.includes('apologize') || lower.includes('apology')) {
-                suggestions.push({ label: 'Soften the tone', action: 'soften' });
-                suggestions.push({ label: 'Add resolution steps', action: 'resolution' });
-            } else {
-                suggestions.push({ label: 'Make it formal', action: 'formal' });
-                suggestions.push({ label: 'Make it shorter', action: 'shorter' });
-            }
-
-            return suggestions;
-        }
-
-        function epoSmartAction(action) {
-            if (epoDrafting || !epoLastPrompt) return;
-            const modifiers = {
-                'add_calendar': 'Add a calendar/meeting link placeholder',
-                'shorter': 'Make it more concise and shorter',
-                'urgent': 'Add a sense of urgency',
-                'casual': 'Make the tone more casual and friendly',
-                'details': 'Add more specific details',
-                'metrics': 'Include key metrics or data points',
-                'formal': 'Make the tone more professional and formal',
-                'soften': 'Soften the tone to be more empathetic',
-                'resolution': 'Add clear resolution steps'
-            };
-            const modifier = modifiers[action] || action;
-            epoDrafting = true;
-            document.getElementById('epo-smart-suggestions').classList.remove('epo-smart-visible');
-            document.getElementById('epo-action-buttons').classList.remove('epo-actions-visible');
-            document.getElementById('epo-reading-status').classList.remove('epo-reading-visible');
-            document.getElementById('epo-status-header').innerHTML =
-                '<span class="epo-writing-gradient font-medium">Refining draft...</span>';
-            const contentEl = document.getElementById('epo-email-content');
-            contentEl.innerHTML = '<span class="epo-cursor"></span>';
-            generateEpoEmail(epoLastPrompt + '. ' + modifier, contentEl);
-        }
-
-        function retryEpoGeneration() {
-            if (epoDrafting || !epoLastPrompt) return;
-            epoDrafting = true;
-            document.getElementById('epo-action-buttons').classList.remove('epo-actions-visible');
-            document.getElementById('epo-recipient-container').classList.remove('epo-recipient-visible');
-            document.getElementById('epo-smart-suggestions').classList.remove('epo-smart-visible');
-            document.getElementById('epo-reading-status').classList.remove('epo-reading-visible');
-            document.getElementById('epo-status-header').innerHTML =
-                '<span class="epo-writing-gradient font-medium">Writing a draft...</span>';
-            const contentEl = document.getElementById('epo-email-content');
-            contentEl.innerHTML = '<span class="epo-cursor"></span>';
-            generateEpoEmail(epoLastPrompt, contentEl);
-        }
-
-        function copyEpoContent() {
-            const text = document.getElementById('epo-email-content').innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                showAppToast('Copied to clipboard', 'success');
-            });
-        }
-
-        function epoShowRecipient() {
-            document.getElementById('epo-recipient-container').classList.add('epo-recipient-visible');
-            document.getElementById('epo-from-field').value = gmailEmail || 'you@gmail.com';
-            setTimeout(() => document.getElementById('epo-to-field').focus(), 400);
-        }
-
-        function epoFinalSend() {
-            const toEmail = document.getElementById('epo-to-field').value.trim();
-            if (!toEmail) {
-                showAppToast('Please enter a recipient email', 'error');
-                return;
-            }
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(toEmail)) {
-                showAppToast('Please enter a valid email address', 'error');
-                return;
-            }
-            if (!gmailConnected) {
-                showAppToast('Connect Gmail first to send emails', 'error');
-                return;
-            }
-
-            const content = document.getElementById('epo-email-content').innerText;
-            // Extract subject if present
-            let subject = '';
-            const subjectMatch = content.match(/^Subject:\s*(.+)/m);
-            if (subjectMatch) subject = subjectMatch[1].trim();
-
-            // Send via API
-            fetch('/api/gmail?action=send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: currentUser.id, to: toEmail, subject: subject || 'Email from Clarity', body: content })
-            }).then(r => r.json()).then(data => {
-                if (data.success) {
-                    showAppToast('Email sent successfully!', 'success');
-                    document.getElementById('epo-recipient-container').classList.remove('epo-recipient-visible');
-                } else {
-                    showAppToast(data.error || 'Failed to send email', 'error');
-                }
-            }).catch(() => showAppToast('Network error sending email', 'error'));
-        }
-
 
     </script>
 </body>
