@@ -472,10 +472,34 @@
         .pp-swipe-hint.pp-swipe-right { right:0.6rem; }
         .pp-swipe-hint.pp-swipe-active { opacity:1; }
 
-        /* ── Thinking phase text (wave glow, no bounce) ── */
+        /* ── Thinking phase text (wave) ── */
         @keyframes think-glow { 0%,100%{opacity:0.35;text-shadow:none} 50%{opacity:1;text-shadow:0 0 10px rgba(167,139,250,0.75),0 0 3px rgba(167,139,250,0.4)} }
-        .thinking-phase-text { font-size:0.85rem; color:#a78bfa; font-style:italic; letter-spacing:0.01em; }
-        .tpt-char { display:inline; animation:think-glow 1.6s ease-in-out infinite; }
+        @keyframes think-wave { 0%,100%{opacity:0.45;transform:translateY(0)} 50%{opacity:1;transform:translateY(-4px)} }
+        .thinking-phase-text { font-size:0.85rem; color:#a78bfa; font-style:italic; letter-spacing:0.02em; }
+        .tpt-char { display:inline-block; animation:think-wave 1.1s ease-in-out infinite; }
+
+        /* ── Logout confirmation modal ── */
+        #logout-modal { position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.65); backdrop-filter:blur(6px); padding:1rem; }
+        #logout-modal.active { display:flex; }
+
+        /* ── Background generation spinner in sidebar ── */
+        .history-item.bg-generating .message-square-icon { display:none !important; }
+        .bg-gen-spin { display:none; width:14px; height:14px; border:2px solid rgba(167,139,250,0.25); border-top-color:#a78bfa; border-radius:50%; animation:send-spin 0.8s linear infinite; flex-shrink:0; }
+        .history-item.bg-generating .bg-gen-spin { display:block; }
+
+        /* ── Coding repo pill above input + popup ── */
+        #coding-repo-chip { display:none; align-items:center; gap:0.5rem; margin:0 1rem 0.5rem; background:rgba(124,58,237,0.12); border:1px solid rgba(124,58,237,0.3); border-radius:999px; padding:0.3rem 0.75rem 0.3rem 0.6rem; font-size:0.75rem; color:#c4b5fd; width:fit-content; max-width:calc(100% - 2rem); }
+        #coding-repo-chip.visible { display:flex; }
+        #coding-repo-chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
+        #coding-repo-chip button { flex-shrink:0; opacity:0.7; hover:opacity-100; transition:opacity 0.15s; }
+        #coding-repo-popup { position:absolute; bottom:calc(100% + 8px); left:0; right:0; background:#181818; border:1px solid rgba(255,255,255,0.1); border-radius:1rem; padding:0.75rem; box-shadow:0 -8px 32px rgba(0,0,0,0.5); z-index:50; display:none; max-height:280px; overflow-y:auto; }
+        #coding-repo-popup.open { display:block; }
+        #coding-repo-popup .repo-popup-item { padding:0.5rem 0.75rem; border-radius:0.5rem; cursor:pointer; font-size:0.8rem; color:#d1d5db; transition:background 0.12s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:0.5rem; }
+        #coding-repo-popup .repo-popup-item:hover { background:rgba(255,255,255,0.07); }
+        #coding-repo-popup .repo-popup-item.active { background:rgba(124,58,237,0.15); color:#c4b5fd; }
+        #coding-repo-btn { flex-shrink:0; display:flex; align-items:center; gap:0.4rem; padding:0.35rem 0.65rem; border-radius:999px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); cursor:pointer; transition:background 0.15s; font-size:0.72rem; color:#9ca3af; white-space:nowrap; }
+        #coding-repo-btn:hover { background:rgba(255,255,255,0.09); color:#d1d5db; }
+        #coding-repo-btn.connected { border-color:rgba(124,58,237,0.4); background:rgba(124,58,237,0.1); color:#c4b5fd; }
 
         /* ── Generation orb overlay ── */
         @keyframes pp-wave-char { 0%,100% { opacity:0.4; transform:translateY(0); } 50% { opacity:1; transform:translateY(-3px); } }
@@ -580,9 +604,6 @@
         .cs-item.cs-active { background:rgba(124,58,237,0.15); }
         .cs-item-title { flex:1; font-size:0.8rem; color:#9ca3af; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .cs-item.cs-active .cs-item-title { color:#c4b5fd; }
-        #coding-repo-bar { padding:0.5rem 1rem; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:0.6rem; background:#0d0d0d; flex-shrink:0; }
-        #coding-repo-select { background:transparent; color:#d1d5db; font-size:0.875rem; outline:none; flex:1; cursor:pointer; }
-        #coding-repo-select option { background:#1a1a1a; }
         .gh-connect-card { background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:1.5rem; padding:2.5rem 3rem; display:flex; flex-direction:column; align-items:center; gap:1.5rem; max-width:400px; text-align:center; }
         .gh-connect-btn { display:flex; align-items:center; gap:0.75rem; background:white; color:#0a0a0a; font-weight:600; font-size:0.95rem; padding:0.85rem 2rem; border-radius:9999px; cursor:pointer; border:none; transition:transform 0.15s, box-shadow 0.15s; }
         .gh-connect-btn:hover { transform:scale(1.03); box-shadow:0 8px 24px rgba(255,255,255,0.15); }
@@ -1615,15 +1636,6 @@
             <!-- Right main panel -->
             <div id="coding-main">
                 <!-- Repo selector -->
-                <div id="coding-repo-bar">
-                    <i data-lucide="git-branch" class="w-4 text-gray-500 flex-shrink-0"></i>
-                    <select id="coding-repo-select">
-                        <option value="">Select a repository…</option>
-                    </select>
-                    <button onclick="loadCodingRepos()" class="text-gray-600 hover:text-gray-300 transition-colors ml-auto" title="Refresh repos">
-                        <i data-lucide="refresh-cw" class="w-3.5"></i>
-                    </button>
-                </div>
 
                 <!-- Chat messages -->
                 <div id="coding-chat-area" class="custom-sb-scroll">
@@ -1633,7 +1645,7 @@
                         </div>
                         <div>
                             <p class="text-gray-400 text-sm font-medium">Start a coding session</p>
-                            <p class="text-gray-600 text-xs mt-1 max-w-xs">Select a repo above and ask me to create, fix, or explain code. I can commit changes directly to GitHub.</p>
+                            <p class="text-gray-600 text-xs mt-1 max-w-xs">Select a repo and ask me to create, fix, or explain code. I can commit changes directly to GitHub.</p>
                         </div>
                     </div>
                 </div>
@@ -1642,18 +1654,65 @@
                 <div id="coding-bottom">
                     <div id="coding-bottom-fade"></div>
                     <div id="coding-input-wrapper">
-                        <div class="relative bg-[#111] rounded-full shadow-2xl border border-white/10 flex items-end gap-3 px-5 py-3.5">
-                            <textarea id="coding-input" rows="1" placeholder="Ask me to write, fix, or explain code…"
-                                class="flex-1 bg-transparent text-sm text-gray-200 placeholder-gray-600 outline-none resize-none leading-relaxed max-h-32"
-                                onkeydown="codingInputKeydown(event)" oninput="autoResizeCodingInput(this)"></textarea>
-                            <button onclick="sendCodingMessage()" id="coding-send-btn"
-                                class="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0 disabled:opacity-30 disabled:pointer-events-none" disabled>
-                                <i data-lucide="arrow-up" class="w-4 text-white"></i>
+                        <!-- Connected repo chip (shown above oval when repo selected) -->
+                        <div id="coding-repo-chip">
+                            <i data-lucide="git-branch" class="w-3 flex-shrink-0"></i>
+                            <span id="coding-repo-chip-label"></span>
+                            <button onclick="clearCodingRepo()" title="Disconnect repo">
+                                <i data-lucide="x" class="w-3"></i>
                             </button>
+                        </div>
+                        <!-- Input oval with relative positioning for popup -->
+                        <div class="relative">
+                            <!-- Repo popup (anchored above oval) -->
+                            <div id="coding-repo-popup">
+                                <div class="flex items-center justify-between mb-2 px-1">
+                                    <span class="text-xs text-gray-500">Select repository</span>
+                                    <button onclick="loadCodingRepos(true)" class="text-gray-600 hover:text-gray-300 transition-colors" title="Refresh">
+                                        <i data-lucide="refresh-cw" class="w-3.5"></i>
+                                    </button>
+                                </div>
+                                <div id="coding-repo-popup-list"><p class="text-xs text-gray-600 px-1 py-2">Loading…</p></div>
+                            </div>
+                            <div class="bg-[#111] rounded-full shadow-2xl border border-white/10 flex items-end gap-3 px-4 py-3.5">
+                                <!-- Repo button (left, inside oval) -->
+                                <button id="coding-repo-btn" onclick="toggleCodingRepoPopup()" title="Select repository">
+                                    <i data-lucide="git-branch" class="w-3"></i>
+                                    <span id="coding-repo-btn-label">Repo</span>
+                                </button>
+                                <div class="w-px h-4 bg-white/10 flex-shrink-0"></div>
+                                <textarea id="coding-input" rows="1" placeholder="Ask me to write, fix, or explain code…"
+                                    class="flex-1 bg-transparent text-sm text-gray-200 placeholder-gray-600 outline-none resize-none leading-relaxed max-h-32"
+                                    onkeydown="codingInputKeydown(event)" oninput="autoResizeCodingInput(this)"></textarea>
+                                <button onclick="sendCodingMessage()" id="coding-send-btn"
+                                    class="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0 disabled:opacity-30 disabled:pointer-events-none" disabled>
+                                    <i data-lucide="arrow-up" class="w-4 text-white"></i>
+                                </button>
+                            </div>
                         </div>
                         <p class="text-center text-xs text-gray-700 mt-2">Clarity Coding · Powered by Mistral · May make mistakes</p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout confirmation modal -->
+    <div id="logout-modal">
+        <div class="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="log-out" class="w-4 text-red-400"></i>
+                </div>
+                <div>
+                    <h3 class="text-white font-semibold text-base">Sign out?</h3>
+                    <p class="text-gray-500 text-xs mt-0.5">You'll need to sign in again to continue</p>
+                </div>
+            </div>
+            <p class="text-gray-400 text-sm leading-relaxed mb-5">Your conversations are saved and will be here when you sign back in. Any active generation will be stopped.</p>
+            <div class="flex gap-2.5">
+                <button onclick="closeLogoutModal()" class="flex-1 py-2.5 bg-white/5 border border-white/8 text-gray-400 text-sm rounded-xl hover:bg-white/10 transition-colors">Cancel</button>
+                <button onclick="confirmSignOut()" class="flex-1 py-2.5 bg-red-600/70 hover:bg-red-600 text-white text-sm font-medium rounded-xl transition-colors">Sign out</button>
             </div>
         </div>
     </div>
@@ -2059,7 +2118,7 @@
                         <p class="text-gray-600 text-[11px]">Sign out of your account</p>
                     </div>
                 </div>
-                <button onclick="signOut()" class="account-btn danger">
+                <button onclick="promptSignOut()" class="account-btn danger">
                     <i data-lucide="log-out" class="w-3.5"></i> Sign out
                 </button>
             </div>
@@ -2165,6 +2224,7 @@
         let conversationHistory  = [];
         let isTyping             = false;
         let activeConversationId = null;
+        let bgGen = null; // { convId, done } — background generation state
         let selectedModel        = localStorage.getItem('clarity_model') || '3.6';
         let pendingRenameId      = null;
         let pendingDeleteId      = null;
@@ -5079,11 +5139,13 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                             <span class="text-[14px] text-gray-400 truncate flex-1 font-light">${safe}</span>
                         </div>`;
                 }
+                const isBg = bgGen && bgGen.convId === c.id && !bgGen.done;
                 return `
-                    <div class="history-item group relative flex items-center hover:bg-white/5 ${isActive(c.id) ? 'history-item-active' : ''}"
+                    <div class="history-item group relative flex items-center hover:bg-white/5 ${isActive(c.id) ? 'history-item-active' : ''} ${isBg ? 'bg-generating' : ''}"
                          data-id="${c.id}" ${delay}>
                         <button onclick="loadConversation('${c.id}')" class="flex-1 text-left flex items-center gap-3 px-2.5 py-2.5 min-w-0">
-                            <i data-lucide="message-square" class="w-3.5 shrink-0 ${isActive(c.id) ? 'text-violet-400' : 'text-white/10 group-hover:text-white/40'} transition-colors"></i>
+                            <i data-lucide="message-square" class="message-square-icon w-3.5 shrink-0 ${isActive(c.id) ? 'text-violet-400' : 'text-white/10 group-hover:text-white/40'} transition-colors"></i>
+                            <div class="bg-gen-spin"></div>
                             <span class="text-[14px] ${isActive(c.id) ? 'text-gray-200' : 'text-white/60 group-hover:text-white'} transition-colors truncate font-light">${safe}</span>
                         </button>
                         <div class="flex gap-0.5 pr-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
@@ -5102,6 +5164,23 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         }
 
         async function loadConversation(id) {
+            // If this conversation is still generating in background, show a waiting state
+            if (bgGen && bgGen.convId === id && !bgGen.done) {
+                activeConversationId = id;
+                conversationHistory  = [];
+                chatResults.innerHTML = `
+                    <div class="flex justify-center items-center py-20 gap-3">
+                        <div class="w-5 h-5 border-2 border-violet-500/30 border-t-violet-400 rounded-full animate-spin"></div>
+                        <span class="text-gray-500 text-sm">Generating response…</span>
+                        <button onclick="if(bgGen&&!bgGen.done){bgGen.done=true;setBgGenSpinner(bgGen.convId,false);if(chatAbortCtrl)chatAbortCtrl.abort();loadConversation(id)}" class="text-xs text-gray-600 hover:text-gray-400 border border-white/8 rounded-lg px-2 py-1 transition-colors ml-2">Pause</button>
+                    </div>`;
+                if (!document.body.classList.contains('conversation-started')) {
+                    document.body.classList.add('conversation-started');
+                    topBrand.style.opacity = '1';
+                    topBrand.style.pointerEvents = 'auto';
+                }
+                return;
+            }
             try {
                 const res  = await fetch('/api/messages?conversationId=' + id, { headers: authHeaders() });
                 if (!res.ok) return;
@@ -5184,8 +5263,9 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         }
 
         // Generate a 2-word AI title and update the conversation in the sidebar
-        async function generateAndUpdateTitle(firstMessage) {
-            if (!activeConversationId) return;
+        async function generateAndUpdateTitle(firstMessage, convId) {
+            const id = convId || activeConversationId;
+            if (!id) return;
             try {
                 const res = await fetch('/api/conversations?action=generate-title', {
                     method: 'POST',
@@ -5195,7 +5275,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 if (!res.ok) return;
                 const data = await res.json();
                 if (!data.title) return;
-                await fetch('/api/conversations?id=' + activeConversationId, {
+                await fetch('/api/conversations?id=' + id, {
                     method: 'PATCH',
                     headers: authHeaders(),
                     body: JSON.stringify({ title: data.title })
@@ -5204,16 +5284,17 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             } catch (_) {}
         }
 
-        async function saveMessage(role, content) {
-            if (!activeConversationId) return;
+        async function saveMessage(role, content, convId) {
+            const id = convId || activeConversationId;
+            if (!id) return;
             try {
                 await fetch('/api/messages', {
                     method: 'POST',
                     headers: authHeaders(),
-                    body: JSON.stringify({ conversationId: activeConversationId, role, content })
+                    body: JSON.stringify({ conversationId: id, role, content })
                 });
                 if (role === 'assistant') {
-                    fetch('/api/conversations?id=' + activeConversationId, {
+                    fetch('/api/conversations?id=' + id, {
                         method: 'PATCH',
                         headers: authHeaders(),
                         body: JSON.stringify({})
@@ -5275,8 +5356,26 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             } catch (_) {}
         }
 
+        // ── Background generation helpers ─────────────────────────
+        function setBgGenSpinner(convId, on) {
+            // Mark the sidebar item with a spinning indicator
+            const el = document.querySelector(`.history-item[data-id="${convId}"]`);
+            if (el) el.classList.toggle('bg-generating', on);
+        }
+
         // ── New conversation ──────────────────────────────────────
         function newConversation() {
+            if (isTyping) {
+                // Move current generation to background instead of aborting
+                const bgConvId = activeConversationId;
+                bgGen = { convId: bgConvId, done: false };
+                typewriterAborted = true;   // skip char-by-char, snap to full render
+                chatAbortCtrl = null;       // don't abort the fetch
+                isTyping = false;
+                setGeneratingState(false);
+                // Spinner will show once renderConversationList re-renders
+                setTimeout(() => setBgGenSpinner(bgConvId, true), 100);
+            }
             activeConversationId = null;
             conversationHistory  = [];
             chatResults.innerHTML = '';
@@ -5606,6 +5705,18 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
         }
 
+        function promptSignOut() {
+            const m = document.getElementById('logout-modal');
+            m.classList.add('active');
+            lucide.createIcons();
+        }
+        function closeLogoutModal() {
+            document.getElementById('logout-modal').classList.remove('active');
+        }
+        function confirmSignOut() {
+            closeLogoutModal();
+            signOut();
+        }
         function signOut() {
             localStorage.removeItem('clarity_token');
             localStorage.removeItem('clarity_user');
@@ -5775,6 +5886,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
 
             await ensureConversation(val || (filesToSend[0] && filesToSend[0].name) || 'File upload');
+            const thisConvId = activeConversationId; // capture before user may navigate away
             appendUserMessage(val, filesToSend);
             scrollToBottom();
             // Build text for history/API — append file names so model knows about them
@@ -5783,7 +5895,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 const fileLabels = filesToSend.map(f => `[Attached file: ${f.name}]`).join(' ');
                 textForHistory = val ? `${val}\n\n${fileLabels}` : fileLabels;
             }
-            saveMessage('user', textForHistory);
+            saveMessage('user', textForHistory, thisConvId);
 
             const { responseEl: aiEl, avatarEl } = appendAIMessageShell();
             scrollToBottom();
@@ -5801,30 +5913,31 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 }
             }
 
-            // ── Clarity 3.6: animated thinking phase text while awaiting response ──
+            // ── Animated thinking phase text while awaiting response ──
             let _thinkInterval = null;
             let _thinkStart = 0;
-            if (selectedModel === '3.6') {
+            {
                 const isCodePrompt = /website|webpage|html|css|code|build|creat|mak|landing|page|app|component|fix|updat|slider|canvas|design|layout|button|navbar|feature/i.test(textForHistory);
+                const isFilePrompt = /file|read|open|understand|structur|analyz|look at|review|check/i.test(textForHistory);
                 const phases = isCodePrompt
-                    ? ['Thinking\u2026', 'Creating website\u2026', 'Gathering components\u2026', 'Finishing\u2026']
-                    : ['Thinking\u2026'];
+                    ? ['Thinking\u2026', 'Reading the file\u2026', 'Understanding the structure\u2026', 'Writing code\u2026', 'Finishing up\u2026']
+                    : isFilePrompt
+                    ? ['Thinking\u2026', 'Reading context\u2026', 'Understanding the structure\u2026', 'Generating response\u2026']
+                    : ['Thinking\u2026', 'Processing your request\u2026', 'Generating response\u2026'];
                 const renderPhase = (text) => {
                     const chars = [...text].map((c, i) =>
-                        `<span class="tpt-char" style="animation-delay:${(i * 0.065).toFixed(3)}s">${c === ' ' ? '&nbsp;' : escapeHtml(c)}</span>`
+                        `<span class="tpt-char" style="animation-delay:${(i * 0.07).toFixed(3)}s">${c === ' ' ? '&nbsp;' : escapeHtml(c)}</span>`
                     ).join('');
                     aiEl.innerHTML = `<span class="thinking-phase-text">${chars}</span>`;
                 };
                 renderPhase(phases[0]);
                 _thinkStart = Date.now();
-                if (phases.length > 1) {
-                    let idx = 0;
-                    _thinkInterval = setInterval(() => {
-                        idx = Math.min(idx + 1, phases.length - 1);
-                        renderPhase(phases[idx]);
-                        if (idx >= phases.length - 1) { clearInterval(_thinkInterval); _thinkInterval = null; }
-                    }, 2000);
-                }
+                let idx = 0;
+                _thinkInterval = setInterval(() => {
+                    idx = Math.min(idx + 1, phases.length - 1);
+                    renderPhase(phases[idx]);
+                    if (idx >= phases.length - 1) { clearInterval(_thinkInterval); _thinkInterval = null; }
+                }, 2200);
             }
 
             chatAbortCtrl = new AbortController();
@@ -5890,10 +6003,10 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                         await typeWriter(aiEl, data.reply);
                         avatarEl.innerHTML = STATIC_LOGO_SVG;
                     }
-                    saveMessage('assistant', data.reply);
+                    saveMessage('assistant', data.reply, thisConvId);
                     // Generate AI 2-word title on first exchange (non-blocking)
                     if (conversationHistory.length === 2) {
-                        generateAndUpdateTitle(val);
+                        generateAndUpdateTitle(val, thisConvId);
                     }
                 }
             } catch (err) {
@@ -5908,12 +6021,20 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
 
             chatAbortCtrl = null;
-            isTyping = false;
-            setGeneratingState(false);
-            updateButtonState(input.value.trim().length > 0);
-            // Show scroll-to-bottom if user scrolled away during generation
-            if (!userIsNearBottom) showScrollToBottom();
-            input.focus();
+            const wasBg = bgGen && bgGen.convId === thisConvId;
+            if (wasBg) {
+                bgGen.done = true;
+                setBgGenSpinner(thisConvId, false);
+                loadConversations();
+                // If user navigated back to this conversation while generating, reload it now
+                if (activeConversationId === thisConvId) loadConversation(thisConvId);
+            } else {
+                isTyping = false;
+                setGeneratingState(false);
+                updateButtonState(input.value.trim().length > 0);
+                if (!userIsNearBottom) showScrollToBottom();
+                input.focus();
+            }
         }
 
         // ═══════════════════════════════════════════════════════
@@ -6690,6 +6811,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 badge.innerHTML = `<div class="flex items-center gap-1.5 bg-green-950/40 border border-green-800/30 px-2.5 py-1 rounded-full"><div class="w-1.5 h-1.5 rounded-full bg-green-400"></div><span class="text-green-400 text-xs font-medium">${escapeHtml(codingGhUser.login || 'Connected')}</span></div>`;
             }
             await Promise.all([loadCodingRepos(), loadCodingSessions()]);
+            updateCodingRepoUI();
             lucide.createIcons();
         }
 
@@ -6730,21 +6852,87 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             showCodingConnectView();
         }
 
-        async function loadCodingRepos() {
+        let _codingRepoList = []; // cached repo list
+
+        async function loadCodingRepos(forceRefresh) {
             if (!codingGhToken) return;
-            const select = document.getElementById('coding-repo-select');
-            if (!select) return;
-            select.innerHTML = '<option value="">Loading repositories…</option>';
+            const popupList = document.getElementById('coding-repo-popup-list');
+            if (!popupList) return;
+            popupList.innerHTML = '<p class="text-xs text-gray-600 px-1 py-2">Loading…</p>';
             try {
                 const r = await fetch('/api/github-files?action=repos', { headers: { 'x-github-token': codingGhToken } });
                 if (!r.ok) throw new Error('Failed');
-                const repos = await r.json();
-                select.innerHTML = '<option value="">Select a repository…</option>' +
-                    repos.map(repo => `<option value="${escapeHtml(repo.full_name)}">${escapeHtml(repo.full_name)}${repo.private ? ' 🔒' : ''}</option>`).join('');
-                if (codingSelectedRepo) select.value = codingSelectedRepo;
-                select.onchange = () => { codingSelectedRepo = select.value; };
+                _codingRepoList = await r.json();
+                renderCodingRepoPopupList();
             } catch (_) {
-                select.innerHTML = '<option value="">Failed to load repos — check token</option>';
+                if (popupList) popupList.innerHTML = '<p class="text-xs text-red-400 px-1 py-2">Failed to load repos</p>';
+            }
+        }
+
+        function renderCodingRepoPopupList() {
+            const popupList = document.getElementById('coding-repo-popup-list');
+            if (!popupList) return;
+            if (!_codingRepoList.length) {
+                popupList.innerHTML = '<p class="text-xs text-gray-600 px-1 py-2">No repositories found</p>';
+                return;
+            }
+            popupList.innerHTML = _codingRepoList.map(repo =>
+                `<div class="repo-popup-item ${codingSelectedRepo === repo.full_name ? 'active' : ''}"
+                    onclick="selectCodingRepoItem('${escapeHtml(repo.full_name)}')">
+                    <i data-lucide="${repo.private ? 'lock' : 'git-branch'}" style="width:12px;height:12px;flex-shrink:0"></i>
+                    ${escapeHtml(repo.full_name)}
+                </div>`
+            ).join('');
+            lucide.createIcons();
+        }
+
+        function toggleCodingRepoPopup() {
+            const popup = document.getElementById('coding-repo-popup');
+            const isOpen = popup.classList.toggle('open');
+            if (isOpen && !_codingRepoList.length) loadCodingRepos();
+            else if (isOpen) renderCodingRepoPopupList();
+            // Close when clicking outside
+            if (isOpen) {
+                setTimeout(() => {
+                    const handler = (e) => {
+                        if (!popup.contains(e.target) && e.target.id !== 'coding-repo-btn') {
+                            popup.classList.remove('open');
+                            document.removeEventListener('click', handler);
+                        }
+                    };
+                    document.addEventListener('click', handler);
+                }, 0);
+            }
+        }
+
+        function selectCodingRepoItem(fullName) {
+            codingSelectedRepo = fullName;
+            document.getElementById('coding-repo-popup').classList.remove('open');
+            updateCodingRepoUI();
+        }
+
+        function clearCodingRepo() {
+            codingSelectedRepo = null;
+            updateCodingRepoUI();
+        }
+
+        function updateCodingRepoUI() {
+            const chip = document.getElementById('coding-repo-chip');
+            const chipLabel = document.getElementById('coding-repo-chip-label');
+            const btn = document.getElementById('coding-repo-btn');
+            const btnLabel = document.getElementById('coding-repo-btn-label');
+            if (codingSelectedRepo) {
+                chip.classList.add('visible');
+                if (chipLabel) chipLabel.textContent = codingSelectedRepo;
+                if (btn) btn.classList.add('connected');
+                if (btnLabel) btnLabel.textContent = codingSelectedRepo.split('/')[1] || codingSelectedRepo;
+                // Update empty state hint
+                const repoEl = document.getElementById('cmt-repo-display');
+                if (repoEl) repoEl.textContent = codingSelectedRepo;
+            } else {
+                chip.classList.remove('visible');
+                if (btn) btn.classList.remove('connected');
+                if (btnLabel) btnLabel.textContent = 'Repo';
             }
         }
 
@@ -6804,7 +6992,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 </div>
                 <div>
                     <p class="text-gray-400 text-sm font-medium">Start a coding session</p>
-                    <p class="text-gray-600 text-xs mt-1 max-w-xs">Select a repo above and ask me to create, fix, or explain code. I can commit changes directly to GitHub.</p>
+                    <p class="text-gray-600 text-xs mt-1 max-w-xs">Select a repo and ask me to create, fix, or explain code. I can commit changes directly to GitHub.</p>
                 </div>
             </div>`;
         }
