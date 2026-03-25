@@ -870,7 +870,7 @@
                 </div>
                 <i data-lucide="chevron-right" class="w-4 text-white/20"></i>
             </button>
-            <button onclick="openCodingPage()" class="sb-btn w-full bg-[#161616] border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+            <button id="sidebar-coding-btn" onclick="openCodingPage()" class="sb-btn w-full bg-[#161616] border border-white/5 p-4 rounded-2xl flex items-center justify-between" style="display:none">
                 <div class="flex items-center gap-3">
                     <i data-lucide="code-2" class="w-4 text-violet-400/70"></i>
                     <span class="font-medium text-[15px]">Clarity Coding</span>
@@ -5129,9 +5129,18 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         }
 
         // ── Gated features (only available after update) ─────────
-        function enableGatedFeatures() {}
-        function disableGatedFeatures() {}
-        function initGatedFeatures() {}
+        function enableGatedFeatures() {
+            const btn = document.getElementById('sidebar-coding-btn');
+            if (btn) btn.style.display = '';
+        }
+        function disableGatedFeatures() {
+            const btn = document.getElementById('sidebar-coding-btn');
+            if (btn) btn.style.display = 'none';
+        }
+        function initGatedFeatures() {
+            if (clarityUpdated) enableGatedFeatures();
+            else disableGatedFeatures();
+        }
 
         // ── New Feature Splash ────────────────────────────────────
         function openFeatureSplash() {
