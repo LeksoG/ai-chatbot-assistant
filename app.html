@@ -628,6 +628,18 @@
         @keyframes coding-dot-pulse { 0%,80%,100%{transform:scale(0.7);opacity:0.3} 40%{transform:scale(1.1);opacity:1} }
         .coding-thinking-text { transition:opacity 0.4s ease; }
 
+        /* ── Real-time activity log for AI responses ── */
+        .coding-activity-log { display:flex; flex-direction:column; gap:0; width:100%; }
+        .coding-activity-step { opacity:0; transform:translateY(6px); transition:opacity 0.35s ease,transform 0.35s ease; padding:0.15rem 0; }
+        .coding-activity-step.visible { opacity:1; transform:translateY(0); }
+        .coding-activity-step.step-status { display:flex; align-items:center; gap:0.5rem; font-size:0.75rem; color:#6b7280; padding:0.4rem 0; }
+        .coding-activity-step.step-status .step-icon { width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .coding-activity-step.step-status .step-icon.done { background:rgba(74,222,128,0.15); color:#4ade80; }
+        .coding-activity-step.step-status .step-icon.active { background:rgba(124,58,237,0.15); color:#a78bfa; }
+        .step-spinner { width:10px; height:10px; border:1.5px solid rgba(124,58,237,0.3); border-top-color:#a78bfa; border-radius:50%; animation:send-spin 0.7s linear infinite; }
+        .coding-activity-step.step-content { padding:0.2rem 0 0.5rem; }
+        .coding-activity-step.step-content .ai-response { margin:0; }
+
         /* ── Code file cards in coding chat ── */
         .code-file-list { display:flex; flex-direction:column; gap:0.5rem; margin:0.75rem 0; }
         .code-file-card { background:#141414; border:1px solid rgba(255,255,255,0.08); border-radius:0.875rem; overflow:hidden; cursor:pointer; transition:border-color 0.15s,background 0.15s; }
@@ -7137,7 +7149,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             const chatArea = document.getElementById('coding-chat-area');
             chatArea.querySelector('#coding-empty-state')?.remove();
             const el = document.createElement('div');
-            el.className = 'flex justify-center';
+            el.className = 'flex justify-end pr-4';
             el.innerHTML = `<div class="coding-user-msg">${escapeHtml(text)}</div>`;
             chatArea.appendChild(el);
             chatArea.scrollTop = chatArea.scrollHeight;
@@ -7169,15 +7181,157 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             _thinkingTimers = [];
         }
 
+        // ── Progressive reveal (Claude-Code-like activity log) ───
+        function _parseCodingSections(text) {
+            // Split response into chunks: prose paragraphs + code fences
+            const sections = [];
+            const parts = text.split(/(```[\s\S]*?```)/g);
+            parts.forEach(part => {
+                const trimmed = part.trim();
+                if (!trimmed) return;
+                if (/^```/.test(trimmed)) {
+                    // Code block — extract lang
+                    const m = trimmed.match(/^```(\w*)\n?([\s\S]*?)```$/);
+                    const lang = m ? (m[1] || '').toLowerCase() : '';
+                    const code = m ? m[2].trim() : trimmed;
+                    sections.push({ type: 'code', lang, code, raw: trimmed });
+                } else {
+                    // Split prose by double-newlines into separate paragraphs
+                    trimmed.split(/\n{2,}/).forEach(p => {
+                        const pt = p.trim();
+                        if (pt) sections.push({ type: 'prose', raw: pt });
+                    });
+                }
+            });
+            return sections;
+        }
+
+        function _codingStatusStep(label, done) {
+            const iconHtml = done
+                ? `<div class="step-icon done"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`
+                : `<div class="step-icon active"><div class="step-spinner"></div></div>`;
+            return `<div class="coding-activity-step step-status">${iconHtml}<span>${label}</span></div>`;
+        }
+
+        async function _revealCodingResponse(container, fullText, msgId) {
+            const sections = _parseCodingSections(fullText);
+            // Store code blocks for commit modal
+            const blocks = [];
+            sections.forEach(s => { if (s.type === 'code') blocks.push({ lang: s.lang, code: s.code }); });
+            if (blocks.length > 0 && msgId) codingCodeBlocks[msgId] = blocks;
+
+            const chatArea = document.getElementById('coding-chat-area');
+            container.className = 'flex justify-start pl-4';
+            container.innerHTML = '<div class="coding-activity-log"></div>';
+            const log = container.querySelector('.coding-activity-log');
+
+            const delay = ms => new Promise(r => setTimeout(r, ms));
+
+            // Step 1: Analyzing
+            let statusEl = document.createElement('div');
+            statusEl.innerHTML = _codingStatusStep('Analyzing your request', false);
+            let step = statusEl.firstElementChild;
+            log.appendChild(step);
+            requestAnimationFrame(() => { step.classList.add('visible'); });
+            chatArea.scrollTop = chatArea.scrollHeight;
+            await delay(600);
+            // Mark done
+            step.querySelector('.step-icon').outerHTML = `<div class="step-icon done"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
+
+            // Determine what status labels to show based on content
+            const hasCode = blocks.length > 0;
+            const codeLabels = blocks.map(b => {
+                const meta = _codingLang(b.lang);
+                return `Writing ${meta.label.toLowerCase()} code`;
+            });
+            // Deduplicate labels
+            const uniqueLabels = [...new Set(codeLabels)];
+
+            // Step 2: If prose, show "Preparing response"
+            const proseSteps = sections.filter(s => s.type === 'prose');
+            if (proseSteps.length) {
+                statusEl = document.createElement('div');
+                statusEl.innerHTML = _codingStatusStep('Preparing response', false);
+                step = statusEl.firstElementChild;
+                log.appendChild(step);
+                requestAnimationFrame(() => { step.classList.add('visible'); });
+                chatArea.scrollTop = chatArea.scrollHeight;
+                await delay(400);
+                step.querySelector('.step-icon').outerHTML = `<div class="step-icon done"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
+            }
+
+            // Step 3: Code writing statuses
+            for (const label of uniqueLabels) {
+                statusEl = document.createElement('div');
+                statusEl.innerHTML = _codingStatusStep(label, false);
+                step = statusEl.firstElementChild;
+                log.appendChild(step);
+                requestAnimationFrame(() => { step.classList.add('visible'); });
+                chatArea.scrollTop = chatArea.scrollHeight;
+                await delay(500);
+                step.querySelector('.step-icon').outerHTML = `<div class="step-icon done"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
+            }
+
+            // Now reveal actual content sections
+            let codeIdx = 0;
+            for (const section of sections) {
+                const contentEl = document.createElement('div');
+                contentEl.className = 'coding-activity-step step-content';
+
+                if (section.type === 'prose') {
+                    let html = '';
+                    if (window.marked) { try { html = marked.parse(section.raw); } catch(_) { html = `<p>${escapeHtml(section.raw)}</p>`; } }
+                    else html = `<p>${escapeHtml(section.raw).replace(/\n/g,'<br>')}</p>`;
+                    contentEl.innerHTML = `<div class="ai-response text-gray-300 text-sm leading-relaxed">${html}</div>`;
+                } else {
+                    // Render as file card
+                    const meta = _codingLang(section.lang);
+                    const lineCount = section.code.split('\n').length;
+                    const esc = section.code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                    const cardUid = `${msgId}_${codeIdx}`;
+                    codeIdx++;
+                    contentEl.innerHTML = `<div class="code-file-list"><div class="code-file-card" id="cfc_${cardUid}" onclick="toggleCodeFileCard('${cardUid}')">
+                        <div class="code-file-card-header">
+                            <div class="code-file-icon ${meta.cls}">${meta.label}</div>
+                            <span class="code-file-name">file.${meta.ext}</span>
+                            <span class="code-file-lines">${lineCount} line${lineCount !== 1 ? 's' : ''}</span>
+                            <svg class="code-file-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </div>
+                        <div class="code-file-body"><pre>${esc}</pre></div>
+                    </div></div>`;
+                }
+
+                log.appendChild(contentEl);
+                requestAnimationFrame(() => { contentEl.classList.add('visible'); });
+                chatArea.scrollTop = chatArea.scrollHeight;
+                await delay(200);
+            }
+
+            // Commit button
+            if (hasCode && codingSelectedRepo && msgId) {
+                const commitEl = document.createElement('div');
+                commitEl.className = 'coding-activity-step step-content';
+                commitEl.innerHTML = `<div><button class="coding-commit-btn" onclick="showCommitModal('${msgId}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>
+                    Commit to GitHub
+                </button></div>`;
+                log.appendChild(commitEl);
+                requestAnimationFrame(() => { commitEl.classList.add('visible'); });
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }
+
+            lucide.createIcons();
+        }
+
         function appendCodingAIMsg(markdown, pending) {
             const chatArea = document.getElementById('coding-chat-area');
             chatArea.querySelector('#coding-empty-state')?.remove();
             const msgId = 'cm_' + Date.now() + '_' + Math.random().toString(36).slice(2);
             const el = document.createElement('div');
-            el.className = 'flex justify-center';
             el.id = msgId;
 
             if (pending) {
+                el.className = 'flex justify-start pl-4';
                 el.innerHTML = `
                     <div class="coding-thinking">
                         <div class="coding-thinking-dot"></div>
@@ -7187,6 +7341,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 chatArea.scrollTop = chatArea.scrollHeight;
                 _startThinkingCycle(el.querySelector('.coding-thinking-text'));
             } else {
+                el.className = 'flex justify-start pl-4';
                 el.innerHTML = `
                     <div class="coding-ai-response ai-response text-gray-300 text-sm leading-relaxed" style="max-width:100%;width:100%;">
                         ${_renderCodingMD(markdown, msgId)}
@@ -7306,13 +7461,9 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 const data = await r.json();
                 const reply = data.reply || data.content || '';
 
-                // Replace pending thinking indicator with response
+                // Replace pending thinking indicator with progressive reveal
                 _stopThinkingCycle();
-                pendingEl.innerHTML = `
-                    <div class="coding-ai-response ai-response text-gray-300 text-sm leading-relaxed" style="max-width:100%;width:100%;">
-                        ${_renderCodingMD(reply, pendingId)}
-                    </div>`;
-                lucide.createIcons();
+                await _revealCodingResponse(pendingEl, reply, pendingId);
 
                 const chatArea = document.getElementById('coding-chat-area');
                 chatArea.scrollTop = chatArea.scrollHeight;
@@ -7328,8 +7479,8 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 }
             } catch (err) {
                 _stopThinkingCycle();
+                pendingEl.className = 'flex justify-start pl-4';
                 pendingEl.innerHTML = `<span class="text-red-400 text-sm">Error getting response. Please try again.</span>`;
-                lucide.createIcons();
             }
             codingIsLoading = false;
             updateCodingSendBtn();
