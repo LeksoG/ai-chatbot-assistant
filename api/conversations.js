@@ -64,31 +64,33 @@ module.exports = async function handler(req, res) {
     };
 
     try {
-        // GET /api/conversations?userId=xxx — list conversations for a user
+        // GET /api/conversations?userId=xxx&section=xxx — list conversations for a user
         if (req.method === 'GET') {
-            const { userId } = req.query;
+            const { userId, section } = req.query;
             if (!userId) return res.status(400).json({ error: 'userId required' });
 
-            const r = await fetch(
-                `${SUPABASE_URL}/rest/v1/conversations?user_id=eq.${encodeURIComponent(userId)}&order=updated_at.desc`,
-                { headers: sbHeaders }
-            );
+            let url = `${SUPABASE_URL}/rest/v1/conversations?user_id=eq.${encodeURIComponent(userId)}&order=updated_at.desc`;
+            if (section) url += `&section=eq.${encodeURIComponent(section)}`;
+            else         url += `&section=eq.chat`;   // default: only regular chats
+
+            const r = await fetch(url, { headers: sbHeaders });
             const data = await r.json();
             return res.json(Array.isArray(data) ? data : []);
         }
 
         // POST /api/conversations — create a new conversation
         if (req.method === 'POST') {
-            const { userId, title, modelVersion } = req.body || {};
+            const { userId, title, modelVersion, section } = req.body || {};
             if (!userId || !title) return res.status(400).json({ error: 'userId and title required' });
 
             const r = await fetch(`${SUPABASE_URL}/rest/v1/conversations`, {
                 method: 'POST',
                 headers: { ...sbHeaders, 'Prefer': 'return=representation' },
                 body: JSON.stringify({
-                    user_id: userId,
-                    title: title.slice(0, 100),
-                    model_version: modelVersion || '3.0'
+                    user_id:       userId,
+                    title:         title.slice(0, 100),
+                    model_version: modelVersion || '3.0',
+                    section:       section || 'chat'
                 })
             });
             const data = await r.json();
