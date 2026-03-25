@@ -11,9 +11,13 @@ CREATE TABLE IF NOT EXISTS conversations (
     user_id       TEXT        NOT NULL,
     title         TEXT        NOT NULL,
     model_version TEXT        DEFAULT '3.0',
+    section       TEXT        DEFAULT 'chat',   -- 'chat' | 'coding'
     created_at    TIMESTAMPTZ DEFAULT NOW(),
     updated_at    TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add section column to existing databases (safe to run on existing tables)
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS section TEXT DEFAULT 'chat';
 
 -- Messages table
 CREATE TABLE IF NOT EXISTS messages (
