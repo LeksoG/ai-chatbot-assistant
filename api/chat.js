@@ -14,7 +14,7 @@ module.exports = async function handler(req, res) {
             return res.status(405).json({ error: 'Method not allowed' });
         }
 
-        const { message, history = [], modelVersion = '3.6', images = [] } = req.body || {};
+        const { message, history = [], modelVersion = '3.6', images = [], mode = 'chat' } = req.body || {};
 
         const hasImages = Array.isArray(images) && images.length > 0;
 
@@ -40,6 +40,15 @@ module.exports = async function handler(req, res) {
             model     = modelVersion === '3.6' ? 'mistral-large-latest' : 'mistral-small-latest';
             maxTokens = modelVersion === '3.6' ? 8000 : 5000;
         }
+
+        const codingSystemPrompt = `You are Clarity Coding, an expert AI coding assistant integrated with GitHub. Rules:
+- Help the user write, fix, explain, and refactor code.
+- When given a GitHub repo context like [GitHub repo: owner/repo], tailor advice to that project.
+- Always return code in fenced code blocks with the correct language tag (e.g. \`\`\`javascript).
+- For file changes: return the COMPLETE updated file content — never partial snippets unless explicitly asked.
+- Be concise. One sentence of explanation, then the code. No filler.
+- If asked to commit or push changes, remind the user to use the "Commit to GitHub" button that appears below your code blocks.
+- Support all languages: JavaScript, TypeScript, Python, Rust, Go, Java, C++, HTML, CSS, SQL, etc.`;
 
         const systemPrompt = `You are Clarity AI, a helpful AI assistant. Rules:
 - Be extremely concise. No filler, no preamble, no repeating the question.
@@ -73,7 +82,7 @@ HTML/website generation rules (CRITICAL — always follow these):
         }
 
         const messages = [
-            { role: 'system', content: systemPrompt },
+            { role: 'system', content: mode === 'coding' ? codingSystemPrompt : systemPrompt },
             ...history,
             { role: 'user', content: userContent }
         ];
