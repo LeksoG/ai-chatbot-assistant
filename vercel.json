@@ -6,8 +6,7 @@
     },
     "api/*.js": {
       "maxDuration": 10
-    },
-
+    }
   },
   "rewrites": [
     { "source": "/api/auth/login",         "destination": "/api/auth?action=login" },
@@ -20,6 +19,7 @@
     { "source": "/login","destination": "/auth.html" }
   ]
 }
+
 
 
 
