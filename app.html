@@ -7875,6 +7875,8 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     const errData = await r.json().catch(() => ({}));
                     const errMsg = r.status === 429
                         ? 'Rate limit reached — please wait a few seconds and try again.'
+                        : r.status === 504
+                        ? 'Request timed out — try a shorter message or start a new session.'
                         : (errData.error || `Error ${r.status}`);
                     throw new Error(errMsg);
                 }
