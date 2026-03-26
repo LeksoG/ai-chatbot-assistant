@@ -139,6 +139,11 @@
         /* ── Mode fade wave (transition overlay) ── */
         #mode-fade-wave { position:fixed; inset:0; background:#000; z-index:300; pointer-events:none; opacity:0; }
 
+        /* ── Clarity Coding wave transition overlay ── */
+        #cp-wave-overlay { position:fixed; inset:0; z-index:350; pointer-events:none; background:#0a0a0a; transform:translateX(-101%); display:none; will-change:transform; }
+        @keyframes cp-wave-in  { from{transform:translateX(-101%)} to{transform:translateX(0)} }
+        @keyframes cp-wave-out { from{transform:translateX(0)} to{transform:translateX(101%)} }
+
         /* ── Account page ── */
         #account-page { transition:transform 0.38s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease; }
         #account-page.ap-hidden { transform:translateX(100%); opacity:0; }
@@ -340,6 +345,15 @@
 
         /* ── Sidebar section label ── */
         .sb-section-label { font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#4b5563; padding:0 4px; }
+
+        /* ── Sidebar modern enhancements ── */
+        #sidebar { background:linear-gradient(160deg,#0c0c0c 0%,#0a0a0a 100%); }
+        #sidebar .p-6 { padding-bottom:0.75rem; }
+        .sb-nav-group { display:flex; flex-direction:column; gap:0.375rem; }
+        .sb-nav-divider { height:1px; background:linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent); margin:0.25rem 0; }
+        .sb-coding-pill { background:linear-gradient(135deg,rgba(124,58,237,0.12) 0%,rgba(79,70,229,0.08) 100%); border-color:rgba(124,58,237,0.18) !important; }
+        .sb-coding-pill:hover { background:linear-gradient(135deg,rgba(124,58,237,0.2) 0%,rgba(79,70,229,0.14) 100%) !important; }
+        .sb-coding-pill .text-violet-400\/70 { color:rgba(167,139,250,0.85) !important; }
         .custom-sb-scroll::-webkit-scrollbar { width:3px; }
         .custom-sb-scroll::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.05); border-radius:10px; }
         /* ── Presentation sidebar card ── */
@@ -616,6 +630,21 @@
         .gh-connect-btn:hover { transform:scale(1.03); box-shadow:0 8px 24px rgba(255,255,255,0.15); }
         .gh-connect-btn:active { transform:scale(0.98); }
         #coding-empty-state { min-height:300px; }
+
+        /* ── Coding empty state ── */
+        #coding-empty-state-inner { display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; min-height:420px; padding:2rem 1.5rem; gap:1.75rem; }
+        .coding-es-logo { opacity:0; animation:coding-es-fade-in 0.6s 0.1s forwards ease-out; }
+        .coding-es-heading { opacity:0; animation:coding-es-fade-in 0.5s 0.25s forwards ease-out; text-align:center; }
+        @keyframes coding-es-fade-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        #coding-es-suggestions { width:100%; max-width:420px; display:flex; flex-direction:column; gap:0.5rem; }
+        .coding-es-sugg { display:flex; align-items:center; gap:0.65rem; background:#141414; border:1px solid rgba(255,255,255,0.07); border-radius:0.875rem; padding:0.65rem 0.85rem; cursor:pointer; transition:border-color 0.18s,background 0.18s; opacity:0; transform:translateY(10px); width:100%; text-align:left; }
+        .coding-es-sugg:hover { border-color:rgba(124,58,237,0.3); background:#1a1a1a; }
+        .coding-es-sugg-icon { width:22px; height:22px; flex-shrink:0; border-radius:0.4rem; display:flex; align-items:center; justify-content:center; }
+        .coding-es-sugg-icon svg { width:12px; height:12px; }
+        .coding-es-sugg-text { flex:1; font-size:0.775rem; color:#9ca3af; line-height:1.35; }
+        .coding-es-sugg:hover .coding-es-sugg-text { color:#d1d5db; }
+        .coding-es-sugg.sugg-visible { opacity:1; transform:translateY(0); transition:opacity 0.4s ease, transform 0.4s ease, border-color 0.18s, background 0.18s; }
+
         .coding-user-msg { background:#1a1a1a; border:1px solid rgba(255,255,255,0.08); padding:0.5rem 0.875rem; border-radius:1rem; max-width:72%; font-size:0.875rem; color:#e5e7eb; white-space:pre-wrap; word-break:break-word; }
         .coding-commit-btn { display:inline-flex; align-items:center; gap:0.5rem; background:rgba(124,58,237,0.2); border:1px solid rgba(124,58,237,0.4); color:#c4b5fd; font-size:0.72rem; padding:0.4rem 0.9rem; border-radius:0.5rem; cursor:pointer; transition:all 0.15s; margin-top:0.75rem; }
         .coding-commit-btn:hover { background:rgba(124,58,237,0.35); }
@@ -636,6 +665,7 @@
         .coding-activity-step.step-status .step-icon { width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
         .coding-activity-step.step-status .step-icon.done { background:rgba(74,222,128,0.15); color:#4ade80; }
         .coding-activity-step.step-status .step-icon.active { background:rgba(124,58,237,0.15); color:#a78bfa; }
+        .coding-activity-step.step-status span { transition:opacity 0.2s ease; }
         .step-spinner { width:10px; height:10px; border:1.5px solid rgba(124,58,237,0.3); border-top-color:#a78bfa; border-radius:50%; animation:send-spin 0.7s linear infinite; }
         .coding-activity-step.step-content { padding:0.2rem 0 0.5rem; }
         .coding-activity-step.step-content .ai-response { margin:0; }
@@ -658,8 +688,8 @@
         .code-file-lines { font-size:0.7rem; color:#6b7280; white-space:nowrap; }
         .code-file-chevron { color:#4b5563; transition:transform 0.2s; flex-shrink:0; }
         .code-file-card.open .code-file-chevron { transform:rotate(90deg); }
-        .code-file-body { display:none; border-top:1px solid rgba(255,255,255,0.06); }
-        .code-file-card.open .code-file-body { display:block; }
+        .code-file-body { display:block; max-height:0; overflow:hidden; transition:max-height 0.38s cubic-bezier(0.4,0,0.2,1), border-top-color 0.25s ease; border-top:1px solid transparent; }
+        .code-file-card.open .code-file-body { max-height:420px; border-top-color:rgba(255,255,255,0.06); }
         .code-file-body pre { margin:0; padding:0.875rem 1rem; font-size:12px; line-height:1.65; color:#d4d4d4; font-family:'SF Mono','Fira Code','Cascadia Code',monospace; white-space:pre-wrap; word-break:break-word; overflow-x:auto; max-height:340px; overflow-y:auto; }
 
         /* ── User Artifacts ── */
@@ -853,6 +883,9 @@
         </defs>
     </svg>
 
+    <!-- Clarity Coding wave transition overlay -->
+    <div id="cp-wave-overlay"></div>
+
     <!-- Sidebar overlay -->
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 opacity-0 pointer-events-none transition-opacity duration-700" onclick="toggleSidebar(false)"></div>
 
@@ -877,24 +910,33 @@
                     <i data-lucide="x" class="w-5 text-white/40"></i>
                 </button>
             </div>
-            <button onclick="newConversation()" class="sb-btn w-full bg-[#161616] border border-white/5 p-4 rounded-2xl flex items-center gap-3 group">
-                <i data-lucide="plus" class="w-4 text-white group-hover:scale-110 transition-transform"></i>
-                <span class="font-medium text-[15px]">New Conversation</span>
-            </button>
-            <button onclick="openArtifactsPage()" class="sb-btn w-full bg-[#161616] border border-white/5 p-4 rounded-2xl flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <i data-lucide="box" class="w-4 text-white/60"></i>
-                    <span class="font-medium text-[15px]">User Artifacts</span>
-                </div>
-                <i data-lucide="chevron-right" class="w-4 text-white/20"></i>
-            </button>
-            <button id="sidebar-coding-btn" onclick="openCodingPage()" class="sb-btn w-full bg-[#161616] border border-white/5 p-4 rounded-2xl flex items-center justify-between" style="display:none">
-                <div class="flex items-center gap-3">
-                    <i data-lucide="code-2" class="w-4 text-violet-400/70"></i>
-                    <span class="font-medium text-[15px]">Clarity Coding</span>
-                </div>
-                <i data-lucide="chevron-right" class="w-4 text-white/20"></i>
-            </button>
+            <div class="sb-nav-group">
+                <button onclick="newConversation()" class="sb-btn w-full bg-[#161616] border border-white/5 p-3.5 rounded-2xl flex items-center gap-3 group">
+                    <div class="w-7 h-7 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="plus" class="w-3.5 text-white/70 group-hover:scale-110 transition-transform"></i>
+                    </div>
+                    <span class="font-medium text-[14px]">New Conversation</span>
+                </button>
+                <button onclick="openArtifactsPage()" class="sb-btn w-full bg-[#161616] border border-white/5 p-3.5 rounded-2xl flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-7 h-7 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="box" class="w-3.5 text-white/50"></i>
+                        </div>
+                        <span class="font-medium text-[14px]">User Artifacts</span>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-3.5 text-white/15"></i>
+                </button>
+                <div class="sb-nav-divider"></div>
+                <button id="sidebar-coding-btn" onclick="openCodingPage()" class="sb-btn sb-coding-pill w-full bg-[#161616] border border-white/5 p-3.5 rounded-2xl flex items-center justify-between" style="display:none">
+                    <div class="flex items-center gap-3">
+                        <div class="w-7 h-7 rounded-xl bg-violet-950/50 border border-violet-800/30 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="code-2" class="w-3.5 text-violet-400/70"></i>
+                        </div>
+                        <span class="font-medium text-[14px]">Clarity Coding</span>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-3.5 text-white/15"></i>
+                </button>
+            </div>
         </div>
 
         <!-- Search + section label -->
@@ -1686,13 +1728,23 @@
 
                 <!-- Chat messages -->
                 <div id="coding-chat-area" class="custom-sb-scroll">
-                    <div id="coding-empty-state" class="flex flex-col items-center justify-center text-center gap-3 pb-20" style="min-height:300px;margin:auto">
-                        <div class="w-14 h-14 rounded-2xl bg-violet-950/30 border border-violet-800/20 flex items-center justify-center">
-                            <i data-lucide="code-2" class="w-6 text-violet-400"></i>
-                        </div>
-                        <div>
-                            <p class="text-gray-400 text-sm font-medium">Start a coding session</p>
-                            <p class="text-gray-600 text-xs mt-1 max-w-xs">Select a repo and ask me to create, fix, or explain code. I can commit changes directly to GitHub.</p>
+                    <div id="coding-empty-state" style="display:flex;align-items:center;justify-content:center;flex:1;width:100%">
+                        <div id="coding-empty-state-inner">
+                            <!-- Clarity branding logo -->
+                            <div class="coding-es-logo" style="display:flex;flex-direction:column;align-items:center;gap:0.65rem">
+                                <svg width="64" height="64" viewBox="-15 -15 130 130" style="filter:drop-shadow(0 0 18px rgba(124,58,237,0.35))">
+                                    <path class="cl-seg cl-seg-top" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
+                                    <path class="cl-seg cl-seg-mid" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
+                                    <path class="cl-seg cl-seg-bot" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
+                                </svg>
+                            </div>
+                            <!-- Heading -->
+                            <div class="coding-es-heading">
+                                <p style="color:#f1f5f9;font-weight:700;font-size:1.05rem;letter-spacing:-0.01em">Clarity Coding</p>
+                                <p style="color:#6b7280;font-size:0.775rem;margin-top:0.3rem" id="coding-es-subtitle">Select a repo to get started</p>
+                            </div>
+                            <!-- Suggestion cards -->
+                            <div id="coding-es-suggestions" style="width:100%;max-width:420px;display:flex;flex-direction:column;gap:0.45rem"></div>
                         </div>
                     </div>
                 </div>
@@ -6907,13 +6959,41 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         const codingCodeBlocks = {};   // msgId → [{code, lang}]
         let pendingCommitCode = null;
 
-        function openCodingPage() {
+        async function openCodingPage() {
             toggleSidebar(false);
-            document.getElementById('coding-page').classList.add('cp-open');
+            await _cpWaveTransition(() => {
+                document.getElementById('coding-page').classList.add('cp-open');
+            });
             initCodingPage();
         }
-        function closeCodingPage() {
-            document.getElementById('coding-page').classList.remove('cp-open');
+        async function closeCodingPage() {
+            await _cpWaveTransition(() => {
+                document.getElementById('coding-page').classList.remove('cp-open');
+            });
+        }
+
+        async function _cpWaveTransition(cb) {
+            const overlay = document.getElementById('cp-wave-overlay');
+            if (!overlay) { cb(); return; }
+            const delay = ms => new Promise(r => setTimeout(r, ms));
+            const raf = () => new Promise(r => requestAnimationFrame(r));
+            // Reset to off-screen left
+            overlay.style.transition = 'none';
+            overlay.style.transform = 'translateX(-101%)';
+            overlay.style.display = 'block';
+            await raf(); await raf();
+            // Sweep across screen (cover)
+            overlay.style.transition = 'transform 0.42s cubic-bezier(0.7,0,0.3,1)';
+            overlay.style.transform = 'translateX(0%)';
+            await delay(420);
+            // Apply the actual page change while overlay covers everything
+            cb();
+            await raf();
+            // Sweep out to the right (reveal)
+            overlay.style.transition = 'transform 0.4s cubic-bezier(0.3,0,0,1)';
+            overlay.style.transform = 'translateX(101%)';
+            await delay(420);
+            overlay.style.display = 'none';
         }
 
         async function initCodingPage() {
@@ -6953,6 +7033,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
             await Promise.all([loadCodingRepos(), loadCodingSessions()]);
             updateCodingRepoUI();
+            renderCodingEmptySuggestions();
             lucide.createIcons();
         }
 
@@ -7048,13 +7129,135 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
         function selectCodingRepoItem(fullName) {
             codingSelectedRepo = fullName;
+            _codingRepoFiles = [];
             document.getElementById('coding-repo-popup').classList.remove('open');
             updateCodingRepoUI();
+            renderCodingEmptySuggestions();
+            loadCodingRepoFileTree();
         }
 
         function clearCodingRepo() {
             codingSelectedRepo = null;
+            _codingRepoFiles = [];
             updateCodingRepoUI();
+            renderCodingEmptySuggestions();
+        }
+
+        // ── Repo file tree cache + suggestions ───────────────────
+        let _codingRepoFiles = [];
+
+        async function loadCodingRepoFileTree() {
+            if (!codingGhToken || !codingSelectedRepo) return;
+            try {
+                const [owner, repo] = codingSelectedRepo.split('/');
+                const r = await fetch(`/api/github-files?action=tree&owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`, {
+                    headers: { 'x-github-token': codingGhToken }
+                });
+                if (r.ok) _codingRepoFiles = await r.json();
+            } catch (_) {}
+            renderCodingEmptySuggestions();
+        }
+
+        function renderCodingEmptySuggestions() {
+            const el = document.getElementById('coding-es-suggestions');
+            const subtitle = document.getElementById('coding-es-subtitle');
+            if (!el) return;
+            const repo = codingSelectedRepo;
+            const repoName = repo ? repo.split('/')[1] : null;
+            const files = _codingRepoFiles;
+
+            // Build suggestion list
+            const suggestions = [];
+
+            if (repo && files.length > 0) {
+                if (subtitle) subtitle.textContent = `Working with ${repoName}`;
+                // Pick a few interesting files from the repo
+                const interesting = files.filter(f => {
+                    const low = f.toLowerCase();
+                    return !low.includes('node_modules') && !low.includes('.min.') && !low.endsWith('.lock');
+                }).slice(0, 6);
+
+                if (interesting.length > 0) {
+                    const picked = interesting.sort(() => Math.random() - 0.5).slice(0, 3);
+                    picked.forEach(f => {
+                        const name = f.split('/').pop();
+                        suggestions.push({ icon: _suggIcon(f), text: `Review and improve \`${name}\`` });
+                    });
+                }
+                suggestions.push({ icon: 'bug', text: 'Find and fix bugs in this repo' });
+                suggestions.push({ icon: 'file-plus', text: 'Add a README to ' + repoName });
+                suggestions.push({ icon: 'test-tube', text: 'Write tests for the main module' });
+            } else if (repo) {
+                if (subtitle) subtitle.textContent = `Working with ${repoName}`;
+                suggestions.push(
+                    { icon: 'wand-2', text: 'Explain the structure of this repo' },
+                    { icon: 'bug', text: 'Find and fix bugs in this project' },
+                    { icon: 'file-plus', text: 'Add a README to ' + repoName },
+                    { icon: 'test-tube', text: 'Write tests for the main module' },
+                    { icon: 'zap', text: 'Optimize performance of key files' },
+                    { icon: 'shield', text: 'Review code for security issues' }
+                );
+            } else {
+                if (subtitle) subtitle.textContent = 'Select a repo to get started';
+                suggestions.push(
+                    { icon: 'wand-2', text: 'Explain how this codebase works' },
+                    { icon: 'bug', text: 'Help me debug an issue in my code' },
+                    { icon: 'code-2', text: 'Write a new feature or component' },
+                    { icon: 'file-plus', text: 'Generate a config or setup file' },
+                    { icon: 'zap', text: 'Refactor code for readability' },
+                    { icon: 'test-tube', text: 'Create unit tests for my functions' }
+                );
+            }
+
+            el.innerHTML = suggestions.slice(0, 6).map((s, i) =>
+                `<button class="coding-es-sugg" style="animation-delay:${i * 80}ms" onclick="injectCodingSuggestion(this)">
+                    <span class="coding-es-sugg-icon" style="background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.18)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#si-${escapeHtml(s.icon)}"/></svg>
+                    </span>
+                    <span class="coding-es-sugg-text">${escapeHtml(s.text)}</span>
+                </button>`
+            ).join('');
+            // Animate in with stagger
+            requestAnimationFrame(() => {
+                el.querySelectorAll('.coding-es-sugg').forEach((btn, i) => {
+                    setTimeout(() => btn.classList.add('sugg-visible'), i * 80);
+                });
+            });
+            // Inject inline SVG symbols for icons (use lucide paths)
+            _injectSuggIcons(suggestions.slice(0, 6).map(s => s.icon));
+        }
+
+        function _suggIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const map = { js:'zap', ts:'zap', jsx:'zap', tsx:'zap', html:'globe', css:'palette', py:'code-2', json:'braces', md:'file-text', sh:'terminal', yml:'settings', yaml:'settings', go:'code-2', rs:'code-2', java:'code-2', rb:'code-2' };
+            return map[ext] || 'file';
+        }
+
+        function _injectSuggIcons(icons) {
+            // Render icon svgs directly (simpler than use/href)
+            const el = document.getElementById('coding-es-suggestions');
+            if (!el) return;
+            // Replace each svg with a simple icon character or use data URIs
+            // Simpler: re-render with proper lucide icons
+            el.querySelectorAll('.coding-es-sugg').forEach((btn, i) => {
+                const iconName = icons[i];
+                const iconSpan = btn.querySelector('.coding-es-sugg-icon');
+                if (iconSpan && iconName) {
+                    iconSpan.innerHTML = `<i data-lucide="${iconName}" style="width:12px;height:12px;color:#a78bfa"></i>`;
+                }
+            });
+            if (window.lucide) lucide.createIcons({ attrs: { 'stroke-width': '2' } });
+        }
+
+        function injectCodingSuggestion(btn) {
+            const text = btn.querySelector('.coding-es-sugg-text')?.textContent || '';
+            const inputEl = document.getElementById('coding-input');
+            if (inputEl) {
+                inputEl.value = text;
+                autoResizeCodingInput(inputEl);
+                updateCodingSendBtn();
+                inputEl.focus();
+            }
         }
 
         function updateCodingRepoUI() {
@@ -7213,6 +7416,8 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             return `<div class="coding-activity-step step-status">${iconHtml}<span>${label}</span></div>`;
         }
 
+        const _doneIcon = `<div class="step-icon done"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
+
         async function _revealCodingResponse(container, fullText, msgId) {
             const sections = _parseCodingSections(fullText);
             // Store code blocks for commit modal
@@ -7227,53 +7432,35 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
             const delay = ms => new Promise(r => setTimeout(r, ms));
 
+            const addStep = (label, done) => {
+                const wrap = document.createElement('div');
+                wrap.innerHTML = _codingStatusStep(label, done);
+                const step = wrap.firstElementChild;
+                log.appendChild(step);
+                requestAnimationFrame(() => step.classList.add('visible'));
+                chatArea.scrollTop = chatArea.scrollHeight;
+                return step;
+            };
+
+            const markDone = step => { const icon = step.querySelector('.step-icon'); if (icon) icon.outerHTML = _doneIcon; };
+
             // Step 1: Analyzing
-            let statusEl = document.createElement('div');
-            statusEl.innerHTML = _codingStatusStep('Analyzing your request', false);
-            let step = statusEl.firstElementChild;
-            log.appendChild(step);
-            requestAnimationFrame(() => { step.classList.add('visible'); });
-            chatArea.scrollTop = chatArea.scrollHeight;
-            await delay(600);
-            // Mark done
-            step.querySelector('.step-icon').outerHTML = `<div class="step-icon done"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
-
-            // Determine what status labels to show based on content
             const hasCode = blocks.length > 0;
-            const codeLabels = blocks.map(b => {
-                const meta = _codingLang(b.lang);
-                return `Writing ${meta.label.toLowerCase()} code`;
-            });
-            // Deduplicate labels
-            const uniqueLabels = [...new Set(codeLabels)];
+            const step1 = addStep('Analyzing your request', false);
+            await delay(600);
+            markDone(step1);
 
-            // Step 2: If prose, show "Preparing response"
-            const proseSteps = sections.filter(s => s.type === 'prose');
-            if (proseSteps.length) {
-                statusEl = document.createElement('div');
-                statusEl.innerHTML = _codingStatusStep('Preparing response', false);
-                step = statusEl.firstElementChild;
-                log.appendChild(step);
-                requestAnimationFrame(() => { step.classList.add('visible'); });
-                chatArea.scrollTop = chatArea.scrollHeight;
-                await delay(400);
-                step.querySelector('.step-icon').outerHTML = `<div class="step-icon done"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
+            // Step 2: Preparing response (if prose present)
+            if (sections.some(s => s.type === 'prose')) {
+                const step2 = addStep('Preparing response', false);
+                await delay(350);
+                markDone(step2);
             }
 
-            // Step 3: Code writing statuses
-            for (const label of uniqueLabels) {
-                statusEl = document.createElement('div');
-                statusEl.innerHTML = _codingStatusStep(label, false);
-                step = statusEl.firstElementChild;
-                log.appendChild(step);
-                requestAnimationFrame(() => { step.classList.add('visible'); });
-                chatArea.scrollTop = chatArea.scrollHeight;
-                await delay(500);
-                step.querySelector('.step-icon').outerHTML = `<div class="step-icon done"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
-            }
-
-            // Now reveal actual content sections
+            // Step 3: Reveal content sections with fix-delay logic
             let codeIdx = 0;
+            let prevProseRaw = '';
+
             for (const section of sections) {
                 const contentEl = document.createElement('div');
                 contentEl.className = 'coding-activity-step step-content';
@@ -7283,9 +7470,36 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     if (window.marked) { try { html = marked.parse(section.raw); } catch(_) { html = `<p>${escapeHtml(section.raw)}</p>`; } }
                     else html = `<p>${escapeHtml(section.raw).replace(/\n/g,'<br>')}</p>`;
                     contentEl.innerHTML = `<div class="ai-response text-gray-300 text-sm leading-relaxed">${html}</div>`;
+                    log.appendChild(contentEl);
+                    requestAnimationFrame(() => contentEl.classList.add('visible'));
+                    chatArea.scrollTop = chatArea.scrollHeight;
+                    await delay(150);
+                    prevProseRaw = section.raw;
                 } else {
-                    // Render as file card
+                    // Check if previous prose signals a fix/update operation
+                    const isFixing = /\bfix(ing|ed)?\b|\bupdat(e|ing|ed)\b|\bmodif(y|ying|ied)\b|\brefactor|\bapply|\bchange/i.test(prevProseRaw);
+
+                    if (isFixing) {
+                        // Show an active "Applying changes" step for 7-9 seconds
+                        const fixMs = 7000 + Math.random() * 2000;
+                        const fixStep = addStep('Applying changes to files…', false);
+                        // Cycle through descriptive sub-labels while waiting
+                        const fixLabels = ['Reading current file…', 'Applying changes to files…', 'Verifying modifications…', 'Finalizing edits…'];
+                        let fi = 0;
+                        const fixInterval = setInterval(() => {
+                            fi = (fi + 1) % fixLabels.length;
+                            const span = fixStep.querySelector('span');
+                            if (span) { span.style.opacity='0'; setTimeout(()=>{ span.textContent=fixLabels[fi]; span.style.opacity='1'; }, 200); }
+                        }, fixMs / fixLabels.length);
+                        await delay(fixMs);
+                        clearInterval(fixInterval);
+                        markDone(fixStep);
+                        await delay(200);
+                    }
+
+                    // Render code as file card with real filename
                     const meta = _codingLang(section.lang);
+                    const filename = _extractCodeFilename(section.code, section.lang, prevProseRaw) || `file.${meta.ext}`;
                     const lineCount = section.code.split('\n').length;
                     const esc = section.code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
                     const cardUid = `${msgId}_${codeIdx}`;
@@ -7293,18 +7507,18 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     contentEl.innerHTML = `<div class="code-file-list"><div class="code-file-card" id="cfc_${cardUid}" onclick="toggleCodeFileCard('${cardUid}')">
                         <div class="code-file-card-header">
                             <div class="code-file-icon ${meta.cls}">${meta.label}</div>
-                            <span class="code-file-name">file.${meta.ext}</span>
+                            <span class="code-file-name">${escapeHtml(filename)}</span>
                             <span class="code-file-lines">${lineCount} line${lineCount !== 1 ? 's' : ''}</span>
                             <svg class="code-file-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
                         <div class="code-file-body"><pre>${esc}</pre></div>
                     </div></div>`;
+                    log.appendChild(contentEl);
+                    requestAnimationFrame(() => contentEl.classList.add('visible'));
+                    chatArea.scrollTop = chatArea.scrollHeight;
+                    await delay(200);
+                    prevProseRaw = '';
                 }
-
-                log.appendChild(contentEl);
-                requestAnimationFrame(() => { contentEl.classList.add('visible'); });
-                chatArea.scrollTop = chatArea.scrollHeight;
-                await delay(200);
             }
 
             // Commit button
@@ -7353,6 +7567,32 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             return { el, msgId };
         }
 
+        // ── Filename extraction from code block ───────────────────
+        function _extractCodeFilename(code, lang, proseContext) {
+            // 1. Look for filename in first line comment: // path/file.js or # script.py etc
+            const lines = code.split('\n');
+            const first = lines[0].trim();
+            const commentM = first.match(/^(?:\/\/|#|\/\*)\s*(?:file(?:name)?[:\s]+)?([\w.\-/]+\.\w+)/i);
+            if (commentM) return commentM[1].split('/').pop();
+
+            // 2. Look in surrounding prose for a quoted filename
+            if (proseContext) {
+                const proseM = proseContext.match(/[`'"]([^`'"]*\.(?:js|ts|jsx|tsx|html|css|py|json|go|rs|java|rb|php|sh|yml|yaml|md|txt))[`'"]/i);
+                if (proseM) return proseM[1].split('/').pop();
+                const pathM = proseContext.match(/\b([\w.\-/]+\.(?:js|ts|jsx|tsx|html|css|py|json|go|rs|java|rb|php|sh|yml|yaml|md))\b/i);
+                if (pathM) return pathM[1].split('/').pop();
+            }
+
+            // 3. Look in repo file list for a file matching this extension
+            if (_codingRepoFiles.length > 0) {
+                const meta = _codingLang(lang);
+                const match = _codingRepoFiles.find(f => f.endsWith('.' + meta.ext));
+                if (match) return match.split('/').pop();
+            }
+
+            return null;
+        }
+
         // ── Language helpers for file cards ──────────────────────
         const _codingLangMeta = {
             javascript: { label:'JS',   cls:'lang-js',   ext:'js'   },
@@ -7395,10 +7635,11 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     const lineCount = b.code.split('\n').length;
                     const escapedCode = b.code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
                     const cardUid = `${cardId}_${idx}`;
+                    const filename = _extractCodeFilename(b.code, b.lang, '') || `file.${meta.ext}`;
                     return `<div class="code-file-card" id="cfc_${cardUid}" onclick="toggleCodeFileCard('${cardUid}')">
                         <div class="code-file-card-header">
                             <div class="code-file-icon ${meta.cls}">${meta.label}</div>
-                            <span class="code-file-name">file.${meta.ext}</span>
+                            <span class="code-file-name">${escapeHtml(filename)}</span>
                             <span class="code-file-lines">${lineCount} line${lineCount !== 1 ? 's' : ''}</span>
                             <svg class="code-file-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
@@ -7420,7 +7661,11 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
         function toggleCodeFileCard(uid) {
             const card = document.getElementById('cfc_' + uid);
-            if (card) card.classList.toggle('open');
+            if (!card) return;
+            const wasOpen = card.classList.contains('open');
+            card.classList.toggle('open');
+            // Scroll newly opened card into view after animation
+            if (!wasOpen) setTimeout(() => card.scrollIntoView({ behavior:'smooth', block:'nearest' }), 200);
         }
 
         async function sendCodingMessage() {
