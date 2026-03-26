@@ -40,15 +40,15 @@ module.exports = async function handler(req, res) {
             maxTokens = modelVersion === '3.6' ? 10000 : 7000;
         }
 
-        // Trim history to avoid token overflow: keep last 8 messages and truncate
-        // any individual message that is very long (e.g. full-file AI responses)
-        const MAX_HISTORY = 8;
-        const MAX_MSG_CHARS = 6000;
+        // Trim history aggressively to keep context small and avoid timeouts.
+        // Keep last 6 messages; truncate any long message to 2500 chars.
+        const MAX_HISTORY = 6;
+        const MAX_MSG_CHARS = 2500;
         const trimmedHistory = history
             .slice(-MAX_HISTORY)
             .map(m => {
                 if (typeof m.content === 'string' && m.content.length > MAX_MSG_CHARS) {
-                    return { ...m, content: m.content.slice(0, MAX_MSG_CHARS) + '\n[... truncated for context length ...]' };
+                    return { ...m, content: m.content.slice(0, MAX_MSG_CHARS) + '\n[... truncated ...]' };
                 }
                 return m;
             });
@@ -108,34 +108,52 @@ HTML/website generation rules (CRITICAL — always follow these):
             max_tokens: maxTokens
         });
 
-        // Retry up to 3 times with exponential backoff on 429 rate-limit responses
+        // Abort the Mistral request after 55 s — just under the 60 s Vercel
+        // maxDuration set for this function — so we return a clean error
+        // instead of a silent gateway cut-off.
+        const TIMEOUT_MS = 55000;
+
+        // Retry up to 2 times on 429; don't retry on other errors
         let mistralRes;
-        const MAX_RETRIES = 3;
+        const MAX_RETRIES = 2;
         for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-            mistralRes = await fetch('https://api.mistral.ai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: requestBody
-            });
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+            try {
+                mistralRes = await fetch('https://api.mistral.ai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: requestBody,
+                    signal: controller.signal
+                });
+            } catch (fetchErr) {
+                clearTimeout(timer);
+                if (fetchErr.name === 'AbortError') {
+                    return res.status(504).json({ error: 'The request timed out — the prompt may be too large. Try a shorter message or start a new session.' });
+                }
+                throw fetchErr;
+            }
+            clearTimeout(timer);
 
             if (mistralRes.status !== 429 || attempt === MAX_RETRIES) break;
 
-            // Respect Retry-After header if present, otherwise use exponential backoff
             const retryAfter = parseInt(mistralRes.headers.get('Retry-After') || '0', 10);
-            const backoffMs   = retryAfter > 0 ? retryAfter * 1000 : (2 ** attempt) * 1500;
+            const backoffMs  = retryAfter > 0 ? retryAfter * 1000 : (2 ** attempt) * 1500;
             await new Promise(r => setTimeout(r, backoffMs));
         }
 
         if (!mistralRes.ok) {
             const errorData = await mistralRes.json().catch(() => ({}));
             const status = mistralRes.status;
-            const message = status === 429
+            const errMsg = status === 429
                 ? 'Rate limit reached — please wait a moment and try again.'
+                : status === 504
+                ? 'Request timed out — try a shorter message or start a new session.'
                 : (errorData.message || `Mistral API error (${status})`);
-            return res.status(status).json({ error: message });
+            return res.status(status).json({ error: errMsg });
         }
 
         const data = await mistralRes.json();
