@@ -33,13 +33,25 @@ module.exports = async function handler(req, res) {
         // Model routing: use vision-capable Pixtral when images are present
         let model, maxTokens;
         if (hasImages) {
-            // pixtral-12b supports vision and is available on standard API keys
             model     = 'pixtral-12b-2409';
             maxTokens = 8000;
         } else {
             model     = modelVersion === '3.6' ? 'mistral-large-latest' : 'mistral-small-latest';
-            maxTokens = modelVersion === '3.6' ? 8000 : 5000;
+            maxTokens = modelVersion === '3.6' ? 10000 : 7000;
         }
+
+        // Trim history to avoid token overflow: keep last 8 messages and truncate
+        // any individual message that is very long (e.g. full-file AI responses)
+        const MAX_HISTORY = 8;
+        const MAX_MSG_CHARS = 6000;
+        const trimmedHistory = history
+            .slice(-MAX_HISTORY)
+            .map(m => {
+                if (typeof m.content === 'string' && m.content.length > MAX_MSG_CHARS) {
+                    return { ...m, content: m.content.slice(0, MAX_MSG_CHARS) + '\n[... truncated for context length ...]' };
+                }
+                return m;
+            });
 
         const codingSystemPrompt = `You are Clarity Coding, an expert AI coding assistant integrated with GitHub. Rules:
 - Help the user write, fix, explain, and refactor code.
@@ -85,7 +97,7 @@ HTML/website generation rules (CRITICAL — always follow these):
 
         const messages = [
             { role: 'system', content: mode === 'coding' ? codingSystemPrompt : systemPrompt },
-            ...history,
+            ...trimmedHistory,
             { role: 'user', content: userContent }
         ];
 
