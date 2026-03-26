@@ -140,9 +140,9 @@
         #mode-fade-wave { position:fixed; inset:0; background:#000; z-index:300; pointer-events:none; opacity:0; }
 
         /* ── Clarity Coding wave transition overlay ── */
-        #cp-wave-overlay { position:fixed; inset:0; z-index:350; pointer-events:none; background:#0a0a0a; transform:translateX(-101%); display:none; will-change:transform; }
-        @keyframes cp-wave-in  { from{transform:translateX(-101%)} to{transform:translateX(0)} }
-        @keyframes cp-wave-out { from{transform:translateX(0)} to{transform:translateX(101%)} }
+        #cp-wave-overlay { position:fixed; inset:0; z-index:350; pointer-events:none; background:#0a0a0a; transform:translateY(101%); display:none; will-change:transform; }
+        @keyframes cp-wave-in  { from{transform:translateY(101%)} to{transform:translateY(0)} }
+        @keyframes cp-wave-out { from{transform:translateY(0)} to{transform:translateY(-101%)} }
 
         /* ── Account page ── */
         #account-page { transition:transform 0.38s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease; }
@@ -650,6 +650,12 @@
         .coding-commit-btn:hover { background:rgba(124,58,237,0.35); }
         #coding-commit-modal { position:fixed; inset:0; z-index:250; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.65); backdrop-filter:blur(8px); }
         #coding-commit-modal.ccm-open { display:flex; }
+        /* ── GitHub disconnect confirm modal ── */
+        #coding-disconnect-modal { position:fixed; inset:0; z-index:260; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); padding:1rem; }
+        #coding-disconnect-modal.cdm-open { display:flex; }
+        /* ── Coding left panel sign-out button ── */
+        .coding-signout-btn { display:flex; align-items:center; justify-content:center; gap:0.4rem; width:100%; padding:0.5rem 0.75rem; background:rgba(153,27,27,0.1); border:1px solid rgba(153,27,27,0.25); border-radius:0.5rem; color:#f87171; font-size:0.72rem; font-weight:600; cursor:pointer; transition:all 0.15s; letter-spacing:0.01em; }
+        .coding-signout-btn:hover { background:rgba(153,27,27,0.2); border-color:rgba(153,27,27,0.45); color:#fca5a5; }
 
         /* ── Coding thinking indicator ── */
         .coding-thinking { display:flex; align-items:center; gap:0.5rem; color:#6b7280; font-size:0.8rem; }
@@ -686,6 +692,7 @@
         .code-file-icon.lang-default { background:rgba(255,255,255,0.06); color:#6b7280; border:1px solid rgba(255,255,255,0.1); }
         .code-file-name { flex:1; font-size:0.8rem; font-weight:500; color:#e5e7eb; font-family:'SF Mono','Fira Code',monospace; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .code-file-lines { font-size:0.7rem; color:#6b7280; white-space:nowrap; }
+        .code-file-new-badge { font-size:0.6rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; padding:0.15rem 0.45rem; border-radius:0.3rem; background:rgba(124,58,237,0.15); border:1px solid rgba(124,58,237,0.3); color:#a78bfa; white-space:nowrap; flex-shrink:0; }
         .code-file-chevron { color:#4b5563; transition:transform 0.2s; flex-shrink:0; }
         .code-file-card.open .code-file-chevron { transform:rotate(90deg); }
         .code-file-body { display:block; max-height:0; overflow:hidden; transition:max-height 0.38s cubic-bezier(0.4,0,0.2,1), border-top-color 0.25s ease; border-top:1px solid transparent; }
@@ -1708,16 +1715,19 @@
                     <div class="text-gray-600 text-xs text-center py-8">No sessions yet</div>
                 </div>
                 <!-- GitHub user footer -->
-                <div id="coding-gh-footer" class="p-3 border-t border-white/5 flex-shrink-0 flex items-center gap-2.5">
-                    <div id="coding-gh-avatar" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        <i data-lucide="github" class="w-4 text-gray-400"></i>
+                <div id="coding-gh-footer" class="p-3 border-t border-white/5 flex-shrink-0 flex flex-col gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <div id="coding-gh-avatar" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            <i data-lucide="github" class="w-4 text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p id="coding-gh-username" class="text-white text-xs font-semibold truncate">GitHub</p>
+                            <p class="text-gray-600 text-[10px]">Connected</p>
+                        </div>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <p id="coding-gh-username" class="text-white text-xs font-semibold truncate">GitHub</p>
-                        <p class="text-gray-600 text-[10px]">Connected</p>
-                    </div>
-                    <button onclick="disconnectGitHub()" class="text-gray-600 hover:text-red-400 transition-colors p-1" title="Disconnect GitHub">
-                        <i data-lucide="log-out" class="w-3.5"></i>
+                    <button onclick="promptCodingDisconnect()" class="coding-signout-btn">
+                        <i data-lucide="log-out" style="width:11px;height:11px"></i>
+                        Sign out
                     </button>
                 </div>
             </div>
@@ -1809,6 +1819,26 @@
         </div>
     </div>
 
+    <!-- Clarity Coding — GitHub disconnect confirm modal -->
+    <div id="coding-disconnect-modal">
+        <div class="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="github" class="w-4 text-red-400"></i>
+                </div>
+                <div>
+                    <h3 class="text-white font-semibold text-base">Disconnect GitHub?</h3>
+                    <p class="text-gray-500 text-xs mt-0.5">You'll need to reconnect to use Clarity Coding</p>
+                </div>
+            </div>
+            <p class="text-gray-400 text-sm leading-relaxed mb-5">Your current session and unsaved code will be lost. Make sure to commit any changes before signing out.</p>
+            <div class="flex gap-2.5">
+                <button onclick="closeCodingDisconnectModal()" class="flex-1 py-2.5 bg-white/5 border border-white/8 text-gray-400 text-sm rounded-xl hover:bg-white/10 transition-colors">Cancel</button>
+                <button onclick="confirmCodingDisconnect()" class="flex-1 py-2.5 bg-red-600/70 hover:bg-red-600 text-white text-sm font-medium rounded-xl transition-colors">Sign out</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Clarity Coding — GitHub commit modal -->
     <div id="coding-commit-modal">
         <div class="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
@@ -1827,7 +1857,11 @@
                     <div id="cmt-repo-display" class="text-gray-300 text-sm bg-white/5 border border-white/8 rounded-lg px-3 py-2 truncate"></div>
                 </div>
                 <div>
-                    <label class="text-gray-500 text-xs mb-1.5 block">File path</label>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="text-gray-500 text-xs">File path</label>
+                        <span id="cmt-existing-label" style="display:none" class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-950/40 border border-blue-800/30 text-blue-400">Updating existing file</span>
+                        <span id="cmt-new-label" style="display:none" class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-violet-950/40 border border-violet-800/30 text-violet-400">New file</span>
+                    </div>
                     <input id="cmt-file-path" type="text" placeholder="e.g. src/index.js"
                         class="w-full bg-white/5 border border-white/8 rounded-lg px-3 py-2 text-sm text-gray-200 outline-none focus:border-violet-500/50 transition-colors placeholder-gray-600">
                 </div>
@@ -6977,21 +7011,21 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             if (!overlay) { cb(); return; }
             const delay = ms => new Promise(r => setTimeout(r, ms));
             const raf = () => new Promise(r => requestAnimationFrame(r));
-            // Reset to off-screen left
+            // Reset to off-screen bottom
             overlay.style.transition = 'none';
-            overlay.style.transform = 'translateX(-101%)';
+            overlay.style.transform = 'translateY(101%)';
             overlay.style.display = 'block';
             await raf(); await raf();
-            // Sweep across screen (cover)
-            overlay.style.transition = 'transform 0.42s cubic-bezier(0.7,0,0.3,1)';
-            overlay.style.transform = 'translateX(0%)';
-            await delay(420);
+            // Sweep up from bottom (cover)
+            overlay.style.transition = 'transform 0.44s cubic-bezier(0.7,0,0.3,1)';
+            overlay.style.transform = 'translateY(0%)';
+            await delay(440);
             // Apply the actual page change while overlay covers everything
             cb();
             await raf();
-            // Sweep out to the right (reveal)
+            // Sweep out to the top (reveal)
             overlay.style.transition = 'transform 0.4s cubic-bezier(0.3,0,0,1)';
-            overlay.style.transform = 'translateX(101%)';
+            overlay.style.transform = 'translateY(-101%)';
             await delay(420);
             overlay.style.display = 'none';
         }
@@ -7067,8 +7101,20 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
         }
 
+        function promptCodingDisconnect() {
+            const m = document.getElementById('coding-disconnect-modal');
+            if (m) { m.classList.add('cdm-open'); lucide.createIcons(); }
+        }
+        function closeCodingDisconnectModal() {
+            document.getElementById('coding-disconnect-modal')?.classList.remove('cdm-open');
+        }
+        function confirmCodingDisconnect() {
+            closeCodingDisconnectModal();
+            disconnectGitHub();
+        }
         function disconnectGitHub() {
             codingGhToken = null; codingGhUser = null;
+            _codingRepoFiles = [];
             localStorage.removeItem('clarity_gh_token');
             localStorage.removeItem('clarity_gh_user');
             showCodingConnectView();
@@ -7504,10 +7550,15 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     const esc = section.code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
                     const cardUid = `${msgId}_${codeIdx}`;
                     codeIdx++;
+                    // Determine if this is a new file vs existing
+                    const _isNewFile = _codingRepoFiles.length > 0 &&
+                        !_codingRepoFiles.some(f => f === filename || f.endsWith('/' + filename));
+                    const newBadge = _isNewFile ? `<span class="code-file-new-badge">New file</span>` : '';
                     contentEl.innerHTML = `<div class="code-file-list"><div class="code-file-card" id="cfc_${cardUid}" onclick="toggleCodeFileCard('${cardUid}')">
                         <div class="code-file-card-header">
                             <div class="code-file-icon ${meta.cls}">${meta.label}</div>
                             <span class="code-file-name">${escapeHtml(filename)}</span>
+                            ${newBadge}
                             <span class="code-file-lines">${lineCount} line${lineCount !== 1 ? 's' : ''}</span>
                             <svg class="code-file-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
@@ -7681,7 +7732,28 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             appendCodingUserMsg(val);
             const { el: pendingEl, msgId: pendingId } = appendCodingAIMsg('', true);
 
-            const messageToSend = codingSelectedRepo ? `[GitHub repo: ${codingSelectedRepo}]\n\n${val}` : val;
+            let messageToSend = codingSelectedRepo ? `[GitHub repo: ${codingSelectedRepo}]\n\n${val}` : val;
+
+            // If a repo is connected and user likely references an existing file, inject its current content
+            if (codingSelectedRepo && codingGhToken && _codingRepoFiles.length > 0) {
+                const valLow = val.toLowerCase();
+                const referencedFile = _codingRepoFiles.find(f => {
+                    const name = f.split('/').pop().toLowerCase();
+                    return valLow.includes(name) || valLow.includes(f.toLowerCase());
+                });
+                if (referencedFile) {
+                    try {
+                        const [owner, repo] = codingSelectedRepo.split('/');
+                        const r = await fetch(`/api/github-files?action=file&owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(referencedFile)}`, {
+                            headers: { 'x-github-token': codingGhToken }
+                        });
+                        if (r.ok) {
+                            const { content } = await r.json();
+                            messageToSend += `\n\n[Current content of \`${referencedFile}\`]:\n\`\`\`\n${content}\n\`\`\`\n\nReturn the COMPLETE updated file. Include \`// ${referencedFile}\` as the first line comment inside the code block.`;
+                        }
+                    } catch (_) {}
+                }
+            }
 
             // Create DB session on first message
             if (!activeCodingSessionId && currentUser) {
@@ -7737,11 +7809,32 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             pendingCommitCode = blocks;
             const repoEl = document.getElementById('cmt-repo-display');
             if (repoEl) repoEl.textContent = codingSelectedRepo || 'No repo selected';
-            const extMap = { javascript:'js', js:'js', typescript:'ts', ts:'ts', python:'py', py:'py', html:'html', css:'css', rust:'rs', go:'go', java:'java', cpp:'cpp', c:'c', json:'json', yaml:'yml', sh:'sh', bash:'sh', ruby:'rb', php:'php' };
-            const firstLang = blocks[0].lang;
-            const ext = extMap[firstLang] || firstLang || 'txt';
+
+            // Detect file path: extracted name → match in repo tree → fallback
+            const firstBlock = blocks[0];
+            const meta = _codingLang(firstBlock.lang);
+            const extractedName = _extractCodeFilename(firstBlock.code, firstBlock.lang, '');
+            let filePath;
+            let isExistingFile = false;
+            if (extractedName) {
+                // Look for the exact path in the repo tree
+                const repoMatch = _codingRepoFiles.find(f => f === extractedName || f.endsWith('/' + extractedName));
+                filePath = repoMatch || extractedName;
+                isExistingFile = !!repoMatch;
+            } else {
+                filePath = `code.${meta.ext}`;
+                isExistingFile = false;
+            }
+
             const pathEl = document.getElementById('cmt-file-path');
-            if (pathEl) pathEl.value = `code.${ext}`;
+            if (pathEl) pathEl.value = filePath;
+
+            // Show/hide "existing file" label
+            const existingLabel = document.getElementById('cmt-existing-label');
+            const newLabel = document.getElementById('cmt-new-label');
+            if (existingLabel) existingLabel.style.display = isExistingFile ? 'inline-flex' : 'none';
+            if (newLabel) newLabel.style.display = (!isExistingFile && extractedName) ? 'inline-flex' : 'none';
+
             document.getElementById('coding-commit-modal').classList.add('ccm-open');
             lucide.createIcons();
         }
