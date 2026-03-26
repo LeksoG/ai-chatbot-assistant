@@ -108,9 +108,10 @@ HTML/website generation rules (CRITICAL — always follow these):
             max_tokens: maxTokens
         });
 
-        // Hard timeout: abort the Mistral request after 25 s so we return a
-        // clean error before Vercel's gateway (10 s Hobby / 60 s Pro) cuts us off.
-        const TIMEOUT_MS = 25000;
+        // Abort the Mistral request after 55 s — just under the 60 s Vercel
+        // maxDuration set for this function — so we return a clean error
+        // instead of a silent gateway cut-off.
+        const TIMEOUT_MS = 55000;
 
         // Retry up to 2 times on 429; don't retry on other errors
         let mistralRes;
