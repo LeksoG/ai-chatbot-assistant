@@ -7749,7 +7749,11 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                         });
                         if (r.ok) {
                             const { content } = await r.json();
-                            messageToSend += `\n\n[Current content of \`${referencedFile}\`]:\n\`\`\`\n${content}\n\`\`\`\n\nReturn the COMPLETE updated file. Include \`// ${referencedFile}\` as the first line comment inside the code block.`;
+                            // Cap injected content to avoid token overflow (approx 5000 chars)
+                            const safeContent = content.length > 5000
+                                ? content.slice(0, 5000) + '\n// ... (file truncated for brevity) ...'
+                                : content;
+                            messageToSend += `\n\n[Current content of \`${referencedFile}\`]:\n\`\`\`\n${safeContent}\n\`\`\`\n\nReturn the COMPLETE updated file. Include \`// ${referencedFile}\` as the first line comment inside the code block.`;
                         }
                     } catch (_) {}
                 }
@@ -7774,7 +7778,13 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: messageToSend, history: codingSessionHistory, modelVersion: '3.6', mode: 'coding' })
                 });
-                if (!r.ok) throw new Error('AI error ' + r.status);
+                if (!r.ok) {
+                    const errData = await r.json().catch(() => ({}));
+                    const errMsg = r.status === 429
+                        ? 'Rate limit reached — please wait a few seconds and try again.'
+                        : (errData.error || `Error ${r.status}`);
+                    throw new Error(errMsg);
+                }
                 const data = await r.json();
                 const reply = data.reply || data.content || '';
 
@@ -7797,7 +7807,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             } catch (err) {
                 _stopThinkingCycle();
                 pendingEl.className = 'flex justify-start pl-4';
-                pendingEl.innerHTML = `<span class="text-red-400 text-sm">Error getting response. Please try again.</span>`;
+                pendingEl.innerHTML = `<div class="flex items-center gap-2 text-sm text-red-400 bg-red-950/20 border border-red-900/30 rounded-xl px-3 py-2 max-w-sm">${escapeHtml(err.message || 'Error getting response. Please try again.')}</div>`;
             }
             codingIsLoading = false;
             updateCodingSendBtn();
