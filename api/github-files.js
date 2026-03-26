@@ -26,6 +26,22 @@ module.exports = async function handler(req, res) {
                 return res.json(repos.map(r => ({ full_name: r.full_name, private: r.private, description: r.description || '' })));
             }
 
+            // List repo file tree (flat)
+            if (action === 'tree' && owner && repo) {
+                const branch = req.query.branch || 'main';
+                let r = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`, { headers: ghHeaders });
+                if (!r.ok) {
+                    // Fallback to master
+                    r = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/master?recursive=1`, { headers: ghHeaders });
+                }
+                if (!r.ok) return res.status(r.status).json({ error: 'Failed to fetch file tree' });
+                const data = await r.json();
+                const files = (data.tree || [])
+                    .filter(f => f.type === 'blob' && f.path && !f.path.startsWith('.') && !f.path.includes('node_modules'))
+                    .map(f => f.path);
+                return res.json(files);
+            }
+
             // Read file contents
             if (action === 'file' && owner && repo && path) {
                 const r = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, { headers: ghHeaders });
