@@ -681,6 +681,14 @@
         .code-file-card { background:#141414; border:1px solid rgba(255,255,255,0.08); border-radius:0.875rem; overflow:hidden; cursor:pointer; transition:border-color 0.15s,background 0.15s; }
         .code-file-card:hover { border-color:rgba(255,255,255,0.16); background:#1a1a1a; }
         .code-file-card-header { display:flex; align-items:center; gap:0.65rem; padding:0.6rem 0.875rem; }
+        /* Diff view inside file cards */
+        .code-file-diff { font-family:'SF Mono','Fira Code','Cascadia Code',monospace; font-size:11.5px; line-height:1.6; overflow-x:auto; max-height:380px; overflow-y:auto; padding:0.5rem 0; }
+        .diff-hunk { display:flex; flex-direction:column; }
+        .diff-line { display:flex; white-space:pre; padding:0.05rem 0.875rem; }
+        .diff-line-add { background:rgba(34,197,94,0.08); color:#86efac; border-left:2px solid rgba(74,222,128,0.5); }
+        .diff-line-del { background:rgba(239,68,68,0.08); color:#fca5a5; border-left:2px solid rgba(239,68,68,0.4); text-decoration:line-through; opacity:0.7; }
+        .diff-line-ctx { color:#4b5563; border-left:2px solid transparent; }
+        .diff-ellipsis { color:#374151; font-size:10px; text-align:center; padding:0.2rem 0; letter-spacing:0.1em; user-select:none; }
         .code-file-icon { width:28px; height:28px; border-radius:0.5rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:0.65rem; font-weight:700; letter-spacing:0.04em; }
         .code-file-icon.lang-js  { background:rgba(250,204,21,0.15); color:#fbbf24; border:1px solid rgba(250,204,21,0.25); }
         .code-file-icon.lang-ts  { background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.25); }
@@ -7554,6 +7562,28 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     const _isNewFile = _codingRepoFiles.length > 0 &&
                         !_codingRepoFiles.some(f => f === filename || f.endsWith('/' + filename));
                     const newBadge = _isNewFile ? `<span class="code-file-new-badge">New file</span>` : '';
+                    // Use diff view if we have the original content cached
+                    const origContent = _codingFileCache[filename] || _codingFileCache[filename.split('/').pop()];
+                    let bodyContent;
+                    if (origContent) {
+                        const diff = _diffLines(origContent, section.code);
+                        const hasChanges = diff.some(d => d.t !== '=');
+                        const changedCount = diff.filter(d => d.t === '+').length;
+                        const removedCount = diff.filter(d => d.t === '-').length;
+                        const diffSummary = hasChanges
+                            ? `<span style="color:#4ade80;font-size:0.68rem">+${changedCount}</span> <span style="color:#f87171;font-size:0.68rem">−${removedCount}</span>`
+                            : `<span style="color:#6b7280;font-size:0.68rem">no changes</span>`;
+                        bodyContent = `<div style="padding:0 0 0.25rem">
+                            <div style="padding:0.3rem 0.875rem;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;gap:0.5rem">
+                                <span style="font-size:0.68rem;color:#6b7280;font-family:monospace">diff</span>
+                                <span style="font-size:0.68rem;color:#6b7280">·</span>
+                                ${diffSummary}
+                            </div>
+                            <div class="code-file-diff">${_renderDiffHtml(diff)}</div>
+                        </div>`;
+                    } else {
+                        bodyContent = `<pre>${esc}</pre>`;
+                    }
                     contentEl.innerHTML = `<div class="code-file-list"><div class="code-file-card" id="cfc_${cardUid}" onclick="toggleCodeFileCard('${cardUid}')">
                         <div class="code-file-card-header">
                             <div class="code-file-icon ${meta.cls}">${meta.label}</div>
@@ -7562,7 +7592,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                             <span class="code-file-lines">${lineCount} line${lineCount !== 1 ? 's' : ''}</span>
                             <svg class="code-file-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
-                        <div class="code-file-body"><pre>${esc}</pre></div>
+                        <div class="code-file-body">${bodyContent}</div>
                     </div></div>`;
                     log.appendChild(contentEl);
                     requestAnimationFrame(() => contentEl.classList.add('visible'));
@@ -7616,6 +7646,65 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                 lucide.createIcons();
             }
             return { el, msgId };
+        }
+
+        // ── File content cache (original → for diff display) ─────
+        const _codingFileCache = {};   // fullPath → original content string
+
+        // ── Line-level diff (LCS-based, capped at 400 lines each) ──
+        function _diffLines(origText, updText) {
+            const a = origText.split('\n').slice(0, 400);
+            const b = updText.split('\n').slice(0, 400);
+            const m = a.length, n = b.length;
+            // Build DP table
+            const dp = [];
+            for (let i = 0; i <= m; i++) { dp[i] = new Array(n + 1).fill(0); }
+            for (let i = m - 1; i >= 0; i--) {
+                for (let j = n - 1; j >= 0; j--) {
+                    if (a[i] === b[j]) dp[i][j] = dp[i+1][j+1] + 1;
+                    else dp[i][j] = Math.max(dp[i+1][j], dp[i][j+1]);
+                }
+            }
+            // Trace back
+            const result = [];
+            let i = 0, j = 0;
+            while (i < m && j < n) {
+                if (a[i] === b[j]) { result.push({ t: '=', l: a[i] }); i++; j++; }
+                else if (dp[i+1][j] >= dp[i][j+1]) { result.push({ t: '-', l: a[i] }); i++; }
+                else { result.push({ t: '+', l: b[j] }); j++; }
+            }
+            while (i < m) result.push({ t: '-', l: a[i++] });
+            while (j < n) result.push({ t: '+', l: b[j++] });
+            return result;
+        }
+
+        function _renderDiffHtml(diff, ctx = 3) {
+            // Find indices of changed lines
+            const changed = diff.map((d, i) => d.t !== '=' ? i : -1).filter(i => i >= 0);
+            if (!changed.length) return `<div class="diff-ellipsis">No changes detected</div>`;
+            // Build visible ranges (changed ± ctx lines, merged if overlapping)
+            const ranges = [];
+            for (const ci of changed) {
+                const s = Math.max(0, ci - ctx), e = Math.min(diff.length - 1, ci + ctx);
+                if (ranges.length && s <= ranges[ranges.length-1].e + 1) ranges[ranges.length-1].e = e;
+                else ranges.push({ s, e });
+            }
+            // Render
+            let html = '';
+            let prevEnd = -1;
+            for (const { s, e } of ranges) {
+                if (s > prevEnd + 1) html += `<div class="diff-ellipsis">··· ${s - prevEnd - 1} unchanged ···</div>`;
+                for (let i = s; i <= e; i++) {
+                    const { t, l } = diff[i];
+                    const esc = l.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                    if (t === '+') html += `<div class="diff-line diff-line-add">+ ${esc}</div>`;
+                    else if (t === '-') html += `<div class="diff-line diff-line-del">− ${esc}</div>`;
+                    else html += `<div class="diff-line diff-line-ctx">  ${esc}</div>`;
+                }
+                prevEnd = e;
+            }
+            if (prevEnd < diff.length - 1) html += `<div class="diff-ellipsis">··· ${diff.length - 1 - prevEnd} unchanged ···</div>`;
+            return html;
         }
 
         // ── Filename extraction from code block ───────────────────
@@ -7749,11 +7838,15 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                         });
                         if (r.ok) {
                             const { content } = await r.json();
+                            // Store original for diff display later
+                            _codingFileCache[referencedFile] = content;
+                            const baseName = referencedFile.split('/').pop();
+                            _codingFileCache[baseName] = content;
                             // Cap injected content to avoid token overflow (approx 5000 chars)
                             const safeContent = content.length > 5000
                                 ? content.slice(0, 5000) + '\n// ... (file truncated for brevity) ...'
                                 : content;
-                            messageToSend += `\n\n[Current content of \`${referencedFile}\`]:\n\`\`\`\n${safeContent}\n\`\`\`\n\nReturn the COMPLETE updated file. Include \`// ${referencedFile}\` as the first line comment inside the code block.`;
+                            messageToSend += `\n\n[Current content of \`${referencedFile}\`]:\n\`\`\`\n${safeContent}\n\`\`\`\n\nMake ONLY the minimal targeted change requested. Do NOT alter any unrelated code, formatting, or comments. Return the COMPLETE updated file with \`// ${referencedFile}\` as the very first comment line inside the code block.`;
                         }
                     } catch (_) {}
                 }
