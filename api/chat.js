@@ -34,10 +34,12 @@ module.exports = async function handler(req, res) {
         let model, maxTokens;
         if (hasImages) {
             model     = 'pixtral-12b-2409';
-            maxTokens = 8000;
+            maxTokens = 6000;
         } else {
             model     = modelVersion === '3.6' ? 'mistral-large-latest' : 'mistral-small-latest';
-            maxTokens = modelVersion === '3.6' ? 10000 : 7000;
+            // Lower ceiling speeds up generation — model stops as soon as the
+            // response is complete anyway; 10k was rarely needed and added latency.
+            maxTokens = modelVersion === '3.6' ? 6000 : 4000;
         }
 
         // Trim history aggressively to keep context small and avoid timeouts.
@@ -104,14 +106,14 @@ HTML/website generation rules (CRITICAL — always follow these):
         const requestBody = JSON.stringify({
             model,
             messages,
-            temperature: 0.7,
+            temperature: mode === 'coding' ? 0.2 : 0.7,
             max_tokens: maxTokens
         });
 
-        // Abort the Mistral request after 55 s — just under the 60 s Vercel
+        // Abort the Mistral request after 58 s — just under the 60 s Vercel
         // maxDuration set for this function — so we return a clean error
         // instead of a silent gateway cut-off.
-        const TIMEOUT_MS = 55000;
+        const TIMEOUT_MS = 58000;
 
         // Retry up to 2 times on 429; don't retry on other errors
         let mistralRes;
