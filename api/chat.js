@@ -58,7 +58,7 @@ module.exports = async function handler(req, res) {
 - When given a GitHub repo context like [GitHub repo: owner/repo], tailor advice to that project.
 - Always return code in fenced code blocks with the correct language tag (e.g. \`\`\`javascript).
 - CRITICAL: The very first line inside every code block MUST be a comment with the file path, e.g. \`// src/app.js\` or \`# utils/helper.py\`. This is required so the system knows which file to update.
-- When the user provides [Current content of \`path/file\`]: you are editing an existing file. Return the COMPLETE updated file — never partial snippets. Preserve all existing code that wasn't asked to change.
+- When the user provides [Current content of \`path/file\`]: you are editing an EXISTING file. Make ONLY the minimal targeted change requested. Preserve every other line exactly as-is — same whitespace, same comments, same logic. Return the COMPLETE file so it can be committed, but change as little as possible.
 - For new files: infer a sensible file path from the repo structure and project context.
 - Be concise. One sentence of explanation, then the code. No filler.
 - If asked to commit or push changes, remind the user to use the "Commit to GitHub" button that appears below your code blocks.
