@@ -127,8 +127,8 @@
         /* ── Modal liquid glass ── */
         .modal-glass {
             background: rgba(22, 22, 22, 0.25) !important;
-            backdrop-filter: blur(40px) saturate(1.6) brightness(1.1);
-            -webkit-backdrop-filter: blur(40px) saturate(1.6) brightness(1.1);
+            backdrop-filter: blur(40px) saturate(1.8) brightness(1.12);
+            -webkit-backdrop-filter: blur(40px) saturate(1.8) brightness(1.12);
             border: 0.5px solid rgba(255, 255, 255, 0.18) !important;
             position: relative;
             overflow: hidden;
@@ -137,7 +137,6 @@
                 0 4px 16px rgba(0, 0, 0, 0.2),
                 inset 0 1px 0 rgba(255, 255, 255, 0.15),
                 inset 0 0 60px rgba(255, 255, 255, 0.03);
-            filter: url(#modal-glass-refraction);
         }
         .modal-glass::before {
             content: '';
@@ -182,7 +181,6 @@
         #version-popup.liquid-glass {
             --glass-bg: rgba(18, 18, 18, 0.22);
             --glass-blur: 40px;
-            filter: url(#modal-glass-refraction);
             box-shadow: 0 16px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 40px rgba(255,255,255,0.03);
         }
         #version-popup.liquid-glass > * { position: relative; z-index: 2; }
@@ -212,7 +210,6 @@
         #coding-repo-popup.liquid-glass {
             --glass-bg: rgba(18, 18, 18, 0.22);
             --glass-blur: 40px;
-            filter: url(#modal-glass-refraction);
             box-shadow: 0 16px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 40px rgba(255,255,255,0.03);
         }
 
@@ -814,14 +811,14 @@
         .pres-card:hover > i[data-lucide="chevron-right"] { opacity:0; }
 
         /* ── Presentation modals (shared) ── */
-        .pp-modal-backdrop { position:fixed; inset:0; z-index:310; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.25); backdrop-filter:blur(16px) url(#backdrop-refraction); }
+        .pp-modal-backdrop { position:fixed; inset:0; z-index:310; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.2); backdrop-filter:blur(16px); }
         .pp-modal-backdrop.pp-modal-open { display:flex; }
-        .pp-modal-card { background:rgba(22,22,22,0.25); backdrop-filter:blur(40px) saturate(1.6) brightness(1.1); -webkit-backdrop-filter:blur(40px) saturate(1.6) brightness(1.1); border:0.5px solid rgba(255,255,255,0.18); border-radius:1.25rem; padding:1.5rem; box-shadow:0 24px 80px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 60px rgba(255,255,255,0.03); animation:splash-in 0.3s ease; position:relative; overflow:hidden; filter:url(#modal-glass-refraction); }
+        .pp-modal-card { background:rgba(22,22,22,0.25); backdrop-filter:blur(40px) saturate(1.8) brightness(1.12); -webkit-backdrop-filter:blur(40px) saturate(1.8) brightness(1.12); border:0.5px solid rgba(255,255,255,0.18); border-radius:1.25rem; padding:1.5rem; box-shadow:0 24px 80px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 60px rgba(255,255,255,0.03); animation:splash-in 0.3s ease; position:relative; overflow:hidden; }
 
         /* ── Splash screen / what's new ── */
         #splash-modal { position:fixed; inset:0; z-index:300; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.2); backdrop-filter:blur(16px); }
         #splash-modal.splash-open { display:flex; }
-        .splash-card { width:420px; max-width:90vw; background:rgba(18,18,18,0.22); backdrop-filter:blur(40px) saturate(1.6) brightness(1.1); -webkit-backdrop-filter:blur(40px) saturate(1.6) brightness(1.1); border:0.5px solid rgba(255,255,255,0.18); border-radius:1.5rem; overflow:hidden; animation:splash-in 0.4s ease; box-shadow:0 24px 80px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 60px rgba(255,255,255,0.03); filter:url(#modal-glass-refraction); }
+        .splash-card { width:420px; max-width:90vw; background:rgba(18,18,18,0.22); backdrop-filter:blur(40px) saturate(1.8) brightness(1.12); -webkit-backdrop-filter:blur(40px) saturate(1.8) brightness(1.12); border:0.5px solid rgba(255,255,255,0.18); border-radius:1.5rem; overflow:hidden; animation:splash-in 0.4s ease; box-shadow:0 24px 80px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 60px rgba(255,255,255,0.03); }
         @keyframes splash-in { from{opacity:0;transform:scale(0.92) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
         @keyframes artifactSplashPop { from{opacity:0;transform:scale(0.97) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
         @keyframes apShimmer { from{transform:translateX(-100%)} to{transform:translateX(100%)} }
@@ -1180,16 +1177,6 @@
             <filter id="liquid-refraction" x="-5%" y="-5%" width="110%" height="110%">
                 <feTurbulence type="fractalNoise" baseFrequency="0.015 0.012" numOctaves="3" seed="2" result="noise"/>
                 <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G"/>
-            </filter>
-            <!-- Modal/Popup Glass Refraction Filter — stretching distortion -->
-            <filter id="modal-glass-refraction" x="-10%" y="-10%" width="120%" height="120%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.008 0.006" numOctaves="4" seed="5" result="noise"/>
-                <feDisplacementMap in="SourceGraphic" in2="noise" scale="10" xChannelSelector="R" yChannelSelector="G"/>
-            </filter>
-            <!-- Backdrop refraction for popups — subtle stretch behind glass -->
-            <filter id="backdrop-refraction" x="-5%" y="-5%" width="110%" height="110%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.012 0.009" numOctaves="3" seed="8" result="noise"/>
-                <feDisplacementMap in="SourceGraphic" in2="noise" scale="8" xChannelSelector="R" yChannelSelector="G"/>
             </filter>
         </defs>
     </svg>
