@@ -839,9 +839,11 @@
         .cr-s4 { animation:clRainbow 3s infinite linear -2.25s; }
 
         /* ── Glass refraction effect ── */
-        .glass-canvas { position:absolute; inset:0; width:100%; height:100%; border-radius:inherit; z-index:0; pointer-events:none; }
+        .glass-canvas { position:absolute; inset:0; width:100%; height:100%; border-radius:inherit; z-index:0; pointer-events:none; opacity:0.55; }
         #sidebar > *:not(.glass-canvas):not(.sidebar-edge-glow) { position:relative; z-index:1; }
         #chat-input-bar-wrapper > *:not(.glass-canvas) { position:relative; z-index:1; }
+        #chat-input-bar-wrapper { background:rgba(17,17,17,0.3) !important; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
+        #sidebar { background:rgba(10,10,10,0.4) !important; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
     </style>
 </head>
 <body>
@@ -7595,6 +7597,12 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     vec2 uv = v_uv;
                     vec2 center = vec2(0.5);
                     vec2 d = (uv - center) * 2.0;
+
+                    // Correct for aspect ratio so glass fills entire element
+                    float aspect = u_resolution.x / u_resolution.y;
+                    if (aspect > 1.0) d.x /= aspect;
+                    else d.y *= aspect;
+
                     float dist = length(d);
                     float radius = 1.0;
 
@@ -7663,7 +7671,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
 
             function setupGlass(canvas) {
-                const gl = canvas.getContext('webgl', { alpha: false, antialias: false });
+                const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: false });
                 if (!gl) return null;
 
                 const vs = compileShader(gl, gl.VERTEX_SHADER, VERT_SRC);
