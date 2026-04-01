@@ -8,269 +8,15 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        :root { --bg: #0a0a0a; --glass-bg: rgba(30, 30, 30, 0.45); --glass-border: rgba(255, 255, 255, 0.12); --glass-highlight: rgba(255, 255, 255, 0.06); --glass-blur: 28px; }
+        :root { --bg: #0a0a0a; }
         body { background: var(--bg); color: white; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; overflow-x: hidden; }
-
-        /* ══════════════════════════════════════════════════════
-           LIQUID GLASS DESIGN SYSTEM
-        ══════════════════════════════════════════════════════ */
-
-        /* Base liquid glass surface */
-        .liquid-glass {
-            background: var(--glass-bg) !important;
-            backdrop-filter: blur(var(--glass-blur)) saturate(1.4) brightness(1.05);
-            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4) brightness(1.05);
-            border: 0.5px solid var(--glass-border) !important;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* Specular highlight — top edge shine */
-        .liquid-glass::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 50%;
-            background: linear-gradient(
-                180deg,
-                rgba(255, 255, 255, 0.08) 0%,
-                rgba(255, 255, 255, 0.02) 40%,
-                transparent 100%
-            );
-            pointer-events: none;
-            z-index: 1;
-            border-radius: inherit;
-        }
-
-        /* Fresnel edge glow — subtle rim light */
-        .liquid-glass::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.12),
-                inset 0 -1px 0 rgba(255, 255, 255, 0.03),
-                0 8px 32px rgba(0, 0, 0, 0.4),
-                0 2px 8px rgba(0, 0, 0, 0.3);
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        /* Refraction distortion layer — applied via SVG filter */
-        .liquid-glass-refract {
-            filter: url(#liquid-refraction);
-        }
-
-        /* Animated refraction shimmer on hover/focus */
-        @keyframes glass-shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-        }
-        .liquid-glass-shimmer::before {
-            background: linear-gradient(
-                105deg,
-                transparent 20%,
-                rgba(255, 255, 255, 0.06) 35%,
-                rgba(255, 255, 255, 0.12) 50%,
-                rgba(255, 255, 255, 0.06) 65%,
-                transparent 80%
-            ) !important;
-            background-size: 200% 100% !important;
-            animation: glass-shimmer 3s ease-in-out infinite;
-        }
-
-        /* Wobble animation for interaction feedback */
-        @keyframes glass-wobble {
-            0% { transform: scale(1); }
-            15% { transform: scale(1.008) translateY(-0.5px); }
-            30% { transform: scale(0.997) translateY(0.3px); }
-            45% { transform: scale(1.003); }
-            60% { transform: scale(0.999); }
-            100% { transform: scale(1); }
-        }
-        .glass-wobble { animation: glass-wobble 0.6s ease-out; }
-
-        /* ── Sidebar liquid glass ── */
-        #sidebar.liquid-glass {
-            --glass-bg: rgba(18, 18, 18, 0.55);
-            --glass-blur: 40px;
-        }
-        #sidebar.liquid-glass .sidebar-edge-glow {
-            background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.25), transparent);
-            box-shadow: 0 0 20px 2px rgba(255,255,255,0.15);
-        }
-        /* Make sidebar children transparent so glass shows through */
-        #sidebar.liquid-glass .p-6,
-        #sidebar.liquid-glass .px-6,
-        #sidebar.liquid-glass .p-4 {
-            background: transparent !important;
-        }
-        #sidebar.liquid-glass .sb-btn {
-            background: rgba(255, 255, 255, 0.04) !important;
-            border-color: rgba(255, 255, 255, 0.08) !important;
-            backdrop-filter: blur(8px);
-        }
-        #sidebar.liquid-glass .sb-btn:hover {
-            background: rgba(255, 255, 255, 0.08) !important;
-        }
-        #sidebar.liquid-glass #sidebar-search {
-            background: rgba(255, 255, 255, 0.04) !important;
-            border-color: rgba(255, 255, 255, 0.08) !important;
-        }
-        /* Sidebar footer — frosted glass separator */
-        #sidebar.liquid-glass > .p-4.bg-\[\#080808\] {
-            background: rgba(0, 0, 0, 0.25) !important;
-            border-color: rgba(255, 255, 255, 0.08) !important;
-        }
-
-        /* ── Modal liquid glass ── */
-        .modal-glass {
-            background: rgba(22, 22, 22, 0.25) !important;
-            backdrop-filter: blur(40px) saturate(1.8) brightness(1.12);
-            -webkit-backdrop-filter: blur(40px) saturate(1.8) brightness(1.12);
-            border: 0.5px solid rgba(255, 255, 255, 0.18) !important;
-            position: relative;
-            overflow: hidden;
-            box-shadow:
-                0 24px 80px rgba(0, 0, 0, 0.4),
-                0 4px 16px rgba(0, 0, 0, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.15),
-                inset 0 0 60px rgba(255, 255, 255, 0.03);
-        }
-        .modal-glass::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 50%;
-            background: linear-gradient(
-                180deg,
-                rgba(255, 255, 255, 0.1) 0%,
-                rgba(255, 255, 255, 0.04) 30%,
-                transparent 100%
-            );
-            pointer-events: none;
-            z-index: 1;
-            border-radius: inherit;
-        }
-        .modal-glass::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.15),
-                inset 0 -1px 0 rgba(255, 255, 255, 0.04),
-                inset 2px 0 8px rgba(255, 255, 255, 0.02),
-                inset -2px 0 8px rgba(255, 255, 255, 0.02);
-            pointer-events: none;
-            z-index: 1;
-        }
-        /* Ensure modal content is above pseudo-elements */
-        .modal-glass > * { position: relative; z-index: 2; }
-
-        /* ── Chat input oval liquid glass ── */
-        #chat-input-bar-wrapper.liquid-glass {
-            --glass-bg: rgba(20, 20, 20, 0.5);
-            --glass-blur: 32px;
-            overflow: visible !important;
-        }
-        #chat-input-bar-wrapper.liquid-glass > * { position: relative; z-index: 2; }
-
-        /* ── Version popup liquid glass ── */
-        #version-popup.liquid-glass {
-            --glass-bg: rgba(18, 18, 18, 0.22);
-            --glass-blur: 40px;
-            box-shadow: 0 16px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 40px rgba(255,255,255,0.03);
-        }
-        #version-popup.liquid-glass > * { position: relative; z-index: 2; }
-        #version-popup.liquid-glass button {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(255, 255, 255, 0.1) !important;
-        }
-        #version-popup.liquid-glass button:hover {
-            background: rgba(255, 255, 255, 0.09);
-        }
-
-        /* ── Top brand header liquid glass ── */
-        #top-brand.liquid-glass-header {
-            background: rgba(10, 10, 10, 0.45) !important;
-            backdrop-filter: blur(40px) saturate(1.5) brightness(1.05) !important;
-            -webkit-backdrop-filter: blur(40px) saturate(1.5) brightness(1.05) !important;
-            border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.4);
-        }
-
-        /* ── Bottom fade — glass-aware gradient ── */
-        .liquid-glass-active #bottom-fade {
-            background: linear-gradient(to bottom, transparent 0%, rgba(10,10,10,0.7) 40%, var(--bg) 65%) !important;
-        }
-
-        /* ── Coding repo popup glass ── */
-        #coding-repo-popup.liquid-glass {
-            --glass-bg: rgba(18, 18, 18, 0.22);
-            --glass-blur: 40px;
-            box-shadow: 0 16px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 40px rgba(255,255,255,0.03);
-        }
-
-        /* ── Splash / what's new modal glass ── */
-        .splash-card.modal-glass {
-            background: rgba(18, 18, 18, 0.22) !important;
-        }
-        .splash-card.modal-glass .splash-header {
-            background: linear-gradient(135deg, rgba(124,58,237,0.2) 0%, rgba(59,130,246,0.12) 100%) !important;
-        }
-
-        /* ── Suggestion cards glass ── */
-        .suggestion-glass {
-            background: rgba(18, 18, 18, 0.35) !important;
-            backdrop-filter: blur(20px) saturate(1.3);
-            -webkit-backdrop-filter: blur(20px) saturate(1.3);
-            border-color: rgba(255, 255, 255, 0.07) !important;
-            position: relative;
-            overflow: hidden;
-        }
-        .suggestion-glass:hover {
-            background: rgba(28, 28, 28, 0.45) !important;
-            border-color: rgba(255, 255, 255, 0.15) !important;
-        }
-        .suggestion-glass::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 50%;
-            background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%);
-            pointer-events: none;
-            border-radius: inherit;
-        }
 
         /* ── Canvas name subtitle ── */
         #canvas-name { font-size:0.62rem; color:#6b7280; line-height:1; margin-top:1px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-        /* ── Rainbow glow (main page oval input) — edge-only rainbow with glass interior ── */
-        .glow-wrapper { position:absolute; inset:-3px; border-radius:9999px; overflow:hidden; opacity:0; transition:opacity 1s ease, border-radius 0.22s ease; }
-        .glow-content {
-            position:absolute; inset:0; border-radius:9999px;
-            background:conic-gradient(from 0deg,transparent 0deg,#ff00c8 40deg,#7000ff 100deg,#00c2ff 160deg,#00ff85 220deg,#ffea00 280deg,transparent 360deg);
-            animation:rainbow-trace 2.5s ease-out forwards;
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            mask-composite: exclude;
-            padding: 3px;
-            filter: blur(4px);
-        }
-        /* Inner subtle rainbow refraction bleed — glass effect inside */
-        .glow-wrapper::after {
-            content: '';
-            position: absolute;
-            inset: 4px;
-            border-radius: 9999px;
-            background: conic-gradient(from 180deg, transparent 0deg, rgba(255,0,200,0.06) 60deg, rgba(112,0,255,0.05) 120deg, rgba(0,194,255,0.04) 180deg, rgba(0,255,133,0.03) 240deg, rgba(255,234,0,0.04) 300deg, transparent 360deg);
-            filter: blur(12px);
-            animation: rainbow-trace 2.5s ease-out forwards;
-            pointer-events: none;
-        }
+        /* ── Rainbow glow (main page oval input) ── */
+        .glow-wrapper { position:absolute; inset:-2px; border-radius:9999px; overflow:hidden; filter:blur(8px); opacity:0; transition:opacity 1s ease, border-radius 0.22s ease; }
+        .glow-content  { position:absolute; inset:-150%; border-radius:50%; background:conic-gradient(from 0deg,transparent 0deg,#ff00c8 40deg,#7000ff 100deg,#00c2ff 160deg,#00ff85 220deg,#ffea00 280deg,transparent 360deg); animation:rainbow-trace 2.5s ease-out forwards; }
         @keyframes rainbow-trace { 0%{transform:rotate(0deg) scale(0.8)} 100%{transform:rotate(360deg) scale(1)} }
 
         /* ── Layout transitions ── */
@@ -393,16 +139,11 @@
         /* ── Mode fade wave (transition overlay) ── */
         #mode-fade-wave { position:fixed; inset:0; background:#000; z-index:300; pointer-events:none; opacity:0; }
 
-        /* ── Clarity Coding wave transition overlay ── */
-        #cp-wave-overlay { position:fixed; inset:0; z-index:350; pointer-events:none; background:#0a0a0a; transform:translateY(101%); display:none; will-change:transform; }
-        @keyframes cp-wave-in  { from{transform:translateY(101%)} to{transform:translateY(0)} }
-        @keyframes cp-wave-out { from{transform:translateY(0)} to{transform:translateY(-101%)} }
-
         /* ── Account page ── */
         #account-page { transition:transform 0.38s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease; }
         #account-page.ap-hidden { transform:translateX(100%); opacity:0; }
         #account-page.ap-visible { transform:translateX(0); opacity:1; }
-        .account-section { background:rgba(18,18,18,0.45); backdrop-filter:blur(24px) saturate(1.3); -webkit-backdrop-filter:blur(24px) saturate(1.3); border:0.5px solid rgba(255,255,255,0.1); border-radius:1rem; padding:1.5rem; margin-bottom:0.875rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 16px rgba(0,0,0,0.3); }
+        .account-section { background:#111; border:1px solid rgba(255,255,255,0.06); border-radius:1rem; padding:1.5rem; margin-bottom:0.875rem; }
         .account-section-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
         .account-input { width:100%; background:#181818; border:1px solid rgba(255,255,255,0.08); border-radius:0.65rem; padding:0.7rem 1rem; color:white; font-size:0.875rem; outline:none; transition:border-color 0.2s; }
         .account-input:focus { border-color:rgba(124,58,237,0.5); box-shadow:0 0 0 3px rgba(124,58,237,0.08); }
@@ -422,8 +163,8 @@
         ::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:4px; }
 
         /* ── Canvas sidebar ── */
-        #canvas-sidebar { position:fixed; right:0; top:0; bottom:0; z-index:100; width:0; overflow:hidden; background:rgba(13,13,13,0.6); backdrop-filter:blur(36px) saturate(1.4); -webkit-backdrop-filter:blur(36px) saturate(1.4); border-left:0.5px solid transparent; border-radius:24px 0 0 24px; display:flex; flex-direction:column; transition:width 0.42s cubic-bezier(0.4,0,0.2,1), border-color 0.42s ease; }
-        #canvas-sidebar.cs-open { width:52%; border-color:rgba(255,255,255,0.1); }
+        #canvas-sidebar { position:fixed; right:0; top:0; bottom:0; z-index:100; width:0; overflow:hidden; background:#0d0d0d; border-left:1px solid transparent; border-radius:24px 0 0 24px; display:flex; flex-direction:column; transition:width 0.42s cubic-bezier(0.4,0,0.2,1), border-color 0.42s ease; }
+        #canvas-sidebar.cs-open { width:52%; border-color:rgba(255,255,255,0.07); }
         #canvas-page-nav { display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.35rem 0; background:#0d0d0d; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; }
         .cpn-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:8px; color:#6b7280; cursor:pointer; transition:all 0.15s; }
         .cpn-btn:hover:not(:disabled) { background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.15); color:#d1d5db; }
@@ -521,9 +262,9 @@
         .customize-pill-btn { position:absolute; top:12px; right:12px; z-index:5; display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:600; color:#c4b5fd; background:rgba(124,58,237,0.12); border:1px solid rgba(124,58,237,0.3); border-radius:999px; padding:4px 12px; cursor:pointer; transition:all 0.15s; }
         .customize-pill-btn:hover { background:rgba(124,58,237,0.22); border-color:rgba(124,58,237,0.5); color:#ddd6fe; }
         /* ── Color customize popup ── */
-        .color-customize-popup { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); backdrop-filter:blur(12px); }
+        .color-customize-popup { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); backdrop-filter:blur(6px); }
         .color-customize-popup.hidden { display:none; }
-        .color-customize-inner { background:rgba(22,22,22,0.5); backdrop-filter:blur(32px) saturate(1.5) brightness(1.08); -webkit-backdrop-filter:blur(32px) saturate(1.5) brightness(1.08); border:0.5px solid rgba(255,255,255,0.13); border-radius:1rem; padding:1.5rem; width:90%; max-width:340px; box-shadow:0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
+        .color-customize-inner { background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:1rem; padding:1.5rem; width:90%; max-width:340px; box-shadow:0 24px 60px rgba(0,0,0,0.5); }
 
         /* ── Sidebar select mode ── */
         #sidebar-select-bar { display:none; }
@@ -599,15 +340,6 @@
 
         /* ── Sidebar section label ── */
         .sb-section-label { font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#4b5563; padding:0 4px; }
-
-        /* ── Sidebar modern enhancements ── */
-        #sidebar { background:linear-gradient(160deg,#0c0c0c 0%,#0a0a0a 100%); }
-        #sidebar .p-6 { padding-bottom:0.75rem; }
-        .sb-nav-group { display:flex; flex-direction:column; gap:0.375rem; }
-        .sb-nav-divider { height:1px; background:linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent); margin:0.25rem 0; }
-        .sb-coding-pill { background:linear-gradient(135deg,rgba(124,58,237,0.12) 0%,rgba(79,70,229,0.08) 100%); border-color:rgba(124,58,237,0.18) !important; }
-        .sb-coding-pill:hover { background:linear-gradient(135deg,rgba(124,58,237,0.2) 0%,rgba(79,70,229,0.14) 100%) !important; }
-        .sb-coding-pill .text-violet-400\/70 { color:rgba(167,139,250,0.85) !important; }
         .custom-sb-scroll::-webkit-scrollbar { width:3px; }
         .custom-sb-scroll::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.05); border-radius:10px; }
         /* ── Presentation sidebar card ── */
@@ -747,7 +479,7 @@
         .tpt-char { display:inline-block; animation:think-wave 1.1s ease-in-out infinite; }
 
         /* ── Logout confirmation modal ── */
-        #logout-modal { position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.2); backdrop-filter:blur(16px); padding:1rem; }
+        #logout-modal { position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.65); backdrop-filter:blur(6px); padding:1rem; }
         #logout-modal.active { display:flex; }
 
         /* ── Background generation spinner in sidebar ── */
@@ -757,7 +489,7 @@
 
         /* ── Coding repo pill above input + popup ── */
         #coding-repo-chip { display:none; }
-        #coding-repo-popup { position:absolute; bottom:calc(100% + 8px); left:0; right:0; background:rgba(18,18,18,0.55); backdrop-filter:blur(32px) saturate(1.5); -webkit-backdrop-filter:blur(32px) saturate(1.5); border:0.5px solid rgba(255,255,255,0.12); border-radius:1rem; padding:0.75rem; box-shadow:0 -8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08); z-index:50; display:none; max-height:280px; overflow-y:auto; }
+        #coding-repo-popup { position:absolute; bottom:calc(100% + 8px); left:0; right:0; background:#181818; border:1px solid rgba(255,255,255,0.1); border-radius:1rem; padding:0.75rem; box-shadow:0 -8px 32px rgba(0,0,0,0.5); z-index:50; display:none; max-height:280px; overflow-y:auto; }
         #coding-repo-popup.open { display:block; }
         #coding-repo-popup .repo-popup-item { padding:0.5rem 0.75rem; border-radius:0.5rem; cursor:pointer; font-size:0.8rem; color:#d1d5db; transition:background 0.12s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:0.5rem; }
         #coding-repo-popup .repo-popup-item:hover { background:rgba(255,255,255,0.07); }
@@ -811,14 +543,14 @@
         .pres-card:hover > i[data-lucide="chevron-right"] { opacity:0; }
 
         /* ── Presentation modals (shared) ── */
-        .pp-modal-backdrop { position:fixed; inset:0; z-index:310; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.2); backdrop-filter:blur(16px); }
+        .pp-modal-backdrop { position:fixed; inset:0; z-index:310; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); backdrop-filter:blur(6px); }
         .pp-modal-backdrop.pp-modal-open { display:flex; }
-        .pp-modal-card { background:rgba(22,22,22,0.25); backdrop-filter:blur(40px) saturate(1.8) brightness(1.12); -webkit-backdrop-filter:blur(40px) saturate(1.8) brightness(1.12); border:0.5px solid rgba(255,255,255,0.18); border-radius:1.25rem; padding:1.5rem; box-shadow:0 24px 80px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 60px rgba(255,255,255,0.03); animation:splash-in 0.3s ease; position:relative; overflow:hidden; }
+        .pp-modal-card { background:#111; border:1px solid rgba(255,255,255,0.1); border-radius:1.25rem; padding:1.5rem; box-shadow:0 20px 60px rgba(0,0,0,0.6); animation:splash-in 0.3s ease; }
 
         /* ── Splash screen / what's new ── */
-        #splash-modal { position:fixed; inset:0; z-index:300; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.2); backdrop-filter:blur(16px); }
+        #splash-modal { position:fixed; inset:0; z-index:300; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); }
         #splash-modal.splash-open { display:flex; }
-        .splash-card { width:420px; max-width:90vw; background:rgba(18,18,18,0.22); backdrop-filter:blur(40px) saturate(1.8) brightness(1.12); -webkit-backdrop-filter:blur(40px) saturate(1.8) brightness(1.12); border:0.5px solid rgba(255,255,255,0.18); border-radius:1.5rem; overflow:hidden; animation:splash-in 0.4s ease; box-shadow:0 24px 80px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 60px rgba(255,255,255,0.03); }
+        .splash-card { width:420px; max-width:90vw; background:#111; border:1px solid rgba(255,255,255,0.1); border-radius:1.5rem; overflow:hidden; animation:splash-in 0.4s ease; }
         @keyframes splash-in { from{opacity:0;transform:scale(0.92) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
         @keyframes artifactSplashPop { from{opacity:0;transform:scale(0.97) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
         @keyframes apShimmer { from{transform:translateX(-100%)} to{transform:translateX(100%)} }
@@ -828,7 +560,7 @@
         @keyframes apCardHighlight { 0%,40%{border-color:#1a1a1a;background:#0a0a0a} 45%,85%{border-color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.05)} 95%,100%{border-color:#1a1a1a;background:#0a0a0a} }
         .ap-splash-card-active { animation:apCardHighlight 10s infinite; }
         #artifacts-splash.as-open { display:flex !important; }
-        .splash-header { background:linear-gradient(135deg, rgba(124,58,237,0.2) 0%, rgba(59,130,246,0.12) 100%); padding:2rem 2rem 1.5rem; text-align:center; }
+        .splash-header { background:linear-gradient(135deg, rgba(124,58,237,0.3) 0%, rgba(59,130,246,0.2) 100%); padding:2rem 2rem 1.5rem; text-align:center; }
         .splash-body { padding:1.5rem 2rem 2rem; }
         .splash-feature { display:flex; align-items:flex-start; gap:0.75rem; padding:0.6rem 0; }
         .splash-feature-icon { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
@@ -868,72 +600,27 @@
         .cp-topbar { display:flex; align-items:center; gap:0.75rem; padding:0.75rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; background:#0a0a0a; }
         #coding-connect-view { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         #coding-workspace { flex:1; display:flex; overflow:hidden; min-height:0; }
-        /* Left panel is now a slide-out overlay — hidden by default */
-        #coding-left-panel { display:none; }
+        #coding-left-panel { width:260px; border-right:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; overflow:hidden; background:#0d0d0d; flex-shrink:0; }
         #coding-main { flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative; background:#0a0a0a; }
         #coding-chat-area { flex:1; overflow-y:auto; padding:1.5rem 1.5rem 9rem; display:flex; flex-direction:column; gap:1.25rem; }
         #coding-bottom { position:absolute; bottom:0; left:0; right:0; pointer-events:none; display:flex; flex-direction:column; align-items:center; }
         #coding-bottom-fade { width:100%; height:5rem; background:linear-gradient(to bottom, transparent 0%, #0a0a0a 100%); }
         #coding-input-wrapper { padding:0 1rem 1.25rem; pointer-events:all; background:#0a0a0a; width:100%; max-width:680px; }
-
-        /* ── Coding history sidebar (slide-out from left) ── */
-        #coding-hist-overlay { position:fixed; inset:0; z-index:210; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); opacity:0; pointer-events:none; transition:opacity 0.35s ease; }
-        #coding-hist-overlay.ch-open { opacity:1; pointer-events:auto; }
-        #coding-hist-sidebar {
-            position:fixed; top:0; left:0; height:100%; width:300px; z-index:220;
-            background:rgba(12,12,12,0.55);
-            backdrop-filter:blur(40px) saturate(1.4);
-            -webkit-backdrop-filter:blur(40px) saturate(1.4);
-            border-right:0.5px solid rgba(255,255,255,0.1);
-            display:flex; flex-direction:column;
-            transform:translateX(-100%);
-            transition:transform 0.42s cubic-bezier(0.16,1,0.3,1);
-            box-shadow:4px 0 32px rgba(0,0,0,0.6), inset -1px 0 0 rgba(255,255,255,0.06);
-        }
-        #coding-hist-sidebar.ch-open { transform:translateX(0); }
-        /* Hamburger button in topbar */
-        .cp-hamburger { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:5px; width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); cursor:pointer; transition:background 0.15s; flex-shrink:0; }
-        .cp-hamburger:hover { background:rgba(255,255,255,0.1); }
-        .cp-hamburger span { display:block; width:14px; height:1.5px; background:rgba(255,255,255,0.7); border-radius:2px; transition:transform 0.2s, opacity 0.2s; }
-        /* Back button inside coding sidebar */
-        .ch-back-btn { display:flex; align-items:center; gap:0.5rem; width:100%; padding:0.65rem 0.9rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:0.625rem; color:#d1d5db; font-size:0.8rem; font-weight:600; cursor:pointer; transition:all 0.15s; }
-        .ch-back-btn:hover { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.15); color:#fff; }
         .cs-item { display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.75rem; border-radius:0.6rem; cursor:pointer; transition:background 0.12s; }
         .cs-item:hover { background:rgba(255,255,255,0.05); }
         .cs-item.cs-active { background:rgba(124,58,237,0.15); }
         .cs-item-title { flex:1; font-size:0.8rem; color:#9ca3af; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .cs-item.cs-active .cs-item-title { color:#c4b5fd; }
-        .gh-connect-card { background:rgba(18,18,18,0.45); backdrop-filter:blur(28px) saturate(1.4); -webkit-backdrop-filter:blur(28px) saturate(1.4); border:0.5px solid rgba(255,255,255,0.1); border-radius:1.5rem; padding:2.5rem 3rem; display:flex; flex-direction:column; align-items:center; gap:1.5rem; max-width:400px; text-align:center; box-shadow:inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.4); }
+        .gh-connect-card { background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:1.5rem; padding:2.5rem 3rem; display:flex; flex-direction:column; align-items:center; gap:1.5rem; max-width:400px; text-align:center; }
         .gh-connect-btn { display:flex; align-items:center; gap:0.75rem; background:white; color:#0a0a0a; font-weight:600; font-size:0.95rem; padding:0.85rem 2rem; border-radius:9999px; cursor:pointer; border:none; transition:transform 0.15s, box-shadow 0.15s; }
         .gh-connect-btn:hover { transform:scale(1.03); box-shadow:0 8px 24px rgba(255,255,255,0.15); }
         .gh-connect-btn:active { transform:scale(0.98); }
         #coding-empty-state { min-height:300px; }
-
-        /* ── Coding empty state ── */
-        #coding-empty-state-inner { display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; min-height:420px; padding:2rem 1.5rem; gap:1.75rem; }
-        .coding-es-logo { opacity:0; animation:coding-es-fade-in 0.6s 0.1s forwards ease-out; }
-        .coding-es-heading { opacity:0; animation:coding-es-fade-in 0.5s 0.25s forwards ease-out; text-align:center; }
-        @keyframes coding-es-fade-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        #coding-es-suggestions { width:100%; max-width:420px; display:flex; flex-direction:column; gap:0.5rem; }
-        .coding-es-sugg { display:flex; align-items:center; gap:0.65rem; background:#141414; border:1px solid rgba(255,255,255,0.07); border-radius:0.875rem; padding:0.65rem 0.85rem; cursor:pointer; transition:border-color 0.18s,background 0.18s; opacity:0; transform:translateY(10px); width:100%; text-align:left; }
-        .coding-es-sugg:hover { border-color:rgba(124,58,237,0.3); background:#1a1a1a; }
-        .coding-es-sugg-icon { width:22px; height:22px; flex-shrink:0; border-radius:0.4rem; display:flex; align-items:center; justify-content:center; }
-        .coding-es-sugg-icon svg { width:12px; height:12px; }
-        .coding-es-sugg-text { flex:1; font-size:0.775rem; color:#9ca3af; line-height:1.35; }
-        .coding-es-sugg:hover .coding-es-sugg-text { color:#d1d5db; }
-        .coding-es-sugg.sugg-visible { opacity:1; transform:translateY(0); transition:opacity 0.4s ease, transform 0.4s ease, border-color 0.18s, background 0.18s; }
-
         .coding-user-msg { background:#1a1a1a; border:1px solid rgba(255,255,255,0.08); padding:0.5rem 0.875rem; border-radius:1rem; max-width:72%; font-size:0.875rem; color:#e5e7eb; white-space:pre-wrap; word-break:break-word; }
         .coding-commit-btn { display:inline-flex; align-items:center; gap:0.5rem; background:rgba(124,58,237,0.2); border:1px solid rgba(124,58,237,0.4); color:#c4b5fd; font-size:0.72rem; padding:0.4rem 0.9rem; border-radius:0.5rem; cursor:pointer; transition:all 0.15s; margin-top:0.75rem; }
         .coding-commit-btn:hover { background:rgba(124,58,237,0.35); }
-        #coding-commit-modal { position:fixed; inset:0; z-index:250; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.2); backdrop-filter:blur(16px); }
+        #coding-commit-modal { position:fixed; inset:0; z-index:250; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.65); backdrop-filter:blur(8px); }
         #coding-commit-modal.ccm-open { display:flex; }
-        /* ── GitHub disconnect confirm modal ── */
-        #coding-disconnect-modal { position:fixed; inset:0; z-index:260; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.2); backdrop-filter:blur(16px); padding:1rem; }
-        #coding-disconnect-modal.cdm-open { display:flex; }
-        /* ── Coding left panel sign-out button ── */
-        .coding-signout-btn { display:flex; align-items:center; justify-content:center; gap:0.4rem; width:100%; padding:0.5rem 0.75rem; background:rgba(153,27,27,0.1); border:1px solid rgba(153,27,27,0.25); border-radius:0.5rem; color:#f87171; font-size:0.72rem; font-weight:600; cursor:pointer; transition:all 0.15s; letter-spacing:0.01em; }
-        .coding-signout-btn:hover { background:rgba(153,27,27,0.2); border-color:rgba(153,27,27,0.45); color:#fca5a5; }
 
         /* ── Coding thinking indicator ── */
         .coding-thinking { display:flex; align-items:center; gap:0.5rem; color:#6b7280; font-size:0.8rem; }
@@ -949,7 +636,6 @@
         .coding-activity-step.step-status .step-icon { width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
         .coding-activity-step.step-status .step-icon.done { background:rgba(74,222,128,0.15); color:#4ade80; }
         .coding-activity-step.step-status .step-icon.active { background:rgba(124,58,237,0.15); color:#a78bfa; }
-        .coding-activity-step.step-status span { transition:opacity 0.2s ease; }
         .step-spinner { width:10px; height:10px; border:1.5px solid rgba(124,58,237,0.3); border-top-color:#a78bfa; border-radius:50%; animation:send-spin 0.7s linear infinite; }
         .coding-activity-step.step-content { padding:0.2rem 0 0.5rem; }
         .coding-activity-step.step-content .ai-response { margin:0; }
@@ -959,14 +645,6 @@
         .code-file-card { background:#141414; border:1px solid rgba(255,255,255,0.08); border-radius:0.875rem; overflow:hidden; cursor:pointer; transition:border-color 0.15s,background 0.15s; }
         .code-file-card:hover { border-color:rgba(255,255,255,0.16); background:#1a1a1a; }
         .code-file-card-header { display:flex; align-items:center; gap:0.65rem; padding:0.6rem 0.875rem; }
-        /* Diff view inside file cards */
-        .code-file-diff { font-family:'SF Mono','Fira Code','Cascadia Code',monospace; font-size:11.5px; line-height:1.6; overflow-x:auto; max-height:380px; overflow-y:auto; padding:0.5rem 0; }
-        .diff-hunk { display:flex; flex-direction:column; }
-        .diff-line { display:flex; white-space:pre; padding:0.05rem 0.875rem; }
-        .diff-line-add { background:rgba(34,197,94,0.08); color:#86efac; border-left:2px solid rgba(74,222,128,0.5); }
-        .diff-line-del { background:rgba(239,68,68,0.08); color:#fca5a5; border-left:2px solid rgba(239,68,68,0.4); text-decoration:line-through; opacity:0.7; }
-        .diff-line-ctx { color:#4b5563; border-left:2px solid transparent; }
-        .diff-ellipsis { color:#374151; font-size:10px; text-align:center; padding:0.2rem 0; letter-spacing:0.1em; user-select:none; }
         .code-file-icon { width:28px; height:28px; border-radius:0.5rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:0.65rem; font-weight:700; letter-spacing:0.04em; }
         .code-file-icon.lang-js  { background:rgba(250,204,21,0.15); color:#fbbf24; border:1px solid rgba(250,204,21,0.25); }
         .code-file-icon.lang-ts  { background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.25); }
@@ -978,11 +656,10 @@
         .code-file-icon.lang-default { background:rgba(255,255,255,0.06); color:#6b7280; border:1px solid rgba(255,255,255,0.1); }
         .code-file-name { flex:1; font-size:0.8rem; font-weight:500; color:#e5e7eb; font-family:'SF Mono','Fira Code',monospace; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .code-file-lines { font-size:0.7rem; color:#6b7280; white-space:nowrap; }
-        .code-file-new-badge { font-size:0.6rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; padding:0.15rem 0.45rem; border-radius:0.3rem; background:rgba(124,58,237,0.15); border:1px solid rgba(124,58,237,0.3); color:#a78bfa; white-space:nowrap; flex-shrink:0; }
         .code-file-chevron { color:#4b5563; transition:transform 0.2s; flex-shrink:0; }
         .code-file-card.open .code-file-chevron { transform:rotate(90deg); }
-        .code-file-body { display:block; max-height:0; overflow:hidden; transition:max-height 0.38s cubic-bezier(0.4,0,0.2,1), border-top-color 0.25s ease; border-top:1px solid transparent; }
-        .code-file-card.open .code-file-body { max-height:420px; border-top-color:rgba(255,255,255,0.06); }
+        .code-file-body { display:none; border-top:1px solid rgba(255,255,255,0.06); }
+        .code-file-card.open .code-file-body { display:block; }
         .code-file-body pre { margin:0; padding:0.875rem 1rem; font-size:12px; line-height:1.65; color:#d4d4d4; font-family:'SF Mono','Fira Code','Cascadia Code',monospace; white-space:pre-wrap; word-break:break-word; overflow-x:auto; max-height:340px; overflow-y:auto; }
 
         /* ── User Artifacts ── */
@@ -1007,10 +684,10 @@
         .art-sb-thumb { width:48px; height:32px; border-radius:4px; background:#0d0d0d; border:1px solid rgba(255,255,255,0.08); overflow:hidden; flex-shrink:0; position:relative; }
         .art-sb-thumb iframe { width:500%; height:500%; transform:scale(0.2); transform-origin:0 0; pointer-events:none; border:0; background:#111; }
         /* Publish modal */
-        #publish-modal { position:fixed; inset:0; z-index:310; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.25); backdrop-filter:blur(16px); }
+        #publish-modal { position:fixed; inset:0; z-index:310; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); }
         #publish-modal.pm-open { display:flex; }
         /* Artifact viewer */
-        #artifact-viewer-modal { position:fixed; inset:0; z-index:310; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.2); backdrop-filter:blur(16px); }
+        #artifact-viewer-modal { position:fixed; inset:0; z-index:310; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); }
         #artifact-viewer-modal.avm-open { display:flex; animation:pp-gen-fade 0.3s ease; }
         /* Artifacts search suggestions */
         #artifacts-suggestions { transform-origin:top center; }
@@ -1066,7 +743,7 @@
         .priv-switch input:checked ~ .priv-thumb { transform:translateX(16px); background:#a78bfa; }
 
         /* ── Edit artifact modal ── */
-        #edit-artifact-modal { position:fixed; inset:0; z-index:350; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.25); backdrop-filter:blur(16px); }
+        #edit-artifact-modal { position:fixed; inset:0; z-index:350; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); }
         #edit-artifact-modal.eam-open { display:flex; }
 
         /* ── Artifact viewer action buttons ── */
@@ -1173,22 +850,14 @@
                 <stop offset="66%"  class="cr-s3"/>
                 <stop offset="100%" class="cr-s4"/>
             </linearGradient>
-            <!-- Liquid Glass Refraction Filter -->
-            <filter id="liquid-refraction" x="-5%" y="-5%" width="110%" height="110%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.015 0.012" numOctaves="3" seed="2" result="noise"/>
-                <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G"/>
-            </filter>
         </defs>
     </svg>
-
-    <!-- Clarity Coding wave transition overlay -->
-    <div id="cp-wave-overlay"></div>
 
     <!-- Sidebar overlay -->
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 opacity-0 pointer-events-none transition-opacity duration-700" onclick="toggleSidebar(false)"></div>
 
     <!-- Sidebar -->
-    <div id="sidebar" class="liquid-glass fixed top-0 left-0 h-full w-full md:w-[380px] z-50 -translate-x-full flex flex-col shadow-2xl overflow-hidden">
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-full md:w-[380px] bg-[#0a0a0a] z-50 -translate-x-full flex flex-col shadow-2xl overflow-hidden">
 
         <!-- Edge glow -->
         <div class="sidebar-edge-glow"></div>
@@ -1208,33 +877,24 @@
                     <i data-lucide="x" class="w-5 text-white/40"></i>
                 </button>
             </div>
-            <div class="sb-nav-group">
-                <button onclick="newConversation()" class="sb-btn w-full bg-white/[0.04] border border-white/[0.08] p-3.5 rounded-2xl flex items-center gap-3 group">
-                    <div class="w-7 h-7 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="plus" class="w-3.5 text-white/70 group-hover:scale-110 transition-transform"></i>
-                    </div>
-                    <span class="font-medium text-[14px]">New Conversation</span>
-                </button>
-                <button onclick="openArtifactsPage()" class="sb-btn w-full bg-white/[0.04] border border-white/[0.08] p-3.5 rounded-2xl flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-7 h-7 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
-                            <i data-lucide="box" class="w-3.5 text-white/50"></i>
-                        </div>
-                        <span class="font-medium text-[14px]">User Artifacts</span>
-                    </div>
-                    <i data-lucide="chevron-right" class="w-3.5 text-white/15"></i>
-                </button>
-                <div class="sb-nav-divider"></div>
-                <button id="sidebar-coding-btn" onclick="openCodingPage()" class="sb-btn sb-coding-pill w-full bg-white/[0.04] border border-white/[0.08] p-3.5 rounded-2xl flex items-center justify-between" style="display:none">
-                    <div class="flex items-center gap-3">
-                        <div class="w-7 h-7 rounded-xl bg-violet-950/50 border border-violet-800/30 flex items-center justify-center flex-shrink-0">
-                            <i data-lucide="code-2" class="w-3.5 text-violet-400/70"></i>
-                        </div>
-                        <span class="font-medium text-[14px]">Clarity Coding</span>
-                    </div>
-                    <i data-lucide="chevron-right" class="w-3.5 text-white/15"></i>
-                </button>
-            </div>
+            <button onclick="newConversation()" class="sb-btn w-full bg-[#161616] border border-white/5 p-4 rounded-2xl flex items-center gap-3 group">
+                <i data-lucide="plus" class="w-4 text-white group-hover:scale-110 transition-transform"></i>
+                <span class="font-medium text-[15px]">New Conversation</span>
+            </button>
+            <button onclick="openArtifactsPage()" class="sb-btn w-full bg-[#161616] border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="box" class="w-4 text-white/60"></i>
+                    <span class="font-medium text-[15px]">User Artifacts</span>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 text-white/20"></i>
+            </button>
+            <button id="sidebar-coding-btn" onclick="openCodingPage()" class="sb-btn w-full bg-[#161616] border border-white/5 p-4 rounded-2xl flex items-center justify-between" style="display:none">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="code-2" class="w-4 text-violet-400/70"></i>
+                    <span class="font-medium text-[15px]">Clarity Coding</span>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 text-white/20"></i>
+            </button>
         </div>
 
         <!-- Search + section label -->
@@ -1243,7 +903,7 @@
                 <i data-lucide="search" class="w-3.5 absolute left-4 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none"></i>
                 <input id="sidebar-search" type="text" placeholder="Search conversations…"
                     autocomplete="off" spellcheck="false"
-                    class="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-11 pr-4 py-3 text-[13px] text-gray-300 placeholder:text-white/20 outline-none focus:border-white/20 transition-all"
+                    class="w-full bg-[#111] border border-white/5 rounded-xl pl-11 pr-4 py-3 text-[13px] text-gray-300 placeholder:text-white/20 outline-none focus:border-white/20 transition-all"
                     oninput="filterSidebarContent(this.value)">
             </div>
             <div class="flex items-center justify-between px-1">
@@ -1269,8 +929,8 @@
         </div>
 
         <!-- User footer -->
-        <div class="p-4 bg-black/25 border-t border-white/[0.08] space-y-2 shrink-0">
-            <div class="sb-btn bg-white/[0.04] p-3 rounded-2xl border border-white/[0.08] flex items-center gap-3 cursor-pointer" onclick="openAccountPage()">
+        <div class="p-4 bg-[#080808] border-t border-white/5 space-y-2 shrink-0">
+            <div class="sb-btn bg-[#121212] p-3 rounded-2xl border border-white/10 flex items-center gap-3 cursor-pointer" onclick="openAccountPage()">
                 <div id="sidebar-user-avatar" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg transition-all duration-500" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">
                     <span id="user-initials" class="text-white text-sm font-bold"></span>
                 </div>
@@ -1294,7 +954,7 @@
     </button>
 
     <!-- Top brand — full-width sectioned header, shown after first message -->
-    <header id="top-brand" class="liquid-glass-header fixed top-0 left-0 right-0 z-20 opacity-0 pointer-events-none">
+    <header id="top-brand" class="fixed top-0 left-0 right-0 z-20 opacity-0 pointer-events-none bg-[#0a0a0a]/95 backdrop-blur-xl shadow-[0_1px_0_rgba(255,255,255,0.04),0_4px_24px_rgba(0,0,0,0.5)]">
         <div id="top-brand-inner" class="flex items-center justify-center gap-2 py-3.5">
             <svg class="w-6 h-6" viewBox="-15 -15 130 130">
                 <path class="cl-seg" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
@@ -1338,7 +998,7 @@
         <!-- Suggestion cards (cycling) -->
         <div class="hide-on-start grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl mb-12" id="suggestion-cards-grid">
             <button id="sc-card-0" onclick="fillInput(scGetCurrentText(0))"
-                class="suggestion-glass flex items-center gap-4 p-5 border border-white/5 rounded-2xl transition-all text-left group">
+                class="flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group">
                 <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform" id="sc-icon-0">
                     <i data-lucide="pen-line" class="text-blue-400 w-5"></i>
                 </div>
@@ -1347,7 +1007,7 @@
                 </div>
             </button>
             <button id="sc-card-1" onclick="fillInput(scGetCurrentText(1))"
-                class="suggestion-glass flex items-center gap-4 p-5 border border-white/5 rounded-2xl transition-all text-left group">
+                class="flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group">
                 <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform" id="sc-icon-1">
                     <i data-lucide="lightbulb" class="text-yellow-400 w-5"></i>
                 </div>
@@ -1356,7 +1016,7 @@
                 </div>
             </button>
             <button id="sc-card-2" onclick="fillInput(scGetCurrentText(2))"
-                class="suggestion-glass flex items-center gap-4 p-5 border border-white/5 rounded-2xl transition-all text-left group">
+                class="flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group">
                 <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform" id="sc-icon-2">
                     <i data-lucide="book-open" class="text-green-400 w-5"></i>
                 </div>
@@ -1365,7 +1025,7 @@
                 </div>
             </button>
             <button id="sc-card-3" onclick="fillInput(scGetCurrentText(3))"
-                class="suggestion-glass flex items-center gap-4 p-5 border border-white/5 rounded-2xl transition-all text-left group">
+                class="flex items-center gap-4 p-5 bg-[#121212] border border-white/5 rounded-2xl hover:bg-[#181818] hover:border-white/20 transition-all text-left group">
                 <div class="p-2.5 bg-black/40 rounded-xl group-hover:scale-110 transition-transform" id="sc-icon-3">
                     <i data-lucide="code" class="text-purple-400 w-5"></i>
                 </div>
@@ -1385,7 +1045,7 @@
         <div class="chat-input-wrapper w-full max-w-2xl px-4 relative">
             <div class="relative group">
                 <div id="rainbow-glow" class="glow-wrapper"><div class="glow-content"></div></div>
-                <div id="chat-input-bar-wrapper" class="liquid-glass relative rounded-full shadow-2xl z-10">
+                <div id="chat-input-bar-wrapper" class="relative bg-[#111] rounded-full shadow-2xl border border-white/10 z-10">
                 <!-- Attachment strip (shown when files are attached) -->
                 <div id="attachment-strip"></div>
                 <!-- Input row -->
@@ -1401,7 +1061,7 @@
                         </button>
 
                         <!-- Popup anchored above the pill -->
-                        <div id="version-popup" class="liquid-glass vpop-hidden absolute bottom-[calc(100%+10px)] left-0 w-72 rounded-2xl p-3 z-30">
+                        <div id="version-popup" class="vpop-hidden absolute bottom-[calc(100%+10px)] left-0 w-72 bg-[#111] border border-white/10 rounded-2xl p-3 shadow-2xl z-30">
         <p class="text-[10px] text-gray-500 uppercase tracking-widest px-1 mb-2">Model</p>
         <button onclick="selectModel('3.5')" id="card-3-5" class="w-full text-left p-3 rounded-xl border mb-2 transition-all hover:border-violet-700/40">
             <div class="flex items-center justify-between mb-1">
@@ -1601,12 +1261,12 @@
     <!-- ═══════════════════════════════════════════════════════
          RENAME MODAL
     ═══════════════════════════════════════════════════════ -->
-    <div id="rename-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/20 backdrop-blur-lg">
+    <div id="rename-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 backdrop-blur-sm">
         <div class="absolute inset-0" onclick="closeRenameModal()"></div>
-        <div class="relative w-80 modal-glass rounded-2xl p-5 mx-4">
+        <div class="relative w-80 bg-[#111] border border-white/10 rounded-2xl p-5 shadow-2xl mx-4">
             <h3 class="text-white font-semibold text-sm mb-3">Rename conversation</h3>
             <input id="rename-input" type="text" placeholder="Conversation title"
-                class="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-violet-600/70 transition-colors mb-3 placeholder-gray-600"
+                class="w-full bg-[#1a1a1a] border border-white/8 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-violet-600/70 transition-colors mb-3 placeholder-gray-600"
                 onkeydown="if(event.key==='Enter') confirmRename()">
             <div class="flex gap-2">
                 <button onclick="closeRenameModal()" class="flex-1 py-2 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">Cancel</button>
@@ -1618,9 +1278,9 @@
     <!-- ═══════════════════════════════════════════════════════
          DELETE MODAL
     ═══════════════════════════════════════════════════════ -->
-    <div id="delete-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/20 backdrop-blur-lg">
+    <div id="delete-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 backdrop-blur-sm">
         <div class="absolute inset-0" onclick="closeDeleteModal()"></div>
-        <div class="relative w-72 modal-glass rounded-2xl p-5 mx-4">
+        <div class="relative w-72 bg-[#111] border border-white/10 rounded-2xl p-5 shadow-2xl mx-4">
             <h3 class="text-white font-semibold text-sm mb-1.5">Delete conversation?</h3>
             <p class="text-gray-500 text-xs mb-4">This cannot be undone.</p>
             <div class="flex gap-2">
@@ -1963,52 +1623,14 @@
     <div id="coding-page">
         <!-- Top nav -->
         <div class="cp-topbar">
-            <button class="cp-hamburger" onclick="toggleCodingHistorySidebar(true)" aria-label="Open session history">
-                <span></span><span></span><span></span>
+            <button onclick="closeCodingPage()" class="w-8 h-8 flex items-center justify-center bg-white/6 hover:bg-white/12 border border-white/8 rounded-full transition-colors group">
+                <i data-lucide="arrow-left" class="w-3.5 text-gray-400 group-hover:text-white group-hover:-translate-x-0.5 transition-all"></i>
             </button>
-            <div class="flex items-center gap-2 flex-1 justify-center">
-                <i data-lucide="code-2" class="w-4 text-violet-400"></i>
-                <span class="font-bold text-white text-[16px] tracking-tight">Clarity Coding</span>
+            <div class="flex items-center gap-2.5">
+                <i data-lucide="code-2" class="w-5 text-violet-400"></i>
+                <span class="font-bold text-white text-[17px] tracking-tight">Clarity Coding</span>
             </div>
-            <div id="cp-gh-badge"></div>
-        </div>
-
-        <!-- History sidebar overlay -->
-        <div id="coding-hist-overlay" onclick="toggleCodingHistorySidebar(false)"></div>
-
-        <!-- History slide-out sidebar -->
-        <div id="coding-hist-sidebar">
-            <!-- Back to main chatbot -->
-            <div class="p-4 border-b border-white/5 flex-shrink-0 flex flex-col gap-3">
-                <button onclick="closeCodingPageFromSidebar()" class="ch-back-btn">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                    Back to Clarity AI
-                </button>
-                <button onclick="newCodingSession();toggleCodingHistorySidebar(false)" class="w-full flex items-center gap-2 bg-[#161616] border border-white/5 p-2.5 rounded-xl text-sm font-medium text-white hover:bg-white/8 transition-colors">
-                    <i data-lucide="plus" class="w-3.5"></i>
-                    New Session
-                </button>
-            </div>
-            <!-- Session list -->
-            <div id="coding-sessions-list" class="flex-1 overflow-y-auto p-2 custom-sb-scroll">
-                <div class="text-gray-600 text-xs text-center py-8">No sessions yet</div>
-            </div>
-            <!-- GitHub user footer -->
-            <div id="coding-gh-footer" class="p-3 border-t border-white/5 flex-shrink-0 flex flex-col gap-2">
-                <div class="flex items-center gap-2.5">
-                    <div id="coding-gh-avatar" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        <i data-lucide="github" class="w-4 text-gray-400"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p id="coding-gh-username" class="text-white text-xs font-semibold truncate">GitHub</p>
-                        <p class="text-gray-600 text-[10px]">Connected</p>
-                    </div>
-                </div>
-                <button onclick="promptCodingDisconnect()" class="coding-signout-btn">
-                    <i data-lucide="log-out" style="width:11px;height:11px"></i>
-                    Sign out
-                </button>
-            </div>
+            <div id="cp-gh-badge" class="ml-auto"></div>
         </div>
 
         <!-- Not connected view -->
@@ -2032,29 +1654,45 @@
         <!-- Connected workspace -->
         <div id="coding-workspace" style="display:none" class="flex-1 flex overflow-hidden min-h-0">
 
-            <!-- Main panel (full width) -->
+            <!-- Left panel: session history -->
+            <div id="coding-left-panel">
+                <div class="p-3 border-b border-white/5 flex-shrink-0">
+                    <button onclick="newCodingSession()" class="w-full flex items-center gap-2.5 bg-[#161616] border border-white/5 p-3 rounded-xl text-sm font-medium text-white hover:bg-white/8 transition-colors">
+                        <i data-lucide="plus" class="w-4"></i>
+                        New Session
+                    </button>
+                </div>
+                <div id="coding-sessions-list" class="flex-1 overflow-y-auto p-2 custom-sb-scroll">
+                    <div class="text-gray-600 text-xs text-center py-8">No sessions yet</div>
+                </div>
+                <!-- GitHub user footer -->
+                <div id="coding-gh-footer" class="p-3 border-t border-white/5 flex-shrink-0 flex items-center gap-2.5">
+                    <div id="coding-gh-avatar" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        <i data-lucide="github" class="w-4 text-gray-400"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p id="coding-gh-username" class="text-white text-xs font-semibold truncate">GitHub</p>
+                        <p class="text-gray-600 text-[10px]">Connected</p>
+                    </div>
+                    <button onclick="disconnectGitHub()" class="text-gray-600 hover:text-red-400 transition-colors p-1" title="Disconnect GitHub">
+                        <i data-lucide="log-out" class="w-3.5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right main panel -->
             <div id="coding-main">
                 <!-- Repo selector -->
 
                 <!-- Chat messages -->
                 <div id="coding-chat-area" class="custom-sb-scroll">
-                    <div id="coding-empty-state" style="display:flex;align-items:center;justify-content:center;flex:1;width:100%">
-                        <div id="coding-empty-state-inner">
-                            <!-- Clarity branding logo -->
-                            <div class="coding-es-logo" style="display:flex;flex-direction:column;align-items:center;gap:0.65rem">
-                                <svg width="64" height="64" viewBox="-15 -15 130 130" style="filter:drop-shadow(0 0 18px rgba(124,58,237,0.35))">
-                                    <path class="cl-seg cl-seg-top" fill-opacity="1" d="M10,10 C10,10 45,10 45,10 C45,10 45,25 45,25 C45,25 25,45 25,45 C25,45 10,45 10,45 Z"/>
-                                    <path class="cl-seg cl-seg-mid" fill-opacity="1" d="M15,85 C15,85 35,85 35,85 C35,85 85,35 85,35 C85,35 85,15 85,15 C85,15 65,15 65,15 C65,15 15,65 15,65 Z"/>
-                                    <path class="cl-seg cl-seg-bot" fill-opacity="1" d="M55,90 C55,90 90,90 90,90 C90,90 90,55 90,55 C90,55 75,55 75,55 C75,55 55,75 55,75 Z"/>
-                                </svg>
-                            </div>
-                            <!-- Heading -->
-                            <div class="coding-es-heading">
-                                <p style="color:#f1f5f9;font-weight:700;font-size:1.05rem;letter-spacing:-0.01em">Clarity Coding</p>
-                                <p style="color:#6b7280;font-size:0.775rem;margin-top:0.3rem" id="coding-es-subtitle">Select a repo to get started</p>
-                            </div>
-                            <!-- Suggestion cards -->
-                            <div id="coding-es-suggestions" style="width:100%;max-width:420px;display:flex;flex-direction:column;gap:0.45rem"></div>
+                    <div id="coding-empty-state" class="flex flex-col items-center justify-center text-center gap-3 pb-20" style="min-height:300px;margin:auto">
+                        <div class="w-14 h-14 rounded-2xl bg-violet-950/30 border border-violet-800/20 flex items-center justify-center">
+                            <i data-lucide="code-2" class="w-6 text-violet-400"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-400 text-sm font-medium">Start a coding session</p>
+                            <p class="text-gray-600 text-xs mt-1 max-w-xs">Select a repo and ask me to create, fix, or explain code. I can commit changes directly to GitHub.</p>
                         </div>
                     </div>
                 </div>
@@ -2101,8 +1739,8 @@
 
     <!-- Logout confirmation modal -->
     <div id="logout-modal">
-        <div class="modal-glass rounded-2xl p-6 w-full max-w-sm">
-            <div class="flex items-center gap-3 mb-4" style="position:relative;z-index:2">
+        <div class="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div class="flex items-center gap-3 mb-4">
                 <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
                     <i data-lucide="log-out" class="w-4 text-red-400"></i>
                 </div>
@@ -2119,29 +1757,9 @@
         </div>
     </div>
 
-    <!-- Clarity Coding — GitHub disconnect confirm modal -->
-    <div id="coding-disconnect-modal">
-        <div class="modal-glass rounded-2xl p-6 w-full max-w-sm">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="github" class="w-4 text-red-400"></i>
-                </div>
-                <div>
-                    <h3 class="text-white font-semibold text-base">Disconnect GitHub?</h3>
-                    <p class="text-gray-500 text-xs mt-0.5">You'll need to reconnect to use Clarity Coding</p>
-                </div>
-            </div>
-            <p class="text-gray-400 text-sm leading-relaxed mb-5">Your current session and unsaved code will be lost. Make sure to commit any changes before signing out.</p>
-            <div class="flex gap-2.5">
-                <button onclick="closeCodingDisconnectModal()" class="flex-1 py-2.5 bg-white/5 border border-white/8 text-gray-400 text-sm rounded-xl hover:bg-white/10 transition-colors">Cancel</button>
-                <button onclick="confirmCodingDisconnect()" class="flex-1 py-2.5 bg-red-600/70 hover:bg-red-600 text-white text-sm font-medium rounded-xl transition-colors">Sign out</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Clarity Coding — GitHub commit modal -->
     <div id="coding-commit-modal">
-        <div class="modal-glass rounded-2xl p-6 w-full max-w-md">
+        <div class="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
             <div class="flex items-center justify-between mb-5">
                 <h3 class="text-white font-semibold text-base flex items-center gap-2">
                     <svg height="16" viewBox="0 0 16 16" fill="white"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
@@ -2157,11 +1775,7 @@
                     <div id="cmt-repo-display" class="text-gray-300 text-sm bg-white/5 border border-white/8 rounded-lg px-3 py-2 truncate"></div>
                 </div>
                 <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="text-gray-500 text-xs">File path</label>
-                        <span id="cmt-existing-label" style="display:none" class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-950/40 border border-blue-800/30 text-blue-400">Updating existing file</span>
-                        <span id="cmt-new-label" style="display:none" class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-violet-950/40 border border-violet-800/30 text-violet-400">New file</span>
-                    </div>
+                    <label class="text-gray-500 text-xs mb-1.5 block">File path</label>
                     <input id="cmt-file-path" type="text" placeholder="e.g. src/index.js"
                         class="w-full bg-white/5 border border-white/8 rounded-lg px-3 py-2 text-sm text-gray-200 outline-none focus:border-violet-500/50 transition-colors placeholder-gray-600">
                 </div>
@@ -2183,9 +1797,10 @@
     ═══════════════════════════════════════════════════════ -->
     <div id="artifact-viewer-modal">
         <div class="absolute inset-0" onclick="closeArtifactViewer()"></div>
-        <div class="relative flex flex-col rounded-2xl overflow-hidden" style="width:min(96vw,1400px);height:min(94vh,900px);background:rgba(13,13,13,0.6);backdrop-filter:blur(36px) saturate(1.4);-webkit-backdrop-filter:blur(36px) saturate(1.4);border:0.5px solid rgba(255,255,255,0.12);box-shadow:0 24px 80px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.08)">
+        <div class="relative flex flex-col bg-[#0d0d0d] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
+             style="width:min(96vw,1400px);height:min(94vh,900px)">
             <!-- Viewer toolbar -->
-            <div class="flex items-center gap-3 px-4 py-3 border-b border-white/6 shrink-0 bg-transparent">
+            <div class="flex items-center gap-3 px-4 py-3 border-b border-white/6 shrink-0 bg-[#0d0d0d]">
                 <button onclick="closeArtifactViewer()" class="w-7 h-7 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors">
                     <i data-lucide="x" class="w-3.5 text-gray-400"></i>
                 </button>
@@ -2714,7 +2329,6 @@
         // ── Init ──────────────────────────────────────────────────
         window.addEventListener('load', async () => {
             lucide.createIcons();
-            document.body.classList.add('liquid-glass-active');
             setTimeout(() => { document.getElementById('rainbow-glow').style.opacity = '1'; }, 120);
             document.getElementById('pill-model-label').textContent = selectedModel;
             updateModelCards();
@@ -7293,62 +6907,13 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
         const codingCodeBlocks = {};   // msgId → [{code, lang}]
         let pendingCommitCode = null;
 
-        function toggleCodingHistorySidebar(open) {
-            const sidebar = document.getElementById('coding-hist-sidebar');
-            const overlay = document.getElementById('coding-hist-overlay');
-            if (!sidebar) return;
-            if (open) {
-                sidebar.classList.add('ch-open');
-                overlay.classList.add('ch-open');
-                lucide.createIcons();
-            } else {
-                sidebar.classList.remove('ch-open');
-                overlay.classList.remove('ch-open');
-            }
-        }
-
-        async function closeCodingPageFromSidebar() {
-            toggleCodingHistorySidebar(false);
-            // Small delay so sidebar closes before the wave starts
-            await new Promise(r => setTimeout(r, 180));
-            closeCodingPage();
-        }
-
-        async function openCodingPage() {
+        function openCodingPage() {
             toggleSidebar(false);
-            await _cpWaveTransition(() => {
-                document.getElementById('coding-page').classList.add('cp-open');
-            });
+            document.getElementById('coding-page').classList.add('cp-open');
             initCodingPage();
         }
-        async function closeCodingPage() {
-            await _cpWaveTransition(() => {
-                document.getElementById('coding-page').classList.remove('cp-open');
-            });
-        }
-
-        async function _cpWaveTransition(cb) {
-            const overlay = document.getElementById('cp-wave-overlay');
-            if (!overlay) { cb(); return; }
-            const delay = ms => new Promise(r => setTimeout(r, ms));
-            const raf = () => new Promise(r => requestAnimationFrame(r));
-            // Reset to off-screen bottom
-            overlay.style.transition = 'none';
-            overlay.style.transform = 'translateY(101%)';
-            overlay.style.display = 'block';
-            await raf(); await raf();
-            // Sweep up from bottom (cover)
-            overlay.style.transition = 'transform 0.44s cubic-bezier(0.7,0,0.3,1)';
-            overlay.style.transform = 'translateY(0%)';
-            await delay(440);
-            // Apply the actual page change while overlay covers everything
-            cb();
-            await raf();
-            // Sweep out to the top (reveal)
-            overlay.style.transition = 'transform 0.4s cubic-bezier(0.3,0,0,1)';
-            overlay.style.transform = 'translateY(-101%)';
-            await delay(420);
-            overlay.style.display = 'none';
+        function closeCodingPage() {
+            document.getElementById('coding-page').classList.remove('cp-open');
         }
 
         async function initCodingPage() {
@@ -7388,7 +6953,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
             await Promise.all([loadCodingRepos(), loadCodingSessions()]);
             updateCodingRepoUI();
-            renderCodingEmptySuggestions();
             lucide.createIcons();
         }
 
@@ -7422,20 +6986,8 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             }
         }
 
-        function promptCodingDisconnect() {
-            const m = document.getElementById('coding-disconnect-modal');
-            if (m) { m.classList.add('cdm-open'); lucide.createIcons(); }
-        }
-        function closeCodingDisconnectModal() {
-            document.getElementById('coding-disconnect-modal')?.classList.remove('cdm-open');
-        }
-        function confirmCodingDisconnect() {
-            closeCodingDisconnectModal();
-            disconnectGitHub();
-        }
         function disconnectGitHub() {
             codingGhToken = null; codingGhUser = null;
-            _codingRepoFiles = [];
             localStorage.removeItem('clarity_gh_token');
             localStorage.removeItem('clarity_gh_user');
             showCodingConnectView();
@@ -7496,135 +7048,13 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
         function selectCodingRepoItem(fullName) {
             codingSelectedRepo = fullName;
-            _codingRepoFiles = [];
             document.getElementById('coding-repo-popup').classList.remove('open');
             updateCodingRepoUI();
-            renderCodingEmptySuggestions();
-            loadCodingRepoFileTree();
         }
 
         function clearCodingRepo() {
             codingSelectedRepo = null;
-            _codingRepoFiles = [];
             updateCodingRepoUI();
-            renderCodingEmptySuggestions();
-        }
-
-        // ── Repo file tree cache + suggestions ───────────────────
-        let _codingRepoFiles = [];
-
-        async function loadCodingRepoFileTree() {
-            if (!codingGhToken || !codingSelectedRepo) return;
-            try {
-                const [owner, repo] = codingSelectedRepo.split('/');
-                const r = await fetch(`/api/github-files?action=tree&owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`, {
-                    headers: { 'x-github-token': codingGhToken }
-                });
-                if (r.ok) _codingRepoFiles = await r.json();
-            } catch (_) {}
-            renderCodingEmptySuggestions();
-        }
-
-        function renderCodingEmptySuggestions() {
-            const el = document.getElementById('coding-es-suggestions');
-            const subtitle = document.getElementById('coding-es-subtitle');
-            if (!el) return;
-            const repo = codingSelectedRepo;
-            const repoName = repo ? repo.split('/')[1] : null;
-            const files = _codingRepoFiles;
-
-            // Build suggestion list
-            const suggestions = [];
-
-            if (repo && files.length > 0) {
-                if (subtitle) subtitle.textContent = `Working with ${repoName}`;
-                // Pick a few interesting files from the repo
-                const interesting = files.filter(f => {
-                    const low = f.toLowerCase();
-                    return !low.includes('node_modules') && !low.includes('.min.') && !low.endsWith('.lock');
-                }).slice(0, 6);
-
-                if (interesting.length > 0) {
-                    const picked = interesting.sort(() => Math.random() - 0.5).slice(0, 3);
-                    picked.forEach(f => {
-                        const name = f.split('/').pop();
-                        suggestions.push({ icon: _suggIcon(f), text: `Review and improve \`${name}\`` });
-                    });
-                }
-                suggestions.push({ icon: 'bug', text: 'Find and fix bugs in this repo' });
-                suggestions.push({ icon: 'file-plus', text: 'Add a README to ' + repoName });
-                suggestions.push({ icon: 'test-tube', text: 'Write tests for the main module' });
-            } else if (repo) {
-                if (subtitle) subtitle.textContent = `Working with ${repoName}`;
-                suggestions.push(
-                    { icon: 'wand-2', text: 'Explain the structure of this repo' },
-                    { icon: 'bug', text: 'Find and fix bugs in this project' },
-                    { icon: 'file-plus', text: 'Add a README to ' + repoName },
-                    { icon: 'test-tube', text: 'Write tests for the main module' },
-                    { icon: 'zap', text: 'Optimize performance of key files' },
-                    { icon: 'shield', text: 'Review code for security issues' }
-                );
-            } else {
-                if (subtitle) subtitle.textContent = 'Select a repo to get started';
-                suggestions.push(
-                    { icon: 'wand-2', text: 'Explain how this codebase works' },
-                    { icon: 'bug', text: 'Help me debug an issue in my code' },
-                    { icon: 'code-2', text: 'Write a new feature or component' },
-                    { icon: 'file-plus', text: 'Generate a config or setup file' },
-                    { icon: 'zap', text: 'Refactor code for readability' },
-                    { icon: 'test-tube', text: 'Create unit tests for my functions' }
-                );
-            }
-
-            el.innerHTML = suggestions.slice(0, 6).map((s, i) =>
-                `<button class="coding-es-sugg" style="animation-delay:${i * 80}ms" onclick="injectCodingSuggestion(this)">
-                    <span class="coding-es-sugg-icon" style="background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.18)">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#si-${escapeHtml(s.icon)}"/></svg>
-                    </span>
-                    <span class="coding-es-sugg-text">${escapeHtml(s.text)}</span>
-                </button>`
-            ).join('');
-            // Animate in with stagger
-            requestAnimationFrame(() => {
-                el.querySelectorAll('.coding-es-sugg').forEach((btn, i) => {
-                    setTimeout(() => btn.classList.add('sugg-visible'), i * 80);
-                });
-            });
-            // Inject inline SVG symbols for icons (use lucide paths)
-            _injectSuggIcons(suggestions.slice(0, 6).map(s => s.icon));
-        }
-
-        function _suggIcon(filename) {
-            const ext = filename.split('.').pop().toLowerCase();
-            const map = { js:'zap', ts:'zap', jsx:'zap', tsx:'zap', html:'globe', css:'palette', py:'code-2', json:'braces', md:'file-text', sh:'terminal', yml:'settings', yaml:'settings', go:'code-2', rs:'code-2', java:'code-2', rb:'code-2' };
-            return map[ext] || 'file';
-        }
-
-        function _injectSuggIcons(icons) {
-            // Render icon svgs directly (simpler than use/href)
-            const el = document.getElementById('coding-es-suggestions');
-            if (!el) return;
-            // Replace each svg with a simple icon character or use data URIs
-            // Simpler: re-render with proper lucide icons
-            el.querySelectorAll('.coding-es-sugg').forEach((btn, i) => {
-                const iconName = icons[i];
-                const iconSpan = btn.querySelector('.coding-es-sugg-icon');
-                if (iconSpan && iconName) {
-                    iconSpan.innerHTML = `<i data-lucide="${iconName}" style="width:12px;height:12px;color:#a78bfa"></i>`;
-                }
-            });
-            if (window.lucide) lucide.createIcons({ attrs: { 'stroke-width': '2' } });
-        }
-
-        function injectCodingSuggestion(btn) {
-            const text = btn.querySelector('.coding-es-sugg-text')?.textContent || '';
-            const inputEl = document.getElementById('coding-input');
-            if (inputEl) {
-                inputEl.value = text;
-                autoResizeCodingInput(inputEl);
-                updateCodingSendBtn();
-                inputEl.focus();
-            }
         }
 
         function updateCodingRepoUI() {
@@ -7657,7 +7087,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     return;
                 }
                 list.innerHTML = sessions.map(s => `
-                    <div class="cs-item ${s.id === activeCodingSessionId ? 'cs-active' : ''}" onclick="loadCodingSession('${s.id}');toggleCodingHistorySidebar(false)">
+                    <div class="cs-item ${s.id === activeCodingSessionId ? 'cs-active' : ''}" onclick="loadCodingSession('${s.id}')">
                         <i data-lucide="message-square-code" style="width:13px;height:13px;flex-shrink:0;opacity:0.4;color:inherit"></i>
                         <span class="cs-item-title">${escapeHtml(s.title || 'Untitled')}</span>
                     </div>`).join('');
@@ -7783,8 +7213,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             return `<div class="coding-activity-step step-status">${iconHtml}<span>${label}</span></div>`;
         }
 
-        const _doneIcon = `<div class="step-icon done"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
-
         async function _revealCodingResponse(container, fullText, msgId) {
             const sections = _parseCodingSections(fullText);
             // Store code blocks for commit modal
@@ -7799,35 +7227,53 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
             const delay = ms => new Promise(r => setTimeout(r, ms));
 
-            const addStep = (label, done) => {
-                const wrap = document.createElement('div');
-                wrap.innerHTML = _codingStatusStep(label, done);
-                const step = wrap.firstElementChild;
-                log.appendChild(step);
-                requestAnimationFrame(() => step.classList.add('visible'));
-                chatArea.scrollTop = chatArea.scrollHeight;
-                return step;
-            };
-
-            const markDone = step => { const icon = step.querySelector('.step-icon'); if (icon) icon.outerHTML = _doneIcon; };
-
             // Step 1: Analyzing
-            const hasCode = blocks.length > 0;
-            const step1 = addStep('Analyzing your request', false);
+            let statusEl = document.createElement('div');
+            statusEl.innerHTML = _codingStatusStep('Analyzing your request', false);
+            let step = statusEl.firstElementChild;
+            log.appendChild(step);
+            requestAnimationFrame(() => { step.classList.add('visible'); });
+            chatArea.scrollTop = chatArea.scrollHeight;
             await delay(600);
-            markDone(step1);
+            // Mark done
+            step.querySelector('.step-icon').outerHTML = `<div class="step-icon done"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
 
-            // Step 2: Preparing response (if prose present)
-            if (sections.some(s => s.type === 'prose')) {
-                const step2 = addStep('Preparing response', false);
-                await delay(350);
-                markDone(step2);
+            // Determine what status labels to show based on content
+            const hasCode = blocks.length > 0;
+            const codeLabels = blocks.map(b => {
+                const meta = _codingLang(b.lang);
+                return `Writing ${meta.label.toLowerCase()} code`;
+            });
+            // Deduplicate labels
+            const uniqueLabels = [...new Set(codeLabels)];
+
+            // Step 2: If prose, show "Preparing response"
+            const proseSteps = sections.filter(s => s.type === 'prose');
+            if (proseSteps.length) {
+                statusEl = document.createElement('div');
+                statusEl.innerHTML = _codingStatusStep('Preparing response', false);
+                step = statusEl.firstElementChild;
+                log.appendChild(step);
+                requestAnimationFrame(() => { step.classList.add('visible'); });
+                chatArea.scrollTop = chatArea.scrollHeight;
+                await delay(400);
+                step.querySelector('.step-icon').outerHTML = `<div class="step-icon done"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
             }
 
-            // Step 3: Reveal content sections with fix-delay logic
-            let codeIdx = 0;
-            let prevProseRaw = '';
+            // Step 3: Code writing statuses
+            for (const label of uniqueLabels) {
+                statusEl = document.createElement('div');
+                statusEl.innerHTML = _codingStatusStep(label, false);
+                step = statusEl.firstElementChild;
+                log.appendChild(step);
+                requestAnimationFrame(() => { step.classList.add('visible'); });
+                chatArea.scrollTop = chatArea.scrollHeight;
+                await delay(500);
+                step.querySelector('.step-icon').outerHTML = `<div class="step-icon done"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
+            }
 
+            // Now reveal actual content sections
+            let codeIdx = 0;
             for (const section of sections) {
                 const contentEl = document.createElement('div');
                 contentEl.className = 'coding-activity-step step-content';
@@ -7837,82 +7283,28 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     if (window.marked) { try { html = marked.parse(section.raw); } catch(_) { html = `<p>${escapeHtml(section.raw)}</p>`; } }
                     else html = `<p>${escapeHtml(section.raw).replace(/\n/g,'<br>')}</p>`;
                     contentEl.innerHTML = `<div class="ai-response text-gray-300 text-sm leading-relaxed">${html}</div>`;
-                    log.appendChild(contentEl);
-                    requestAnimationFrame(() => contentEl.classList.add('visible'));
-                    chatArea.scrollTop = chatArea.scrollHeight;
-                    await delay(150);
-                    prevProseRaw = section.raw;
                 } else {
-                    // Check if previous prose signals a fix/update operation
-                    const isFixing = /\bfix(ing|ed)?\b|\bupdat(e|ing|ed)\b|\bmodif(y|ying|ied)\b|\brefactor|\bapply|\bchange/i.test(prevProseRaw);
-
-                    if (isFixing) {
-                        // Show an active "Applying changes" step for 7-9 seconds
-                        const fixMs = 7000 + Math.random() * 2000;
-                        const fixStep = addStep('Applying changes to files…', false);
-                        // Cycle through descriptive sub-labels while waiting
-                        const fixLabels = ['Reading current file…', 'Applying changes to files…', 'Verifying modifications…', 'Finalizing edits…'];
-                        let fi = 0;
-                        const fixInterval = setInterval(() => {
-                            fi = (fi + 1) % fixLabels.length;
-                            const span = fixStep.querySelector('span');
-                            if (span) { span.style.opacity='0'; setTimeout(()=>{ span.textContent=fixLabels[fi]; span.style.opacity='1'; }, 200); }
-                        }, fixMs / fixLabels.length);
-                        await delay(fixMs);
-                        clearInterval(fixInterval);
-                        markDone(fixStep);
-                        await delay(200);
-                    }
-
-                    // Render code as file card with real filename
+                    // Render as file card
                     const meta = _codingLang(section.lang);
-                    const filename = _extractCodeFilename(section.code, section.lang, prevProseRaw) || `file.${meta.ext}`;
                     const lineCount = section.code.split('\n').length;
                     const esc = section.code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
                     const cardUid = `${msgId}_${codeIdx}`;
                     codeIdx++;
-                    // Determine if this is a new file vs existing
-                    const _isNewFile = _codingRepoFiles.length > 0 &&
-                        !_codingRepoFiles.some(f => f === filename || f.endsWith('/' + filename));
-                    const newBadge = _isNewFile ? `<span class="code-file-new-badge">New file</span>` : '';
-                    // Use diff view if we have the original content cached
-                    const origContent = _codingFileCache[filename] || _codingFileCache[filename.split('/').pop()];
-                    let bodyContent;
-                    if (origContent) {
-                        const diff = _diffLines(origContent, section.code);
-                        const hasChanges = diff.some(d => d.t !== '=');
-                        const changedCount = diff.filter(d => d.t === '+').length;
-                        const removedCount = diff.filter(d => d.t === '-').length;
-                        const diffSummary = hasChanges
-                            ? `<span style="color:#4ade80;font-size:0.68rem">+${changedCount}</span> <span style="color:#f87171;font-size:0.68rem">−${removedCount}</span>`
-                            : `<span style="color:#6b7280;font-size:0.68rem">no changes</span>`;
-                        bodyContent = `<div style="padding:0 0 0.25rem">
-                            <div style="padding:0.3rem 0.875rem;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;gap:0.5rem">
-                                <span style="font-size:0.68rem;color:#6b7280;font-family:monospace">diff</span>
-                                <span style="font-size:0.68rem;color:#6b7280">·</span>
-                                ${diffSummary}
-                            </div>
-                            <div class="code-file-diff">${_renderDiffHtml(diff)}</div>
-                        </div>`;
-                    } else {
-                        bodyContent = `<pre>${esc}</pre>`;
-                    }
                     contentEl.innerHTML = `<div class="code-file-list"><div class="code-file-card" id="cfc_${cardUid}" onclick="toggleCodeFileCard('${cardUid}')">
                         <div class="code-file-card-header">
                             <div class="code-file-icon ${meta.cls}">${meta.label}</div>
-                            <span class="code-file-name">${escapeHtml(filename)}</span>
-                            ${newBadge}
+                            <span class="code-file-name">file.${meta.ext}</span>
                             <span class="code-file-lines">${lineCount} line${lineCount !== 1 ? 's' : ''}</span>
                             <svg class="code-file-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
-                        <div class="code-file-body">${bodyContent}</div>
+                        <div class="code-file-body"><pre>${esc}</pre></div>
                     </div></div>`;
-                    log.appendChild(contentEl);
-                    requestAnimationFrame(() => contentEl.classList.add('visible'));
-                    chatArea.scrollTop = chatArea.scrollHeight;
-                    await delay(200);
-                    prevProseRaw = '';
                 }
+
+                log.appendChild(contentEl);
+                requestAnimationFrame(() => { contentEl.classList.add('visible'); });
+                chatArea.scrollTop = chatArea.scrollHeight;
+                await delay(200);
             }
 
             // Commit button
@@ -7961,91 +7353,6 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             return { el, msgId };
         }
 
-        // ── File content cache (original → for diff display) ─────
-        const _codingFileCache = {};   // fullPath → original content string
-
-        // ── Line-level diff (LCS-based, capped at 400 lines each) ──
-        function _diffLines(origText, updText) {
-            const a = origText.split('\n').slice(0, 400);
-            const b = updText.split('\n').slice(0, 400);
-            const m = a.length, n = b.length;
-            // Build DP table
-            const dp = [];
-            for (let i = 0; i <= m; i++) { dp[i] = new Array(n + 1).fill(0); }
-            for (let i = m - 1; i >= 0; i--) {
-                for (let j = n - 1; j >= 0; j--) {
-                    if (a[i] === b[j]) dp[i][j] = dp[i+1][j+1] + 1;
-                    else dp[i][j] = Math.max(dp[i+1][j], dp[i][j+1]);
-                }
-            }
-            // Trace back
-            const result = [];
-            let i = 0, j = 0;
-            while (i < m && j < n) {
-                if (a[i] === b[j]) { result.push({ t: '=', l: a[i] }); i++; j++; }
-                else if (dp[i+1][j] >= dp[i][j+1]) { result.push({ t: '-', l: a[i] }); i++; }
-                else { result.push({ t: '+', l: b[j] }); j++; }
-            }
-            while (i < m) result.push({ t: '-', l: a[i++] });
-            while (j < n) result.push({ t: '+', l: b[j++] });
-            return result;
-        }
-
-        function _renderDiffHtml(diff, ctx = 3) {
-            // Find indices of changed lines
-            const changed = diff.map((d, i) => d.t !== '=' ? i : -1).filter(i => i >= 0);
-            if (!changed.length) return `<div class="diff-ellipsis">No changes detected</div>`;
-            // Build visible ranges (changed ± ctx lines, merged if overlapping)
-            const ranges = [];
-            for (const ci of changed) {
-                const s = Math.max(0, ci - ctx), e = Math.min(diff.length - 1, ci + ctx);
-                if (ranges.length && s <= ranges[ranges.length-1].e + 1) ranges[ranges.length-1].e = e;
-                else ranges.push({ s, e });
-            }
-            // Render
-            let html = '';
-            let prevEnd = -1;
-            for (const { s, e } of ranges) {
-                if (s > prevEnd + 1) html += `<div class="diff-ellipsis">··· ${s - prevEnd - 1} unchanged ···</div>`;
-                for (let i = s; i <= e; i++) {
-                    const { t, l } = diff[i];
-                    const esc = l.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-                    if (t === '+') html += `<div class="diff-line diff-line-add">+ ${esc}</div>`;
-                    else if (t === '-') html += `<div class="diff-line diff-line-del">− ${esc}</div>`;
-                    else html += `<div class="diff-line diff-line-ctx">  ${esc}</div>`;
-                }
-                prevEnd = e;
-            }
-            if (prevEnd < diff.length - 1) html += `<div class="diff-ellipsis">··· ${diff.length - 1 - prevEnd} unchanged ···</div>`;
-            return html;
-        }
-
-        // ── Filename extraction from code block ───────────────────
-        function _extractCodeFilename(code, lang, proseContext) {
-            // 1. Look for filename in first line comment: // path/file.js or # script.py etc
-            const lines = code.split('\n');
-            const first = lines[0].trim();
-            const commentM = first.match(/^(?:\/\/|#|\/\*)\s*(?:file(?:name)?[:\s]+)?([\w.\-/]+\.\w+)/i);
-            if (commentM) return commentM[1].split('/').pop();
-
-            // 2. Look in surrounding prose for a quoted filename
-            if (proseContext) {
-                const proseM = proseContext.match(/[`'"]([^`'"]*\.(?:js|ts|jsx|tsx|html|css|py|json|go|rs|java|rb|php|sh|yml|yaml|md|txt))[`'"]/i);
-                if (proseM) return proseM[1].split('/').pop();
-                const pathM = proseContext.match(/\b([\w.\-/]+\.(?:js|ts|jsx|tsx|html|css|py|json|go|rs|java|rb|php|sh|yml|yaml|md))\b/i);
-                if (pathM) return pathM[1].split('/').pop();
-            }
-
-            // 3. Look in repo file list for a file matching this extension
-            if (_codingRepoFiles.length > 0) {
-                const meta = _codingLang(lang);
-                const match = _codingRepoFiles.find(f => f.endsWith('.' + meta.ext));
-                if (match) return match.split('/').pop();
-            }
-
-            return null;
-        }
-
         // ── Language helpers for file cards ──────────────────────
         const _codingLangMeta = {
             javascript: { label:'JS',   cls:'lang-js',   ext:'js'   },
@@ -8088,11 +7395,10 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     const lineCount = b.code.split('\n').length;
                     const escapedCode = b.code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
                     const cardUid = `${cardId}_${idx}`;
-                    const filename = _extractCodeFilename(b.code, b.lang, '') || `file.${meta.ext}`;
                     return `<div class="code-file-card" id="cfc_${cardUid}" onclick="toggleCodeFileCard('${cardUid}')">
                         <div class="code-file-card-header">
                             <div class="code-file-icon ${meta.cls}">${meta.label}</div>
-                            <span class="code-file-name">${escapeHtml(filename)}</span>
+                            <span class="code-file-name">file.${meta.ext}</span>
                             <span class="code-file-lines">${lineCount} line${lineCount !== 1 ? 's' : ''}</span>
                             <svg class="code-file-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
@@ -8114,11 +7420,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
 
         function toggleCodeFileCard(uid) {
             const card = document.getElementById('cfc_' + uid);
-            if (!card) return;
-            const wasOpen = card.classList.contains('open');
-            card.classList.toggle('open');
-            // Scroll newly opened card into view after animation
-            if (!wasOpen) setTimeout(() => card.scrollIntoView({ behavior:'smooth', block:'nearest' }), 200);
+            if (card) card.classList.toggle('open');
         }
 
         async function sendCodingMessage() {
@@ -8134,36 +7436,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             appendCodingUserMsg(val);
             const { el: pendingEl, msgId: pendingId } = appendCodingAIMsg('', true);
 
-            let messageToSend = codingSelectedRepo ? `[GitHub repo: ${codingSelectedRepo}]\n\n${val}` : val;
-
-            // If a repo is connected and user likely references an existing file, inject its current content
-            if (codingSelectedRepo && codingGhToken && _codingRepoFiles.length > 0) {
-                const valLow = val.toLowerCase();
-                const referencedFile = _codingRepoFiles.find(f => {
-                    const name = f.split('/').pop().toLowerCase();
-                    return valLow.includes(name) || valLow.includes(f.toLowerCase());
-                });
-                if (referencedFile) {
-                    try {
-                        const [owner, repo] = codingSelectedRepo.split('/');
-                        const r = await fetch(`/api/github-files?action=file&owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(referencedFile)}`, {
-                            headers: { 'x-github-token': codingGhToken }
-                        });
-                        if (r.ok) {
-                            const { content } = await r.json();
-                            // Store original for diff display later
-                            _codingFileCache[referencedFile] = content;
-                            const baseName = referencedFile.split('/').pop();
-                            _codingFileCache[baseName] = content;
-                            // Cap injected content to avoid token overflow (approx 5000 chars)
-                            const safeContent = content.length > 5000
-                                ? content.slice(0, 5000) + '\n// ... (file truncated for brevity) ...'
-                                : content;
-                            messageToSend += `\n\n[Current content of \`${referencedFile}\`]:\n\`\`\`\n${safeContent}\n\`\`\`\n\nMake ONLY the minimal targeted change requested. Do NOT alter any unrelated code, formatting, or comments. Return the COMPLETE updated file with \`// ${referencedFile}\` as the very first comment line inside the code block.`;
-                        }
-                    } catch (_) {}
-                }
-            }
+            const messageToSend = codingSelectedRepo ? `[GitHub repo: ${codingSelectedRepo}]\n\n${val}` : val;
 
             // Create DB session on first message
             if (!activeCodingSessionId && currentUser) {
@@ -8184,15 +7457,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: messageToSend, history: codingSessionHistory, modelVersion: '3.6', mode: 'coding' })
                 });
-                if (!r.ok) {
-                    const errData = await r.json().catch(() => ({}));
-                    const errMsg = r.status === 429
-                        ? 'Rate limit reached — please wait a few seconds and try again.'
-                        : r.status === 504
-                        ? 'Request timed out — try a shorter message or start a new session.'
-                        : (errData.error || `Error ${r.status}`);
-                    throw new Error(errMsg);
-                }
+                if (!r.ok) throw new Error('AI error ' + r.status);
                 const data = await r.json();
                 const reply = data.reply || data.content || '';
 
@@ -8215,7 +7480,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             } catch (err) {
                 _stopThinkingCycle();
                 pendingEl.className = 'flex justify-start pl-4';
-                pendingEl.innerHTML = `<div class="flex items-center gap-2 text-sm text-red-400 bg-red-950/20 border border-red-900/30 rounded-xl px-3 py-2 max-w-sm">${escapeHtml(err.message || 'Error getting response. Please try again.')}</div>`;
+                pendingEl.innerHTML = `<span class="text-red-400 text-sm">Error getting response. Please try again.</span>`;
             }
             codingIsLoading = false;
             updateCodingSendBtn();
@@ -8227,32 +7492,11 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             pendingCommitCode = blocks;
             const repoEl = document.getElementById('cmt-repo-display');
             if (repoEl) repoEl.textContent = codingSelectedRepo || 'No repo selected';
-
-            // Detect file path: extracted name → match in repo tree → fallback
-            const firstBlock = blocks[0];
-            const meta = _codingLang(firstBlock.lang);
-            const extractedName = _extractCodeFilename(firstBlock.code, firstBlock.lang, '');
-            let filePath;
-            let isExistingFile = false;
-            if (extractedName) {
-                // Look for the exact path in the repo tree
-                const repoMatch = _codingRepoFiles.find(f => f === extractedName || f.endsWith('/' + extractedName));
-                filePath = repoMatch || extractedName;
-                isExistingFile = !!repoMatch;
-            } else {
-                filePath = `code.${meta.ext}`;
-                isExistingFile = false;
-            }
-
+            const extMap = { javascript:'js', js:'js', typescript:'ts', ts:'ts', python:'py', py:'py', html:'html', css:'css', rust:'rs', go:'go', java:'java', cpp:'cpp', c:'c', json:'json', yaml:'yml', sh:'sh', bash:'sh', ruby:'rb', php:'php' };
+            const firstLang = blocks[0].lang;
+            const ext = extMap[firstLang] || firstLang || 'txt';
             const pathEl = document.getElementById('cmt-file-path');
-            if (pathEl) pathEl.value = filePath;
-
-            // Show/hide "existing file" label
-            const existingLabel = document.getElementById('cmt-existing-label');
-            const newLabel = document.getElementById('cmt-new-label');
-            if (existingLabel) existingLabel.style.display = isExistingFile ? 'inline-flex' : 'none';
-            if (newLabel) newLabel.style.display = (!isExistingFile && extractedName) ? 'inline-flex' : 'none';
-
+            if (pathEl) pathEl.value = `code.${ext}`;
             document.getElementById('coding-commit-modal').classList.add('ccm-open');
             lucide.createIcons();
         }
