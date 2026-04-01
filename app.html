@@ -9,7 +9,8 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root { --bg: #0a0a0a; }
-        body { background: var(--bg); color: white; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; overflow-x: hidden; }
+        html { background: var(--bg); }
+        body { background: transparent; color: white; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; overflow-x: hidden; }
 
         /* ── Canvas name subtitle ── */
         #canvas-name { font-size:0.62rem; color:#6b7280; line-height:1; margin-top:1px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -26,15 +27,15 @@
         .hide-on-start { }
         .conversation-started .hide-on-start { opacity:0; transform:translateY(-20px); pointer-events:none; display:none; }
         @keyframes home-fade-up { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-        #main-ui { transition:justify-content 0.5s ease; }
+        #main-ui { transition:justify-content 0.5s ease; position:relative; z-index:1; }
         .conversation-started #main-ui { justify-content:flex-start; padding-top:5.5rem; }
         #chat-results { display:none; opacity:0; }
         .conversation-started #chat-results { display:flex; animation:fade-up 0.5s ease forwards; }
         @keyframes fade-up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         /* ── Bottom fade mask so messages dissolve before input bar ── */
-        .conversation-started #bottom-fade { display:block; }
-        #bottom-fade { display:none; position:fixed; bottom:0; left:0; right:0; height:13rem; pointer-events:none; z-index:40; background:linear-gradient(to bottom, transparent 0%, var(--bg) 55%); }
-        body.canvas-open #bottom-fade { right:52%; }
+        .conversation-started #bottom-fade { display:none; }
+        #bottom-fade { display:none !important; }
+        body.canvas-open #bottom-fade { display:none !important; }
         /* ── Scroll to bottom button ── */
         #scroll-to-bottom { position:fixed; bottom:6.5rem; left:50%; transform:translateX(-50%) translateY(10px); z-index:45; opacity:0; pointer-events:none; transition:opacity 0.25s ease, transform 0.25s ease; }
         #scroll-to-bottom.stb-visible { opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0); }
@@ -838,15 +839,16 @@
         .cr-s3 { animation:clRainbow 3s infinite linear -1.5s; }
         .cr-s4 { animation:clRainbow 3s infinite linear -2.25s; }
 
-        /* ── Glass refraction effect ── */
-        .glass-canvas { position:absolute; inset:0; width:100%; height:100%; border-radius:inherit; z-index:0; pointer-events:none; opacity:0.55; }
-        #sidebar > *:not(.glass-canvas):not(.sidebar-edge-glow) { position:relative; z-index:1; }
-        #chat-input-bar-wrapper > *:not(.glass-canvas) { position:relative; z-index:1; }
-        #chat-input-bar-wrapper { background:rgba(17,17,17,0.3) !important; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
-        #sidebar { background:rgba(10,10,10,0.4) !important; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+        /* ── Glass refraction full-screen canvas ── */
+        #glass-canvas { position:fixed; inset:0; width:100vw; height:100vh; z-index:0; pointer-events:none; display:block; }
+        #chat-input-bar-wrapper { background:rgba(17,17,17,0.08) !important; }
+        #sidebar { background:rgba(10,10,10,0.08) !important; }
     </style>
 </head>
 <body>
+
+    <!-- Full-screen glass refraction canvas (behind all UI) -->
+    <canvas id="glass-canvas"></canvas>
 
     <!-- Shared SVG gradient defs for code logo (referenced by all logo SVGs) -->
     <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
@@ -865,9 +867,6 @@
 
     <!-- Sidebar -->
     <div id="sidebar" class="fixed top-0 left-0 h-full w-full md:w-[380px] bg-transparent z-50 -translate-x-full flex flex-col shadow-2xl overflow-hidden">
-
-        <!-- Glass refraction canvas -->
-        <canvas id="glass-sidebar-canvas" class="glass-canvas"></canvas>
 
         <!-- Edge glow -->
         <div class="sidebar-edge-glow"></div>
@@ -1056,8 +1055,6 @@
             <div class="relative group">
                 <div id="rainbow-glow" class="glow-wrapper"><div class="glow-content"></div></div>
                 <div id="chat-input-bar-wrapper" class="relative bg-transparent rounded-full shadow-2xl border border-white/10 z-10">
-                <!-- Glass refraction canvas -->
-                <canvas id="glass-oval-canvas" class="glass-canvas"></canvas>
                 <!-- Attachment strip (shown when files are attached) -->
                 <div id="attachment-strip"></div>
                 <!-- Input row -->
@@ -7574,40 +7571,50 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
             });
         }
 
-        // ── Glass Refraction Effect (WebGL) ──────────────────────────
-        (function initGlassEffect() {
-            const VERT_SRC = `
-                attribute vec2 a_position;
-                varying vec2 v_uv;
+        // ── Glass Refraction Effect — full-screen ShaderToy-style ────
+        (function() {
+            const canvas = document.getElementById('glass-canvas');
+            const gl = canvas.getContext('webgl');
+            if (!gl) return;
+
+            // Offscreen 2D canvas — animated background that feeds iChannel0
+            const bgCanvas = document.createElement('canvas');
+            bgCanvas.width = 512; bgCanvas.height = 512;
+            const bgCtx = bgCanvas.getContext('2d');
+
+            // ── Canvas size ──────────────────────────────────────────────
+            const setCanvasSize = () => {
+                canvas.width  = window.innerWidth;
+                canvas.height = window.innerHeight;
+            };
+            setCanvasSize();
+
+            // ── Vertex shader ────────────────────────────────────────────
+            const vsSource = `
+                attribute vec2 position;
                 void main() {
-                    v_uv = a_position * 0.5 + 0.5;
-                    gl_Position = vec4(a_position, 0.0, 1.0);
+                    gl_Position = vec4(position, 0.0, 1.0);
                 }
             `;
 
-            const FRAG_SRC = `
+            // ── Fragment shader — exact glass code applied at lens positions ──
+            const fsSource = `
                 precision highp float;
-                uniform sampler2D u_texture;
+                uniform vec3  iResolution;
+                uniform float iTime;
+                uniform vec4  iMouse;
+                uniform sampler2D iChannel0;
                 uniform float u_refraction;
-                uniform float u_time;
-                uniform vec2 u_resolution;
-                varying vec2 v_uv;
+                uniform vec4  u_oval_rect;    // x,y,w,h in CSS pixels (y from top)
+                uniform float u_sidebar_w;    // sidebar width in CSS px (0 = hidden)
 
-                void main() {
-                    vec2 uv = v_uv;
-                    vec2 center = vec2(0.5);
-                    vec2 d = (uv - center) * 2.0;
-
-                    // Correct for aspect ratio so glass fills entire element
-                    float aspect = u_resolution.x / u_resolution.y;
+                void applyGlassLens(inout vec4 finalColor, vec4 bgColor,
+                                    vec2 uv, vec2 d, float aspect) {
                     if (aspect > 1.0) d.x /= aspect;
-                    else d.y *= aspect;
+                    else              d.y *= aspect;
 
-                    float dist = length(d);
+                    float dist   = length(d);
                     float radius = 1.0;
-
-                    vec4 bgColor = texture2D(u_texture, uv);
-                    vec4 finalColor = bgColor;
 
                     if (dist < radius) {
                         float normalizedDist = dist / radius;
@@ -7617,7 +7624,7 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                         vec2 refractOffset = normal.xy * u_refraction * pow(normalizedDist, 1.5);
                         vec2 lookupUv = uv - refractOffset;
 
-                        vec3 color = texture2D(u_texture, lookupUv).rgb;
+                        vec3 color = texture2D(iChannel0, lookupUv).rgb;
 
                         // Light gloss effect
                         vec3 lightDir = normalize(vec3(0.1, 0.9, 0.4));
@@ -7627,130 +7634,161 @@ Return ONLY a JSON object: {"slides":[{"html":"..."},{"html":"..."}]}`;
                         float mask = 1.0 - smoothstep(radius - 0.01, radius, dist);
                         finalColor = mix(bgColor, vec4(color, 1.0), mask);
                     }
+                }
+
+                void main() {
+                    vec2 fragCoord = gl_FragCoord.xy;
+                    vec2 uv = fragCoord / iResolution.xy;
+
+                    vec4 bgColor    = texture2D(iChannel0, uv);
+                    vec4 finalColor = bgColor;
+
+                    // ── Oval input bar lens ──────────────────────────────
+                    if (u_oval_rect.z > 0.0) {
+                        float yGL    = iResolution.y - u_oval_rect.y - u_oval_rect.w;
+                        vec2  center = vec2(u_oval_rect.x + u_oval_rect.z * 0.5,
+                                           yGL           + u_oval_rect.w * 0.5);
+                        vec2  d      = (fragCoord - center) / (u_oval_rect.zw * 0.5);
+                        applyGlassLens(finalColor, bgColor, uv, d,
+                                       u_oval_rect.z / u_oval_rect.w);
+                    }
+
+                    // ── Sidebar panel lens ───────────────────────────────
+                    if (u_sidebar_w > 0.0) {
+                        vec2  center = vec2(u_sidebar_w * 0.5, iResolution.y * 0.5);
+                        vec2  d      = (fragCoord - center) /
+                                       vec2(u_sidebar_w * 0.5, iResolution.y * 0.5);
+                        applyGlassLens(finalColor, bgColor, uv, d,
+                                       u_sidebar_w / iResolution.y);
+                    }
 
                     gl_FragColor = finalColor;
                 }
             `;
 
-            // Offscreen canvas for animated background texture
-            const bgCanvas = document.createElement('canvas');
-            bgCanvas.width = 256;
-            bgCanvas.height = 256;
-            const bgCtx = bgCanvas.getContext('2d');
+            // ── Create shader ────────────────────────────────────────────
+            const createShader = (type, source) => {
+                const shader = gl.createShader(type);
+                gl.shaderSource(shader, source);
+                gl.compileShader(shader);
+                if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                    console.error('Shader error:', gl.getShaderInfoLog(shader));
+                    gl.deleteShader(shader);
+                    return null;
+                }
+                return shader;
+            };
 
-            function updateBgTexture(time) {
+            // ── Program ──────────────────────────────────────────────────
+            const vs      = createShader(gl.VERTEX_SHADER,   vsSource);
+            const fs      = createShader(gl.FRAGMENT_SHADER, fsSource);
+            const program = gl.createProgram();
+            gl.attachShader(program, vs);
+            gl.attachShader(program, fs);
+            gl.linkProgram(program);
+            gl.useProgram(program);
+
+            // ── Buffer ───────────────────────────────────────────────────
+            const buffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+            gl.bufferData(gl.ARRAY_BUFFER,
+                new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+            const position = gl.getAttribLocation(program, 'position');
+            gl.enableVertexAttribArray(position);
+            gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+
+            // ── Uniforms ─────────────────────────────────────────────────
+            const uniforms = {
+                resolution: gl.getUniformLocation(program, 'iResolution'),
+                time:       gl.getUniformLocation(program, 'iTime'),
+                mouse:      gl.getUniformLocation(program, 'iMouse'),
+                texture:    gl.getUniformLocation(program, 'iChannel0'),
+                refraction: gl.getUniformLocation(program, 'u_refraction'),
+                ovalRect:   gl.getUniformLocation(program, 'u_oval_rect'),
+                sidebarW:   gl.getUniformLocation(program, 'u_sidebar_w'),
+            };
+            gl.uniform1f(uniforms.refraction, 0.12);
+
+            // ── Mouse tracking ───────────────────────────────────────────
+            let mouse = [0, 0];
+            window.addEventListener('mousemove', (e) => {
+                mouse = [e.clientX, canvas.height - e.clientY];
+            });
+
+            // ── Texture (iChannel0 = animated bg canvas) ─────────────────
+            const texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+            // ── Animated background drawn to bgCanvas each frame ─────────
+            function updateBgTexture(ms) {
                 const w = bgCanvas.width, h = bgCanvas.height;
-                const t = time * 0.0003;
+                const t = ms * 0.0003;
                 bgCtx.fillStyle = '#0a0a0a';
                 bgCtx.fillRect(0, 0, w, h);
                 const blobs = [
-                    { x: 0.3 + 0.15 * Math.sin(t * 0.7), y: 0.5 + 0.1 * Math.cos(t), r: 0.4, c: 'rgba(124,58,237,0.18)' },
-                    { x: 0.7 + 0.1 * Math.cos(t * 0.5), y: 0.3 + 0.15 * Math.sin(t * 0.8), r: 0.35, c: 'rgba(79,70,229,0.14)' },
-                    { x: 0.5 + 0.12 * Math.sin(t * 0.6), y: 0.7 + 0.08 * Math.cos(t * 0.9), r: 0.3, c: 'rgba(139,92,246,0.12)' },
-                    { x: 0.2 + 0.08 * Math.cos(t * 0.4), y: 0.2 + 0.1 * Math.sin(t * 1.1), r: 0.25, c: 'rgba(99,102,241,0.1)' },
+                    {x:0.30+0.15*Math.sin(t*0.7), y:0.50+0.10*Math.cos(t),     r:0.42, c:'rgba(124,58,237,0.22)'},
+                    {x:0.70+0.10*Math.cos(t*0.5), y:0.30+0.15*Math.sin(t*0.8), r:0.38, c:'rgba(79,70,229,0.18)'},
+                    {x:0.50+0.12*Math.sin(t*0.6), y:0.72+0.08*Math.cos(t*0.9), r:0.33, c:'rgba(139,92,246,0.15)'},
+                    {x:0.20+0.08*Math.cos(t*0.4), y:0.20+0.10*Math.sin(t*1.1), r:0.28, c:'rgba(99,102,241,0.13)'},
+                    {x:0.80+0.06*Math.sin(t*0.3), y:0.80+0.06*Math.cos(t*0.7), r:0.25, c:'rgba(167,139,250,0.10)'},
                 ];
                 blobs.forEach(b => {
-                    const grad = bgCtx.createRadialGradient(b.x * w, b.y * h, 0, b.x * w, b.y * h, b.r * w);
-                    grad.addColorStop(0, b.c);
-                    grad.addColorStop(1, 'transparent');
-                    bgCtx.fillStyle = grad;
+                    const g = bgCtx.createRadialGradient(
+                        b.x*w, b.y*h, 0, b.x*w, b.y*h, b.r*w);
+                    g.addColorStop(0, b.c);
+                    g.addColorStop(1, 'transparent');
+                    bgCtx.fillStyle = g;
                     bgCtx.fillRect(0, 0, w, h);
                 });
             }
 
-            function compileShader(gl, type, src) {
-                const s = gl.createShader(type);
-                gl.shaderSource(s, src);
-                gl.compileShader(s);
-                if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-                    console.error('Glass shader error:', gl.getShaderInfoLog(s));
-                    gl.deleteShader(s);
-                    return null;
-                }
-                return s;
-            }
+            // ── Rendering ────────────────────────────────────────────────
+            const startTime = performance.now();
+            const render = () => {
+                const now         = performance.now();
+                const currentTime = (now - startTime) / 1000;
 
-            function setupGlass(canvas) {
-                const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: false });
-                if (!gl) return null;
+                updateBgTexture(now);
 
-                const vs = compileShader(gl, gl.VERTEX_SHADER, VERT_SRC);
-                const fs = compileShader(gl, gl.FRAGMENT_SHADER, FRAG_SRC);
-                if (!vs || !fs) return null;
-
-                const prog = gl.createProgram();
-                gl.attachShader(prog, vs);
-                gl.attachShader(prog, fs);
-                gl.linkProgram(prog);
-                if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-                    console.error('Glass program error:', gl.getProgramInfoLog(prog));
-                    return null;
-                }
-                gl.useProgram(prog);
-
-                const buf = gl.createBuffer();
-                gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-                const aPos = gl.getAttribLocation(prog, 'a_position');
-                gl.enableVertexAttribArray(aPos);
-                gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-
-                const tex = gl.createTexture();
-                gl.bindTexture(gl.TEXTURE_2D, tex);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-                gl.uniform1i(gl.getUniformLocation(prog, 'u_texture'), 0);
-                gl.uniform1f(gl.getUniformLocation(prog, 'u_refraction'), 0.15);
-
-                return {
-                    gl, tex,
-                    uTime: gl.getUniformLocation(prog, 'u_time'),
-                    uRes: gl.getUniformLocation(prog, 'u_resolution'),
-                    uRefract: gl.getUniformLocation(prog, 'u_refraction')
-                };
-            }
-
-            function resizeCanvas(canvas) {
-                const rect = canvas.parentElement.getBoundingClientRect();
-                const dpr = Math.min(window.devicePixelRatio || 1, 2);
-                const w = Math.round(rect.width * dpr);
-                const h = Math.round(rect.height * dpr);
-                if (canvas.width !== w || canvas.height !== h) {
-                    canvas.width = w;
-                    canvas.height = h;
-                }
-            }
-
-            function renderGlass(ctx, canvas, time) {
-                if (!ctx) return;
-                const { gl, tex, uTime, uRes } = ctx;
-                resizeCanvas(canvas);
                 gl.viewport(0, 0, canvas.width, canvas.height);
-                gl.bindTexture(gl.TEXTURE_2D, tex);
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bgCanvas);
-                gl.uniform1f(uTime, time * 0.001);
-                gl.uniform2f(uRes, canvas.width, canvas.height);
-                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-            }
+                gl.clear(gl.COLOR_BUFFER_BIT);
 
-            const ovalCanvas = document.getElementById('glass-oval-canvas');
-            const sidebarCanvas = document.getElementById('glass-sidebar-canvas');
-            const ovalCtx = ovalCanvas ? setupGlass(ovalCanvas) : null;
-            const sidebarCtx = sidebarCanvas ? setupGlass(sidebarCanvas) : null;
+                gl.uniform3f(uniforms.resolution, canvas.width, canvas.height, 1.0);
+                gl.uniform1f(uniforms.time, currentTime);
+                gl.uniform4f(uniforms.mouse, mouse[0], mouse[1], 0, 0);
 
-            function animate(time) {
-                updateBgTexture(time);
-                if (ovalCtx) renderGlass(ovalCtx, ovalCanvas, time);
-                const sb = document.getElementById('sidebar');
-                if (sidebarCtx && sb && sb.classList.contains('sidebar-open')) {
-                    renderGlass(sidebarCtx, sidebarCanvas, time);
+                // Update oval input bar position
+                const ovalEl = document.getElementById('chat-input-bar-wrapper');
+                if (ovalEl) {
+                    const r = ovalEl.getBoundingClientRect();
+                    gl.uniform4f(uniforms.ovalRect, r.left, r.top, r.width, r.height);
+                } else {
+                    gl.uniform4f(uniforms.ovalRect, 0, 0, 0, 0);
                 }
-                requestAnimationFrame(animate);
-            }
-            requestAnimationFrame(animate);
+
+                // Update sidebar width
+                const sbEl   = document.getElementById('sidebar');
+                const sbOpen = sbEl && sbEl.classList.contains('sidebar-open');
+                gl.uniform1f(uniforms.sidebarW, sbOpen
+                    ? parseFloat(getComputedStyle(sbEl).width) : 0.0);
+
+                gl.activeTexture(gl.TEXTURE0);
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,
+                    gl.UNSIGNED_BYTE, bgCanvas);
+                gl.uniform1i(uniforms.texture, 0);
+
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                requestAnimationFrame(render);
+            };
+
+            // ── Resize ───────────────────────────────────────────────────
+            window.addEventListener('resize', setCanvasSize);
+
+            render();
         })();
 
     </script>
